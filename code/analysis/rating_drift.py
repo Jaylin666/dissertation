@@ -17,9 +17,7 @@ rows against the frozen Meeting 7 Step 34 appearance dataset.
 from __future__ import annotations
 
 from collections import defaultdict
-import importlib.util
 from pathlib import Path
-import sys
 from typing import Any
 
 import matplotlib
@@ -32,11 +30,10 @@ import pandas as pd
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_DIR = PROJECT_ROOT / "outputs" / "meeting8_technical"
 FIGURE_DIR = OUTPUT_DIR / "figures"
 
-STEP24_PATH = SCRIPT_DIR / "24_glicko_rd_inflation_sensitivity.py"
 STEP34_APPEARANCE_PATH = (
     PROJECT_ROOT / "outputs" / "meeting7" / "34_early_game_appearance_dataset.csv"
 )
@@ -73,16 +70,44 @@ EXPECTED_2025_BRIER = 0.322316
 EXPECTED_2025_MEAN_OPPONENT_RATING = 1180.755
 
 
-def load_step24_module():
-    """Load the validated Step 24 implementation without duplicating it."""
+def configure_output_root(output_root: str | Path) -> Path:
+    """Redirect Step 41 outputs while retaining frozen default inputs."""
 
-    spec = importlib.util.spec_from_file_location("meeting5_step24", STEP24_PATH)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Could not load Step 24 module from {STEP24_PATH}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+    global OUTPUT_DIR, FIGURE_DIR
+    global PLAYER_ENTRY_PATH, DEBUT_DETAIL_PATH, DEBUT_COHORT_PATH
+    global YEARLY_SCALE_PATH, YEARLY_DEBUT_PATH, BURN_IN_SENSITIVITY_PATH
+    global TEST_YEAR_VALIDATION_PATH, VALIDATION_CHECKS_PATH
+    global FIGURE_MANIFEST_PATH, SUMMARY_PATH
+    global RATING_SCALE_FIGURE_PATH, DEBUT_ANCHOR_FIGURE_PATH
+    global COHORT_BIAS_FIGURE_PATH
+
+    root = Path(output_root)
+    if not root.is_absolute():
+        root = PROJECT_ROOT / root
+    OUTPUT_DIR = root.resolve() / "meeting8_technical"
+    FIGURE_DIR = OUTPUT_DIR / "figures"
+    PLAYER_ENTRY_PATH = OUTPUT_DIR / "41_player_entry_classification.csv"
+    DEBUT_DETAIL_PATH = OUTPUT_DIR / "41_debut_appearance_diagnostics.csv"
+    DEBUT_COHORT_PATH = OUTPUT_DIR / "41_debut_cohort_summary.csv"
+    YEARLY_SCALE_PATH = OUTPUT_DIR / "41_yearly_rating_scale_drift.csv"
+    YEARLY_DEBUT_PATH = OUTPUT_DIR / "41_yearly_debut_anchor_diagnostics.csv"
+    BURN_IN_SENSITIVITY_PATH = OUTPUT_DIR / "41_burnin_definition_sensitivity.csv"
+    TEST_YEAR_VALIDATION_PATH = OUTPUT_DIR / "41_2025_first_appearance_validation.csv"
+    VALIDATION_CHECKS_PATH = OUTPUT_DIR / "41_validation_checks.csv"
+    FIGURE_MANIFEST_PATH = OUTPUT_DIR / "41_figure_manifest.csv"
+    SUMMARY_PATH = OUTPUT_DIR / "41_meeting8_technical_summary.md"
+    RATING_SCALE_FIGURE_PATH = FIGURE_DIR / "41_fig01_glicko_rating_scale_by_year.png"
+    DEBUT_ANCHOR_FIGURE_PATH = FIGURE_DIR / "41_fig02_debut_anchor_by_year.png"
+    COHORT_BIAS_FIGURE_PATH = FIGURE_DIR / "41_fig03_debut_prediction_by_cohort.png"
+    return OUTPUT_DIR
+
+
+def load_step24_module():
+    """Return the canonical validated Step 24 implementation."""
+
+    from code.pipelines import glicko_pipeline
+
+    return glicko_pipeline
 
 
 def format_player_name(value: Any) -> str | pd._libs.missing.NAType:

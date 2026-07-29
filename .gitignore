@@ -52,6 +52,7 @@ outputs/**/cache/
 outputs/**/intermediate/
 outputs/**/temporary/
 outputs/**/tmp/
+outputs/refactor_validation/
 
 # Semantically row-level datasets and histories
 outputs/**/*per_match*.csv

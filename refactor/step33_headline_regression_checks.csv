@@ -1,0 +1,15 @@
+check_name,reference_value,new_value,expected,absolute_difference,passed,source_file
+evaluation_games,11379,11379,11379,0.0,True,33_overall_model_metrics.csv
+glicko_low_brier,0.187603868924,0.187603868924,original golden; approximately 0.187604,0.0,True,33_overall_model_metrics.csv
+glicko_low_log_loss,0.5517787243,0.5517787243,original golden; approximately 0.551779,0.0,True,33_overall_model_metrics.csv
+glicko_low_accuracy,0.711486070832,0.711486070832,original golden; approximately 0.711486,0.0,True,33_overall_model_metrics.csv
+validation_best_elo_brier,0.19007264006,0.19007264006,original golden; approximately 0.190073,0.0,True,33_overall_model_metrics.csv
+validation_best_elo_log_loss,0.556534255949,0.556534255949,original golden; approximately 0.556534,0.0,True,33_overall_model_metrics.csv
+validation_best_elo_accuracy,0.704455576061,0.704455576061,original golden; approximately 0.704456,0.0,True,33_overall_model_metrics.csv
+glicko_c0_brier,0.195707693341,0.195707693341,original golden; approximately 0.195708,0.0,True,33_overall_model_metrics.csv
+main_elo_minus_glicko_brier_improvement,0.00246877113577,0.00246877113577,original golden; approximately 0.002469,0.0,True,33_overall_pairwise_comparisons.csv
+exactly_one_debut_matches,72,72,72,0.0,True,33_meeting6_final_results.csv
+no_debut_matches,11305,11305,11305,0.0,True,33_meeting6_final_results.csv
+all_core_probabilities_in_unit_interval,True,True,True,0.0,True,33_orientation_corrected_per_match_scores_2025.csv
+fixed_direct_player_a_orientation,True,True,True,0.0,True,33_final_validation_checks.csv
+all_step33_final_validation_checks_pass,True,True,True,0.0,True,33_final_validation_checks.csv

@@ -17,9 +17,9 @@ including:
 - early-game and first-recorded-appearance diagnostics;
 - burn-in definitions and rating-scale alignment.
 
-Scripts in `code/` are numbered in the order in which the analysis was
-developed. Later scripts reuse and audit earlier validated components rather
-than silently replacing them.
+Active modules in `code/` are organised by responsibility. The original
+numbered development sequence is preserved under `archive/legacy_steps/` and
+mapped in `CODE_MAP.md`.
 
 ## Current main findings
 
@@ -43,8 +43,14 @@ the first-appearance prediction error.
 
 ## Repository structure
 
-- `code/`: numbered data-processing, Elo, Glicko, evaluation, robustness, and
-  diagnostic scripts.
+- `code/`: active modular data, model, pipeline, analysis, CLI, and validation
+  code.
+- `archive/legacy_steps/`: preserved numbered research scripts and historical
+  one-off experiments.
+- `tests/`: equation, orientation, entry-definition, and golden-output
+  regression tests.
+- `refactor/`: audit inventory, dependency map, refactor plan, and validation
+  evidence.
 - `outputs/`: selected compact result tables, validation checks, summaries,
   manifests, and figures.
 - `outputs/meeting6/`: orientation correction and supporting diagnostics.
@@ -52,6 +58,33 @@ the first-appearance prediction error.
   and probability-orientation results.
 - `outputs/meeting8_technical/`: burn-in, rating-scale, strict prematch, and
   cross-file audits from Steps 41 and 42.
+
+## Active code structure
+
+New users should use the modular code under `code/`:
+
+- `code/models/elo.py` and `code/models/glicko.py` contain the canonical rating
+  equations;
+- `code/data/build_matches.py` validates and constructs the fixed
+  full-history match table;
+- `code/pipelines/` contains the supported Elo, Glicko, and comparison
+  workflows;
+- `code/analysis/` contains orientation, early-game, rating-drift, and entry
+  diagnostics;
+- `code/config.py` records frozen dissertation parameters;
+- `code/cli.py` provides the supported command-line interface.
+
+The active code contains no numbered research scripts. See `code/README.md`
+for the complete command list.
+
+## Legacy research scripts
+
+The original chronological scripts are retained under
+`archive/legacy_steps/` for auditability and research history. They are not
+the recommended entry points for current reproduction, and some require
+historical intermediate output files. `CODE_MAP.md` records the purpose,
+status, outputs, and active replacement for every original numbered script.
+The safety tag `pre-code-cleanup-2026` preserves the exact pre-refactor tree.
 
 ## Reproducibility
 
@@ -61,12 +94,27 @@ Install the external Python dependencies with:
 python -m pip install -r requirements.txt
 ```
 
-The numbered scripts document the analysis sequence and use project-relative
-paths. However, this repository is not fully self-contained: raw match data
-and several large generated intermediate tables are intentionally not tracked.
-To reproduce the full workflow, obtain the annual source data separately,
-place it under `data_raw/`, and run the required numbered construction scripts
-before downstream analyses.
+The supported interface is the command-line module:
+
+```bash
+python -m code.cli --help
+python -m code.cli validate
+python -m unittest discover -s tests -v
+python -m compileall -f code
+```
+
+Full runs are explicit and can be redirected to a protected output root:
+
+```bash
+python -m code.cli run-elo --full-run --output-root outputs/refactor_validation
+python -m code.cli entry-diagnostics --full-run --output-root outputs/refactor_validation
+```
+
+See `code/README.md` for all entry points. This repository is not fully
+self-contained: raw match data and several large generated intermediate tables
+are intentionally not tracked. To reproduce the full workflow, obtain the
+annual source data separately, place it under `data_raw/`, and build the
+full-history input before downstream analyses.
 
 The repository retains compact summaries and validation artifacts rather than
 large per-match predictions, player-appearance tables, complete rating

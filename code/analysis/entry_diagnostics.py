@@ -12,9 +12,7 @@ Meeting 7 probability convention.
 from __future__ import annotations
 
 from collections import defaultdict
-import importlib.util
 from pathlib import Path
-import sys
 from typing import Any
 
 import matplotlib
@@ -27,13 +25,12 @@ import pandas as pd
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+GLICKO_PIPELINE_PATH = PROJECT_ROOT / "code" / "pipelines" / "glicko_pipeline.py"
 
 OUTPUT_DIR = PROJECT_ROOT / "outputs" / "meeting8_technical"
 FIGURE_DIR = OUTPUT_DIR / "figures"
 
-STEP24_PATH = SCRIPT_DIR / "24_glicko_rd_inflation_sensitivity.py"
-STEP41_PATH = SCRIPT_DIR / "41_burnin_entry_and_rating_drift_diagnostic.py"
 STEP33_PATH = (
     PROJECT_ROOT
     / "outputs"
@@ -93,16 +90,47 @@ EXPECTED_EXACTLY_ONE_DEBUT_MATCHES = 72
 EXPECTED_BOTH_DEBUT_MATCHES = 2
 
 
-def load_step24_module() -> Any:
-    """Load the validated Step 24 module through importlib."""
+def configure_output_root(output_root: str | Path) -> Path:
+    """Redirect Step 42 outputs and its Step 41 inputs to a validation root."""
 
-    spec = importlib.util.spec_from_file_location("meeting5_step24_for_step42", STEP24_PATH)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Could not load Step 24 from {STEP24_PATH}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+    global OUTPUT_DIR, FIGURE_DIR
+    global STEP41_CLASSIFICATION_PATH, STEP41_YEARLY_SCALE_PATH
+    global STRICT_ENTRY_PATH, STEP41_MISMATCH_PATH, PREMATCH_DIAGNOSTIC_PATH
+    global ENTRY_YEAR_SUMMARY_PATH, ENTRY_COHORT_SUMMARY_PATH
+    global CROSSFILE_AUDIT_PATH, ORIENTATION_SENSITIVITY_PATH
+    global BURN_IN_SENSITIVITY_PATH, VALIDATION_PATH, FIGURE_MANIFEST_PATH
+    global SUMMARY_PATH, FIGURE_1_PATH, FIGURE_2_PATH, FIGURE_3_PATH
+
+    root = Path(output_root)
+    if not root.is_absolute():
+        root = PROJECT_ROOT / root
+    OUTPUT_DIR = root.resolve() / "meeting8_technical"
+    FIGURE_DIR = OUTPUT_DIR / "figures"
+    STEP41_CLASSIFICATION_PATH = OUTPUT_DIR / "41_player_entry_classification.csv"
+    STEP41_YEARLY_SCALE_PATH = OUTPUT_DIR / "41_yearly_rating_scale_drift.csv"
+    STRICT_ENTRY_PATH = OUTPUT_DIR / "42_strict_player_entry_classification.csv"
+    STEP41_MISMATCH_PATH = OUTPUT_DIR / "42_step41_entry_classification_mismatches.csv"
+    PREMATCH_DIAGNOSTIC_PATH = OUTPUT_DIR / "42_prematch_contemporaneous_scale_diagnostics.csv"
+    ENTRY_YEAR_SUMMARY_PATH = OUTPUT_DIR / "42_entry_year_scale_summary.csv"
+    ENTRY_COHORT_SUMMARY_PATH = OUTPUT_DIR / "42_entry_cohort_scale_summary.csv"
+    CROSSFILE_AUDIT_PATH = OUTPUT_DIR / "42_2025_crossfile_entry_audit.csv"
+    ORIENTATION_SENSITIVITY_PATH = OUTPUT_DIR / "42_probability_orientation_sensitivity.csv"
+    BURN_IN_SENSITIVITY_PATH = OUTPUT_DIR / "42_burnin_sensitivity_audit.csv"
+    VALIDATION_PATH = OUTPUT_DIR / "42_validation_checks.csv"
+    FIGURE_MANIFEST_PATH = OUTPUT_DIR / "42_figure_manifest.csv"
+    SUMMARY_PATH = OUTPUT_DIR / "42_prematch_entry_scale_summary.md"
+    FIGURE_1_PATH = FIGURE_DIR / "42_fig01_entry_anchor_vs_contemporaneous_scale.png"
+    FIGURE_2_PATH = FIGURE_DIR / "42_fig02_entry_anchor_vs_actual_opponent.png"
+    FIGURE_3_PATH = FIGURE_DIR / "42_fig03_historical_orientation_sensitivity.png"
+    return OUTPUT_DIR
+
+
+def load_step24_module() -> Any:
+    """Return the canonical validated Step 24 implementation."""
+
+    from code.pipelines import glicko_pipeline
+
+    return glicko_pipeline
 
 
 def robust_bool_value(value: Any) -> bool:
@@ -1309,7 +1337,15 @@ def build_validation_checks(
     cohort_counts = strict["entry_cohort"].value_counts()
     test = diagnostics.loc[diagnostics["first_recorded_year"].eq(TEST_YEAR)]
 
-    add_check(rows, "step24_file_exists", STEP24_PATH.exists(), STEP24_PATH.exists(), True, "error", "Validated model implementation must be present.")
+    add_check(
+        rows,
+        "step24_file_exists",
+        GLICKO_PIPELINE_PATH.exists(),
+        GLICKO_PIPELINE_PATH.exists(),
+        True,
+        "error",
+        "Validated model implementation must be present.",
+    )
     add_check(rows, "step33_file_exists", STEP33_PATH.exists(), STEP33_PATH.exists(), True, "error", "Frozen Step 33 output must be present.")
     add_check(rows, "step34_file_exists", STEP34_PATH.exists(), STEP34_PATH.exists(), True, "error", "Frozen Step 34 output must be present.")
     add_check(rows, "full_history_rows", len(matches) == EXPECTED_FULL_HISTORY_ROWS, len(matches), EXPECTED_FULL_HISTORY_ROWS, "error", "Full-history row count.")
@@ -1763,6 +1799,31 @@ def main() -> None:
             "Step 42 error-level validation failures: "
             + ", ".join(failed_errors["check_name"].tolist())
         )
+
+
+def run_prematch_entry_audit(output_root: str | Path | None = None) -> None:
+    """Run the Step 42 prematch entry-scale audit."""
+
+    if output_root is not None:
+        configure_output_root(output_root)
+    main()
+
+
+def run_burnin_and_drift(output_root: str | Path | None = None) -> None:
+    """Run the Step 41 burn-in and rating-scale diagnostic."""
+
+    from code.analysis import rating_drift
+
+    if output_root is not None:
+        rating_drift.configure_output_root(output_root)
+    rating_drift.main()
+
+
+def run_all_entry_diagnostics(output_root: str | Path | None = None) -> None:
+    """Run Steps 41 and 42 in their required dependency order."""
+
+    run_burnin_and_drift(output_root)
+    run_prematch_entry_audit(output_root)
 
 
 if __name__ == "__main__":

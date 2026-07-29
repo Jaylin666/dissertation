@@ -33,13 +33,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from code.io_utils import add_event_ordering_columns as add_shared_event_ordering
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-from glicko_core import (  # noqa: E402
+from code.models.glicko import (  # noqa: E402
     DEFAULT_RATING,
     DEFAULT_RD,
     MAX_RD,
@@ -69,6 +68,33 @@ BRIER_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_brier_bar.png"
 LOGLOSS_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_logloss_bar.png"
 RD_DIST_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rd_distribution_by_variant.png"
 GAP_BRIER_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_gap_brier.png"
+
+
+def configure_output_root(output_root: str | Path) -> Path:
+    """Redirect generated Step 24 artifacts below a temporary output root."""
+
+    global OUTPUT_DIR
+    global METRICS_PATH, RD_SUMMARY_PATH, GAP_METRICS_PATH
+    global PREDICTIONS_2025_PATH, FINAL_RATINGS_PATH, CALIBRATION_PATH
+    global SUMMARY_MD_PATH, BRIER_PLOT_PATH, LOGLOSS_PLOT_PATH
+    global RD_DIST_PLOT_PATH, GAP_BRIER_PLOT_PATH
+
+    root = Path(output_root)
+    if not root.is_absolute():
+        root = PROJECT_ROOT / root
+    OUTPUT_DIR = root.resolve() / "meeting5_glicko_rd_inflation"
+    METRICS_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_metrics_2025.csv"
+    RD_SUMMARY_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_rd_summary.csv"
+    GAP_METRICS_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_gap_metrics.csv"
+    PREDICTIONS_2025_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_predictions_2025.csv"
+    FINAL_RATINGS_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_final_ratings.csv"
+    CALIBRATION_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_calibration_2025.csv"
+    SUMMARY_MD_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_summary.md"
+    BRIER_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_brier_bar.png"
+    LOGLOSS_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_logloss_bar.png"
+    RD_DIST_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rd_distribution_by_variant.png"
+    GAP_BRIER_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_gap_brier.png"
+    return OUTPUT_DIR
 
 REQUIRED_COLUMNS = ["fcode", "year", "event", "winner", "loser"]
 NUMERIC_ID_COLUMNS = ["fcode", "year", "event", "winner", "loser"]
@@ -129,57 +155,9 @@ def update_player_name(player_names: dict[int, str], code: int, possible_name: A
 
 
 def add_event_ordering_columns(matches: pd.DataFrame) -> pd.DataFrame:
-    """Add ordering date columns without modifying raw event date fields."""
+    """Compatibility name for the shared frozen ordering helper."""
 
-    matches = matches.copy()
-    if "event_date_raw" not in matches.columns:
-        matches["event_date_raw"] = pd.NA
-    if "event_date_parsed" not in matches.columns:
-        matches["event_date_parsed"] = pd.NA
-
-    if "event_order_date" in matches.columns and "event_date_ordering_method" in matches.columns:
-        matches["event_order_date"] = pd.to_datetime(matches["event_order_date"], errors="coerce")
-        return matches
-
-    parsed = pd.to_datetime(matches["event_date_parsed"], errors="coerce")
-    matches["event_order_date"] = parsed
-    matches["event_date_ordering_method"] = np.where(
-        parsed.notna(),
-        "parsed_full_date",
-        "fallback_no_date",
-    )
-
-    missing_parsed = parsed.isna()
-    raw = matches.loc[missing_parsed, "event_date_raw"].astype("string").str.strip()
-    extracted = raw.str.extract(r"^(?P<month>\d{1,2})\.(?P<year>\d{2}|\d{4})$")
-    valid_month_year = extracted["month"].notna()
-
-    if valid_month_year.any():
-        months = pd.to_numeric(extracted.loc[valid_month_year, "month"], errors="coerce")
-        raw_years = extracted.loc[valid_month_year, "year"].astype(str)
-        years_numeric = raw_years.astype(int)
-        years = np.where(
-            raw_years.str.len().eq(2),
-            np.where(years_numeric >= 85, 1900 + years_numeric, 2000 + years_numeric),
-            years_numeric,
-        )
-        valid_month = months.between(1, 12).fillna(False)
-        valid_mask = valid_month.to_numpy(dtype=bool)
-        valid_index = extracted.loc[valid_month_year].index[valid_mask]
-
-        imputed_dates = pd.to_datetime(
-            {
-                "year": np.asarray(years)[valid_mask],
-                "month": months.loc[valid_index].astype(int).to_numpy(),
-                "day": np.repeat(15, len(valid_index)),
-            },
-            errors="coerce",
-        )
-
-        matches.loc[valid_index, "event_order_date"] = imputed_dates.to_numpy()
-        matches.loc[valid_index, "event_date_ordering_method"] = "month_year_imputed"
-
-    return matches
+    return add_shared_event_ordering(matches)
 
 
 def add_inactivity_period_index(matches: pd.DataFrame) -> tuple[pd.DataFrame, str]:
