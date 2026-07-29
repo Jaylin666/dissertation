@@ -1344,7 +1344,7 @@ def build_validation_checks(
         GLICKO_PIPELINE_PATH.exists(),
         True,
         "error",
-        "The validated canonical Glicko implementation must be present.",
+        "Validated model implementation must be present.",
     )
     add_check(rows, "step33_file_exists", STEP33_PATH.exists(), STEP33_PATH.exists(), True, "error", "Frozen Step 33 output must be present.")
     add_check(rows, "step34_file_exists", STEP34_PATH.exists(), STEP34_PATH.exists(), True, "error", "Frozen Step 34 output must be present.")

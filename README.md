@@ -59,6 +59,33 @@ the first-appearance prediction error.
 - `outputs/meeting8_technical/`: burn-in, rating-scale, strict prematch, and
   cross-file audits from Steps 41 and 42.
 
+## Active code structure
+
+New users should use the modular code under `code/`:
+
+- `code/models/elo.py` and `code/models/glicko.py` contain the canonical rating
+  equations;
+- `code/data/build_matches.py` validates and constructs the fixed
+  full-history match table;
+- `code/pipelines/` contains the supported Elo, Glicko, and comparison
+  workflows;
+- `code/analysis/` contains orientation, early-game, rating-drift, and entry
+  diagnostics;
+- `code/config.py` records frozen dissertation parameters;
+- `code/cli.py` provides the supported command-line interface.
+
+The active code contains no numbered research scripts. See `code/README.md`
+for the complete command list.
+
+## Legacy research scripts
+
+The original chronological scripts are retained under
+`archive/legacy_steps/` for auditability and research history. They are not
+the recommended entry points for current reproduction, and some require
+historical intermediate output files. `CODE_MAP.md` records the purpose,
+status, outputs, and active replacement for every original numbered script.
+The safety tag `pre-code-cleanup-2026` preserves the exact pre-refactor tree.
+
 ## Reproducibility
 
 Install the external Python dependencies with:

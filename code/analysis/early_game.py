@@ -2103,6 +2103,18 @@ def run_bootstrap_audit_and_match_level_robustness() -> None:
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     appearances = load_appearance_dataset()
+    if not BOOTSTRAP_CI_PATH.exists():
+        models = available_performance_models(appearances)
+        bootstrap = calculate_bootstrap_confidence_intervals(
+            appearances,
+            models,
+        )
+        bootstrap.to_csv(
+            BOOTSTRAP_CI_PATH,
+            index=False,
+            encoding="utf-8-sig",
+            float_format="%.12g",
+        )
     appearance_bootstrap, pairwise = read_existing_bootstrap_outputs()
     method_audit, audit_passed = audit_current_player_cluster_bootstrap(appearances, appearance_bootstrap, pairwise)
     original_bootstrap_modified = False
@@ -2229,9 +2241,64 @@ def run_model_performance_analysis() -> None:
     print(f"Outputs written to: {OUTPUT_DIR}")
 
 
-def main() -> None:
-    """Run the Step 34 bootstrap method audit and robustness supplement."""
+def run_bootstrap_and_figures() -> None:
+    """Create Step 34 bootstrap intervals, figures, and validation outputs."""
 
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    FIGURE_DIR.mkdir(parents=True, exist_ok=True)
+    appearances = load_appearance_dataset()
+    models = available_performance_models(appearances)
+    bootstrap = calculate_bootstrap_confidence_intervals(appearances, models)
+    bootstrap.to_csv(
+        BOOTSTRAP_CI_PATH,
+        index=False,
+        encoding="utf-8-sig",
+        float_format="%.12g",
+    )
+    exact_counts = pd.read_csv(EXACT_APPEARANCE_COUNTS_PATH)
+    cumulative = pd.read_csv(CUMULATIVE_PERFORMANCE_PATH)
+    stage = pd.read_csv(STAGE_PERFORMANCE_PATH)
+    exact = pd.read_csv(EXACT_PERFORMANCE_PATH)
+    pairwise = pd.read_csv(PAIRWISE_DIFFERENCES_PATH)
+    figure_manifest = create_early_game_figures(
+        exact_counts,
+        cumulative,
+        stage,
+        exact,
+        pairwise,
+        bootstrap,
+    )
+    figure_manifest.to_csv(
+        FIGURE_MANIFEST_PATH,
+        index=False,
+        encoding="utf-8-sig",
+    )
+    validation_rows: list[dict[str, Any]] = []
+    validate_bootstrap_and_figures(
+        appearances,
+        pairwise,
+        bootstrap,
+        figure_manifest,
+        validation_rows,
+    )
+    validation = write_bootstrap_figure_validation_checks(validation_rows)
+    failed_errors = validation.loc[
+        (~validation["passed"].astype(bool))
+        & validation["severity"].eq("error")
+    ]
+    if len(failed_errors):
+        raise RuntimeError(
+            "Step 34 bootstrap or figure validation failed; see "
+            f"{BOOTSTRAP_FIGURE_VALIDATION_PATH}"
+        )
+
+
+def main() -> None:
+    """Run the complete Step 34 workflow in dependency order."""
+
+    run_part1_data_preparation()
+    run_model_performance_analysis()
+    run_bootstrap_and_figures()
     run_bootstrap_audit_and_match_level_robustness()
 
 

@@ -1,60 +1,62 @@
 # Numbered-script migration map
 
-The archive path preserves chronology. The active replacement identifies the
-recommended current implementation; “archive only” means the script remains
-scientifically auditable but is not part of the supported active workflow.
+The archive preserves the chronological research record. Active replacements
+are the recommended current implementations. “Archive only” means that a
+script remains scientifically auditable but is not part of the supported
+active workflow. Promoted scripts retain their complete Git rename history and
+their exact pre-refactor versions at tag `pre-code-cleanup-2026`.
 
-| Original script | Preserved location | Active replacement or status |
-|---|---|---|
-| `01_inspect_2025_data.py` | `archive/legacy_steps/01_inspect_2025_data.py` | Archive only; checked loading is in `code/io_utils.py` |
-| `02_simple_elo_2025.py` | `archive/legacy_steps/02_simple_elo_2025.py` | `code/models/elo.py`, `code/pipelines/elo_pipeline.py` |
-| `03_evaluate_elo_2025.py` | `archive/legacy_steps/03_evaluate_elo_2025.py` | `code/pipelines/elo_pipeline.py` |
-| `04_elo_parameter_test_2025.py` | `archive/legacy_steps/04_elo_parameter_test_2025.py` | Archive-only parameter experiment |
-| `05_summarise_elo_results_2025.py` | `archive/legacy_steps/05_summarise_elo_results_2025.py` | `code/pipelines/elo_pipeline.py` |
-| `06_add_chinese_output_names.py` | `archive/legacy_steps/06_add_chinese_output_names.py` | Archive-only reporting utility |
-| `06_convert_meeting_summary_to_word.py` | `archive/legacy_steps/06_convert_meeting_summary_to_word.py` | Archive-only reporting utility |
-| `07_build_multiyear_match_dataset.py` | Git history | `code/data/build_matches.py` |
-| `08_multiyear_elo.py` | `archive/legacy_steps/08_multiyear_elo.py` | `code/models/elo.py`, `code/pipelines/elo_pipeline.py` |
-| `09_evaluate_multiyear_elo.py` | `archive/legacy_steps/09_evaluate_multiyear_elo.py` | `code/pipelines/elo_pipeline.py` |
-| `10_burnin_experiment.py` | `archive/legacy_steps/10_burnin_experiment.py` | Archive-only experiment |
-| `11_parameter_validation_multiyear.py` | `archive/legacy_steps/11_parameter_validation_multiyear.py` | Frozen settings in `code/config.py` |
-| `12_rating_stability_analysis.py` | `archive/legacy_steps/12_rating_stability_analysis.py` | Archive-only diagnostic |
-| `13_build_full_history_match_dataset.py` | `archive/legacy_steps/13_build_full_history_match_dataset.py` | `code/data/build_matches.py` |
-| `14_elo_burnin_rating_list_stability.py` | `archive/legacy_steps/14_elo_burnin_rating_list_stability.py` | Archive-only diagnostic |
-| `15_elo_single_year_rerun_convergence.py` | `archive/legacy_steps/15_elo_single_year_rerun_convergence.py` | Archive-only experiment |
-| `16_elo_event_level_volatility.py` | `archive/legacy_steps/16_elo_event_level_volatility.py` | Archive-only diagnostic |
-| `17_elo_baseline_decision_summary.py` | `archive/legacy_steps/17_elo_baseline_decision_summary.py` | Frozen settings in `code/config.py` |
-| `18_glicko_core_sanity_check.py` | `archive/legacy_steps/18_glicko_core_sanity_check.py` | `code/models/glicko.py`, `tests/test_glicko_core.py` |
-| `19_glicko_match_by_match_baseline.py` | `archive/legacy_steps/19_glicko_match_by_match_baseline.py` | `code/pipelines/glicko_pipeline.py` |
-| `20_glicko_rating_period_sensitivity.py` | `archive/legacy_steps/20_glicko_rating_period_sensitivity.py` | Archive-only experiment |
-| `21_create_elo_confirmation_answers_word.py` | `archive/legacy_steps/21_create_elo_confirmation_answers_word.py` | Archive-only reporting utility |
-| `22_meeting5_experiment_matrix.py` | `archive/legacy_steps/22_meeting5_experiment_matrix.py` | Archive-only orchestration record |
-| `23_glicko_implementation_validation.py` | `archive/legacy_steps/23_glicko_implementation_validation.py` | `tests/test_glicko_core.py`, `code/validation_utils.py` |
-| `24_glicko_rd_inflation_sensitivity.py` | Git history | `code/pipelines/glicko_pipeline.py` |
-| `25_glicko_rating_period_runtime_comparison.py` | `archive/legacy_steps/25_glicko_rating_period_runtime_comparison.py` | Archive-only experiment |
-| `26_fair_elo_vs_glicko_comparison.py` | `archive/legacy_steps/26_fair_elo_vs_glicko_comparison.py` | `code/pipelines/comparison_pipeline.py` |
-| `27_adaptive_k_elo_comparison.py` | `archive/legacy_steps/27_adaptive_k_elo_comparison.py` | Adaptive-K helpers in `code/models/elo.py`; negative result archived |
-| `28_build_prematch_player_features.py` | `archive/legacy_steps/28_build_prematch_player_features.py` | Inputs consumed by `code/pipelines/comparison_pipeline.py` |
-| `29_where_glicko_helps.py` | `archive/legacy_steps/29_where_glicko_helps.py` | `code/pipelines/comparison_pipeline.py` |
-| `30_debut_initialisation_and_robustness_diagnostics.py` | `archive/legacy_steps/30_debut_initialisation_and_robustness_diagnostics.py` | `code/analysis/entry_diagnostics.py` |
-| `31_methodological_corrections_and_meeting6_finalisation.py` | `archive/legacy_steps/31_methodological_corrections_and_meeting6_finalisation.py` | Superseded analysis retained for audit |
-| `32_glicko_probability_orientation_audit.py` | `archive/legacy_steps/32_glicko_probability_orientation_audit.py` | `code/analysis/orientation.py` |
-| `33_recompute_orientation_corrected_meeting6_results.py` | Git history | `code/pipelines/comparison_pipeline.py` |
-| `34_early_game_analysis.py` | Git history | `code/analysis/early_game.py` |
-| `35_early_game_mechanism_analysis.py` | `archive/legacy_steps/35_early_game_mechanism_analysis.py` | `code/analysis/early_game.py` |
-| `36_glicko_initialisation_source_diagnostic.py` | `archive/legacy_steps/36_glicko_initialisation_source_diagnostic.py` | `code/analysis/entry_diagnostics.py` |
-| `37_glicko_initial_rating_sensitivity.py` | `archive/legacy_steps/37_glicko_initial_rating_sensitivity.py` | Archive-only sensitivity experiment |
-| `38_asymmetric_adaptive_k_elo.py` | `archive/legacy_steps/38_asymmetric_adaptive_k_elo.py` | Adaptive-K helpers in `code/models/elo.py`; negative result archived |
-| `39_glicko_orientation_sensitivity_audit.py` | `archive/legacy_steps/39_glicko_orientation_sensitivity_audit.py` | `code/analysis/orientation.py`, `code/analysis/entry_diagnostics.py` |
-| `40_finalize_orientation_reporting.py` | `archive/legacy_steps/40_finalize_orientation_reporting.py` | `code/pipelines/comparison_pipeline.py` |
-| `41_burnin_entry_and_rating_drift_diagnostic.py` | Git history | `code/analysis/rating_drift.py` |
-| `42_prematch_entry_scale_and_crossfile_audit.py` | Git history | `code/analysis/entry_diagnostics.py` |
+| original_file | original_purpose | new_location_or_command | status | output_files_preserved | notes |
+|---|---|---|---|---|---|
+| `01_inspect_2025_data.py` | Inspect annual source data | `archive/legacy_steps/01_inspect_2025_data.py` | Archive only | Historical names unchanged | Checked loading is now shared in `code/io_utils.py`. |
+| `02_simple_elo_2025.py` | Initial single-year Elo run | `archive/legacy_steps/02_simple_elo_2025.py`; `python -m code.cli run-elo` | Archived; logic consolidated | Historical names unchanged | Canonical equations are in `code/models/elo.py`. |
+| `03_evaluate_elo_2025.py` | Evaluate single-year Elo | `archive/legacy_steps/03_evaluate_elo_2025.py`; `python -m code.cli run-elo` | Archived; logic consolidated | Historical names unchanged | Current metrics are produced by the Elo pipeline. |
+| `04_elo_parameter_test_2025.py` | Historical Elo parameter search | `archive/legacy_steps/04_elo_parameter_test_2025.py` | Archive only | Historical names unchanged | Frozen selected settings are in `code/config.py`; no new search is run. |
+| `05_summarise_elo_results_2025.py` | Summarise early Elo outputs | `archive/legacy_steps/05_summarise_elo_results_2025.py` | Archive only | Historical names unchanged | Thin historical reporting step. |
+| `06_add_chinese_output_names.py` | Add translated output labels | `archive/legacy_steps/06_add_chinese_output_names.py` | Archive only | Historical names unchanged | Reporting utility, not active scientific code. |
+| `06_convert_meeting_summary_to_word.py` | Convert meeting summary to Word | `archive/legacy_steps/06_convert_meeting_summary_to_word.py` | Archive only | Historical names unchanged | Reporting utility, not active scientific code. |
+| `07_build_multiyear_match_dataset.py` | Build checked multi-year matches | `code/data/build_matches.py`; `python -m code.cli build-data` | Promoted through Git rename | Canonical checked-match filenames retained | Full-history checks now cover 1985–2025. |
+| `08_multiyear_elo.py` | Run multi-year Elo | `archive/legacy_steps/08_multiyear_elo.py`; `python -m code.cli run-elo` | Archived; logic consolidated | Historical names unchanged | Uses canonical Elo equations and ordering. |
+| `09_evaluate_multiyear_elo.py` | Evaluate multi-year Elo | `archive/legacy_steps/09_evaluate_multiyear_elo.py`; `python -m code.cli run-elo` | Archived; logic consolidated | Historical names unchanged | Current metrics are produced by the Elo pipeline. |
+| `10_burnin_experiment.py` | Early burn-in experiment | `archive/legacy_steps/10_burnin_experiment.py` | Archive only | Historical names unchanged | Superseded experiment retained for audit. |
+| `11_parameter_validation_multiyear.py` | Validate Elo parameters across years | `archive/legacy_steps/11_parameter_validation_multiyear.py`; `code/config.py` | Archived; settings frozen | Historical names unchanged | Validation years and selected settings are unchanged. |
+| `12_rating_stability_analysis.py` | Elo rating stability diagnostic | `archive/legacy_steps/12_rating_stability_analysis.py` | Archive only | Historical names unchanged | Unique diagnostic retained. |
+| `13_build_full_history_match_dataset.py` | Orchestrate full-history build | `archive/legacy_steps/13_build_full_history_match_dataset.py`; `python -m code.cli build-data` | Archive only; orchestration replaced | Historical names unchanged | Active build logic is in `code/data/build_matches.py`. |
+| `14_elo_burnin_rating_list_stability.py` | Burn-in rating-list stability | `archive/legacy_steps/14_elo_burnin_rating_list_stability.py` | Archive only | Historical names unchanged | Unique diagnostic retained. |
+| `15_elo_single_year_rerun_convergence.py` | Single-year convergence experiment | `archive/legacy_steps/15_elo_single_year_rerun_convergence.py` | Archive only | Historical names unchanged | Unique experiment retained. |
+| `16_elo_event_level_volatility.py` | Event-level Elo volatility | `archive/legacy_steps/16_elo_event_level_volatility.py` | Archive only | Historical names unchanged | Unique diagnostic retained. |
+| `17_elo_baseline_decision_summary.py` | Document Elo baseline decision | `archive/legacy_steps/17_elo_baseline_decision_summary.py`; `code/config.py` | Archive only; settings frozen | Historical names unchanged | Decision evidence remains auditable. |
+| `18_glicko_core_sanity_check.py` | Glicko equation sanity checks | `archive/legacy_steps/18_glicko_core_sanity_check.py`; `tests/test_glicko_core.py` | Archived; tests consolidated | Historical names unchanged | Canonical implementation is `code/models/glicko.py`. |
+| `19_glicko_match_by_match_baseline.py` | Match-by-match Glicko baseline | `archive/legacy_steps/19_glicko_match_by_match_baseline.py`; `python -m code.cli run-glicko` | Archived; logic consolidated | Historical names unchanged | Match-by-match convention is unchanged. |
+| `20_glicko_rating_period_sensitivity.py` | Rating-period sensitivity | `archive/legacy_steps/20_glicko_rating_period_sensitivity.py` | Archive only | Historical names unchanged | Distinct historical experiment retained. |
+| `21_create_elo_confirmation_answers_word.py` | Create confirmation document | `archive/legacy_steps/21_create_elo_confirmation_answers_word.py` | Archive only | Historical names unchanged | Reporting utility, not active scientific code. |
+| `22_meeting5_experiment_matrix.py` | Orchestrate Meeting 5 experiments | `archive/legacy_steps/22_meeting5_experiment_matrix.py` | Archive only | Historical names unchanged | Chronological orchestration record retained. |
+| `23_glicko_implementation_validation.py` | Validate Glicko implementation | `archive/legacy_steps/23_glicko_implementation_validation.py`; `tests/test_glicko_core.py` | Archived; tests consolidated | Historical names unchanged | Error-level output checks remain in active pipelines. |
+| `24_glicko_rd_inflation_sensitivity.py` | Validated Glicko variants and low-inflation run | `code/pipelines/glicko_pipeline.py`; `python -m code.cli run-glicko` | Promoted through Git rename | Step 24 output names retained | Canonical formulas are imported from `code/models/glicko.py`. |
+| `25_glicko_rating_period_runtime_comparison.py` | Glicko runtime comparison | `archive/legacy_steps/25_glicko_rating_period_runtime_comparison.py` | Archive only | Historical names unchanged | Distinct historical experiment retained. |
+| `26_fair_elo_vs_glicko_comparison.py` | Fair Elo–Glicko comparison | `archive/legacy_steps/26_fair_elo_vs_glicko_comparison.py`; `python -m code.cli compare-models` | Archived; superseded comparison retained | Historical names unchanged | Step 33 is the formal orientation-corrected comparison. |
+| `27_adaptive_k_elo_comparison.py` | Adaptive-K Elo proof of concept | `archive/legacy_steps/27_adaptive_k_elo_comparison.py`; `code/models/elo.py` | Archive only; helper extracted | Historical names unchanged | Negative result remains available for dissertation reporting. |
+| `28_build_prematch_player_features.py` | Build prematch comparison features | `archive/legacy_steps/28_build_prematch_player_features.py` | Archive only | Historical names unchanged | Existing compact inputs remain consumed by the comparison pipeline. |
+| `29_where_glicko_helps.py` | Subgroup and mechanism comparison | `archive/legacy_steps/29_where_glicko_helps.py`; `code/pipelines/comparison_pipeline.py` | Archived; superseded analysis retained | Historical names unchanged | Step 33 contains the formal corrected results. |
+| `30_debut_initialisation_and_robustness_diagnostics.py` | Debut and initialisation diagnostics | `archive/legacy_steps/30_debut_initialisation_and_robustness_diagnostics.py`; `code/analysis/entry_diagnostics.py` | Archived; active concepts consolidated | Historical names unchanged | Strict entry definitions now follow Step 42. |
+| `31_methodological_corrections_and_meeting6_finalisation.py` | Meeting 6 methodological corrections | `archive/legacy_steps/31_methodological_corrections_and_meeting6_finalisation.py` | Archive only; superseded but meaningful | Historical names unchanged | Retained to document the correction sequence. |
+| `32_glicko_probability_orientation_audit.py` | Audit Glicko probability orientation | `archive/legacy_steps/32_glicko_probability_orientation_audit.py`; `code/analysis/orientation.py` | Archived; helper extracted | Historical names unchanged | Player A/B and focal conventions have regression tests. |
+| `33_recompute_orientation_corrected_meeting6_results.py` | Formal orientation-corrected comparison | `code/pipelines/comparison_pipeline.py`; `python -m code.cli compare-models` | Promoted through Git rename | All `33_*` output names retained | Formal primary probability convention is unchanged. |
+| `34_early_game_analysis.py` | Orientation-corrected early-game analysis | `code/analysis/early_game.py`; `python -m code.cli early-game` | Promoted through Git rename | All `34_*` output names retained | Appearance, stage, bootstrap, and robustness definitions are unchanged. |
+| `35_early_game_mechanism_analysis.py` | Early-game mechanism follow-up | `archive/legacy_steps/35_early_game_mechanism_analysis.py`; `code/analysis/early_game.py` | Archive only; related helpers retained | Historical names unchanged | Distinct follow-up evidence remains in the archive. |
+| `36_glicko_initialisation_source_diagnostic.py` | Initialisation-source diagnostic | `archive/legacy_steps/36_glicko_initialisation_source_diagnostic.py`; `code/analysis/entry_diagnostics.py` | Archive only; active concepts consolidated | Historical names unchanged | Entry-scale interpretation follows Step 42. |
+| `37_glicko_initial_rating_sensitivity.py` | Initial-rating sensitivity | `archive/legacy_steps/37_glicko_initial_rating_sensitivity.py` | Archive only | Historical names unchanged | Parameter experiment retained; no new tuning was performed. |
+| `38_asymmetric_adaptive_k_elo.py` | Asymmetric adaptive-K experiment | `archive/legacy_steps/38_asymmetric_adaptive_k_elo.py`; `code/models/elo.py` | Archive only; helper extracted | Historical names unchanged | Negative result retained. |
+| `39_glicko_orientation_sensitivity_audit.py` | Orientation sensitivity audit | `archive/legacy_steps/39_glicko_orientation_sensitivity_audit.py`; `code/analysis/orientation.py` | Archive only; helper extracted | Historical names unchanged | Sensitivity remains secondary to the Step 33 convention. |
+| `40_finalize_orientation_reporting.py` | Finalise orientation reporting | `archive/legacy_steps/40_finalize_orientation_reporting.py`; `code/pipelines/comparison_pipeline.py` | Archive only; orchestration replaced | Historical names unchanged | Formal comparison output names remain under Step 33. |
+| `41_burnin_entry_and_rating_drift_diagnostic.py` | Burn-in classification and end-of-year drift | `code/analysis/rating_drift.py`; `python -m code.cli entry-diagnostics` | Promoted through Git rename | All `41_*` output names retained | Broader Step 41 scale summaries are retained. |
+| `42_prematch_entry_scale_and_crossfile_audit.py` | Strict prematch entry-scale and cross-file audit | `code/analysis/entry_diagnostics.py`; `python -m code.cli entry-diagnostics` | Promoted through Git rename | All `42_*` output names retained | Step 42 remains the stricter source for entry definitions. |
 
 Additional original files:
 
-| Original file | Current location |
-|---|---|
-| `glicko_core.py` | Compatibility wrapper at `code/glicko_core.py`; implementation at `code/models/glicko.py` |
-| `load_croquet_data.py` | `code/data/download.py` |
-| `meeting7_final_code_audit.py` | `archive/legacy_steps/meeting7_final_code_audit.py` |
+| original_file | original_purpose | new_location_or_command | status | output_files_preserved | notes |
+|---|---|---|---|---|---|
+| `glicko_core.py` | Validated reusable Glicko equations | `code/models/glicko.py`; wrapper at `code/glicko_core.py` | Implementation moved; compatibility wrapper retained | Not applicable | There is only one active formula implementation. |
+| `load_croquet_data.py` | Download annual source files | `code/data/download.py` | Promoted through Git rename | Download naming retained | Raw source data remain untracked. |
+| `meeting7_final_code_audit.py` | Audit final Meeting 7 scripts and outputs | `archive/legacy_steps/meeting7_final_code_audit.py` | Archive only | Historical audit references unchanged | Preserved for research provenance. |
 
