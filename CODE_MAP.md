@@ -3,8 +3,10 @@
 The archive preserves the chronological research record. Active replacements
 are the recommended current implementations. “Archive only” means that a
 script remains scientifically auditable but is not part of the supported
-active workflow. Promoted scripts retain their complete Git rename history and
-their exact pre-refactor versions at tag `pre-code-cleanup-2026`.
+active workflow. Archived scripts are not guaranteed to run from their archive
+locations and must not be treated as active dependencies. Promoted scripts
+retain their Git history, and tag `pre-code-cleanup-2026` preserves the exact
+original runnable directory layout.
 
 | original_file | original_purpose | new_location_or_command | status | output_files_preserved | notes |
 |---|---|---|---|---|---|
@@ -41,7 +43,7 @@ their exact pre-refactor versions at tag `pre-code-cleanup-2026`.
 | `30_debut_initialisation_and_robustness_diagnostics.py` | Debut and initialisation diagnostics | `archive/legacy_steps/30_debut_initialisation_and_robustness_diagnostics.py`; `code/analysis/entry_diagnostics.py` | Archived; active concepts consolidated | Historical names unchanged | Strict entry definitions now follow Step 42. |
 | `31_methodological_corrections_and_meeting6_finalisation.py` | Meeting 6 methodological corrections | `archive/legacy_steps/31_methodological_corrections_and_meeting6_finalisation.py` | Archive only; superseded but meaningful | Historical names unchanged | Retained to document the correction sequence. |
 | `32_glicko_probability_orientation_audit.py` | Audit Glicko probability orientation | `archive/legacy_steps/32_glicko_probability_orientation_audit.py`; `code/analysis/orientation.py` | Archived; helper extracted | Historical names unchanged | Player A/B and focal conventions have regression tests. |
-| `33_recompute_orientation_corrected_meeting6_results.py` | Formal orientation-corrected comparison | `code/pipelines/comparison_pipeline.py`; `python -m code.cli compare-models` | Promoted through Git rename | All `33_*` output names retained | Formal primary probability convention is unchanged. |
+| `33_recompute_orientation_corrected_meeting6_results.py` | Formal orientation-corrected comparison | `archive/legacy_steps/33_recompute_orientation_corrected_meeting6_results.py`; `code/pipelines/comparison_pipeline.py`; `python -m code.cli compare-models` | Exact original archived; active logic promoted | All 26 Step 33 table/Markdown outputs and 10 figures retained | The archived file is source reference only; the active CLI is the supported execution interface. |
 | `34_early_game_analysis.py` | Orientation-corrected early-game analysis | `code/analysis/early_game.py`; `python -m code.cli early-game` | Promoted through Git rename | All `34_*` output names retained | Appearance, stage, bootstrap, and robustness definitions are unchanged. |
 | `35_early_game_mechanism_analysis.py` | Early-game mechanism follow-up | `archive/legacy_steps/35_early_game_mechanism_analysis.py`; `code/analysis/early_game.py` | Archive only; related helpers retained | Historical names unchanged | Distinct follow-up evidence remains in the archive. |
 | `36_glicko_initialisation_source_diagnostic.py` | Initialisation-source diagnostic | `archive/legacy_steps/36_glicko_initialisation_source_diagnostic.py`; `code/analysis/entry_diagnostics.py` | Archive only; active concepts consolidated | Historical names unchanged | Entry-scale interpretation follows Step 42. |
@@ -59,4 +61,3 @@ Additional original files:
 | `glicko_core.py` | Validated reusable Glicko equations | `code/models/glicko.py`; wrapper at `code/glicko_core.py` | Implementation moved; compatibility wrapper retained | Not applicable | There is only one active formula implementation. |
 | `load_croquet_data.py` | Download annual source files | `code/data/download.py` | Promoted through Git rename | Download naming retained | Raw source data remain untracked. |
 | `meeting7_final_code_audit.py` | Audit final Meeting 7 scripts and outputs | `archive/legacy_steps/meeting7_final_code_audit.py` | Archive only | Historical audit references unchanged | Preserved for research provenance. |
-
