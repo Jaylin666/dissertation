@@ -1,0 +1,9 @@
+model,predictor,pearson_correlation_with_abs_complement_gap,number_of_matches
+Glicko_low,absolute_RD_difference,0.8918741236918177,11379
+Glicko_low,maximum_player_RD,0.8239199812986536,11379
+Glicko_low,minimum_player_RD,0.3063364310737366,11379
+Glicko_low,absolute_rating_difference,0.2147329531065472,11379
+Glicko_C0,absolute_RD_difference,0.8875017639755028,11379
+Glicko_C0,maximum_player_RD,0.8560503396027025,11379
+Glicko_C0,minimum_player_RD,0.35042575315673896,11379
+Glicko_C0,absolute_rating_difference,0.2591702167553203,11379

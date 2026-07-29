@@ -1,0 +1,20 @@
+﻿check,passed,actual,expected,details
+one_entry_row_per_player,True,5143,5143,Every observed player has exactly one first-recorded classification row.
+history_year_range,True,1985-2025,1985-2025,The diagnostic uses the full frozen historical range.
+one_debut_appearance_per_player,True,"rows=5143, unique=5143",5143,Each player contributes one first-recorded focal appearance.
+all_debut_focal_ratings_equal_1500,True,1500.0,1500.0,The fixed new-player rating anchor is unchanged.
+all_debut_focal_rds_equal_350,True,350.0,350.0,The fixed new-player RD anchor is unchanged.
+probabilities_in_unit_interval,True,"min=0.039847856600, max=0.984718055061","[0, 1]",All saved probabilities are valid.
+primary_low_inflation_variant_reused,True,low_inflation,low_inflation,The diagnostic imports the existing Step 24 configuration.
+yearly_rating_sum_reconciles,True,2.2351741790771484e-08,< 1e-6,End-year rating sums equal prior sums plus new anchors and net updates.
+2025_first_appearance_rows,True,76,76,Regression against the Meeting 7 first_1 sample.
+2025_first_appearance_matches,True,74,74,Two matches contain two first-recorded players.
+2025_all_first_appearances_are_post_burn_in,True,76,76,The test-year first_1 group is not the left-censored model-start cohort.
+2025_rows_match_step34_keys,True,76,76,Match/player/opponent keys agree with the frozen Step 34 dataset.
+2025_probabilities_match_step34,True,5.284661597215745e-13,< 1e-10,Probability convention and chronological model state are unchanged.
+2025_opponent_ratings_match_step34,True,4.909452400170267e-09,< 1e-8,Prematch rating state agrees with Meeting 7 within saved-CSV precision.
+2025_opponent_rds_match_step34,True,4.988578439224511e-10,< 1e-9,Prematch RD state agrees with Meeting 7.
+2025_mean_probability_regression,True,0.7434483364117653,0.743448,Matches the rounded Meeting 7 headline.
+2025_win_rate_regression,True,0.40789473684210525,0.407895,Matches the rounded Meeting 7 headline.
+2025_brier_regression,True,0.3223155238042425,0.322316,Matches the rounded Meeting 7 headline.
+2025_mean_opponent_rating_regression,True,1180.7550147538468,1180.755,Matches the rounded Meeting 7 initialisation diagnostic.

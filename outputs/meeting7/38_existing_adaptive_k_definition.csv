@@ -1,0 +1,10 @@
+item,value,notes
+reference_model,AdaptiveK_PreviousYearGames_Elo_scale300,Best Step 27 adaptive-K Elo variant selected before the fixed 2025 test.
+elo_scale,300.0,Standard Elo expected-score formula with scale 300.
+activity_feature,previous_year_games,Count of matches played by that same player in the previous calendar year.
+K_rule_1,previous_year_games <= 5 -> K = 30,Low previous-year activity receives the largest update.
+K_rule_2,6 <= previous_year_games <= 30 -> K = 20,Medium previous-year activity receives the middle update.
+K_rule_3,previous_year_games > 30 -> K = 10,High previous-year activity receives the smallest update.
+K_bounds,"minimum 10, maximum 30",No additional clipping beyond the three threshold buckets.
+Step27_application_audit,player-specific winner_K and loser_K are calculated separately,The saved Step 27 model does not reduce both players to one shared match-level K.
+asymmetric_definition_for_step38,K_A from Player A previous-year games; K_B from Player B previous-year games,This canonical A/B formulation is algebraically equivalent to Step 27's winner/loser-specific updates.

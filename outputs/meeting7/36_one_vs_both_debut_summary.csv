@@ -1,0 +1,3 @@
+﻿group,group_order,number_of_appearances,number_of_unique_matches,mean_focal_rating,mean_opponent_rating,mean_rating_difference,mean_focal_RD,mean_opponent_RD,mean_Glicko_low_predicted_probability,empirical_win_rate,prediction_bias,Glicko_Brier,Elo_Brier,Elo_minus_Glicko_delta_Brier,note
+exactly_one_debut_player,1,72,72,1500.0,1163.0191822407223,336.9808177592778,350.0,127.537666654,0.7569732439900972,0.4027777777777778,0.35419546621231945,0.32633305290440007,0.20832852958361592,-0.11800452332078415,One first_1 appearance per match.
+both_players_debut,2,4,2,1500.0,1500.0,0.0,350.0,350.0,0.5,0.5,0.0,0.25,0.25,0.0,Two first_1 appearances can come from the same match; unique matches counts that contribution once.

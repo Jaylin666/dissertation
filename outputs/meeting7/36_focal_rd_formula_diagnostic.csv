@@ -1,0 +1,9 @@
+﻿diagnostic_item,observed_value,formula_role,interpretation
+unique_focal_RD_values,350.0:76,state distribution,All first-appearance focal RDs should be at the initial maximum if debut state is unchanged.
+mean_focal_RD,350.0,state distribution,Mean focal RD equals the initial maximum when all focal debut players have RD 350.
+minimum_focal_RD,350.0,state distribution,Minimum focal RD checks whether any debut player has a non-initial RD.
+maximum_focal_RD,350.0,state distribution,Maximum focal RD checks whether the initial maximum is used.
+rows_where_saved_formula_uses_focal_RD,72,Step 33 p_A direct plus Step 34 focal complement,"For focal-B rows, the saved focal probability is 1 - E(A,B,RD_B), so RD_B is the focal player's RD."
+rows_where_saved_formula_uses_opponent_RD,4,Step 33 p_A direct plus Step 34 focal complement,"For focal-A rows, RD_B is the focal player's opponent RD."
+stored_minus_direct_focal_probability_mean,-0.0446450672571435,"comparison with direct focal E(focal, opponent, opponent_RD)","Non-zero values show that saved focal probabilities are Step 33 canonical-A probabilities converted to focal orientation, not direct focal Glicko probabilities."
+stored_minus_direct_focal_probability_max_abs,0.08179714914243918,"comparison with direct focal E(focal, opponent, opponent_RD)",This is a diagnostic contrast only; the reconstruction output validates the actual saved probability definition.

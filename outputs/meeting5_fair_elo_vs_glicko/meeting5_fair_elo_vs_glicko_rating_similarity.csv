@@ -1,0 +1,10 @@
+﻿comparison,group,players,spearman,pearson,top50_overlap,top100_overlap,mean_abs_rank_diff,mean_abs_centered_rating_diff
+Validation_best_Elo_vs_Glicko_low_inflation_match_by_match,active_2025_games_ge5,950,0.9785080409186635,0.9664997056787346,0.92,0.9,381.4957894736842,105.0594999277398
+Validation_best_Elo_vs_Glicko_low_inflation_match_by_match,total_games_ge100,1831,0.9673634456791839,0.9663276493505485,0.9,0.86,361.207536865101,89.95834370732966
+Validation_best_Elo_vs_Glicko_low_inflation_match_by_match,active_2025_games_ge5_and_total_games_ge100,565,0.9898161892145977,0.9882778886830614,0.92,0.9,298.79646017699116,78.40327487963364
+Default_Elo_vs_Glicko_low_inflation_match_by_match,active_2025_games_ge5,950,0.9495637359213286,0.932542536837014,0.9,0.91,467.2021052631579,93.6542501897206
+Default_Elo_vs_Glicko_low_inflation_match_by_match,total_games_ge100,1831,0.955220975962261,0.9505387934629552,0.88,0.81,485.9814309120699,71.40109849730516
+Default_Elo_vs_Glicko_low_inflation_match_by_match,active_2025_games_ge5_and_total_games_ge100,565,0.9819756050014206,0.9762432291650377,0.9,0.91,341.9221238938053,50.59338426175741
+Validation_best_Elo_vs_Glicko_C0_match_by_match,active_2025_games_ge5,950,0.9140835438161442,0.8995942900162526,0.8,0.8,690.5873684210526,86.85048450070053
+Validation_best_Elo_vs_Glicko_C0_match_by_match,total_games_ge100,1831,0.8468538941986663,0.8554195279470846,0.64,0.63,723.8296013107591,86.9399215930736
+Validation_best_Elo_vs_Glicko_C0_match_by_match,active_2025_games_ge5_and_total_games_ge100,565,0.9218479813547854,0.92730949073855,0.8,0.83,619.0477876106195,66.26111438238983

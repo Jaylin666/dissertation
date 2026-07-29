@@ -1,0 +1,42 @@
+scope,metric,model,value,notes
+overall_2025,brier,Validation_best_Elo,0.19007264006008115,Overall fixed 2025 performance.
+overall_2025,brier,AdaptiveK_PreviousYearGames_Elo_scale300,0.19078142253619362,Overall fixed 2025 performance.
+overall_2025,brier,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,0.1907814225361941,Overall fixed 2025 performance.
+overall_2025,brier,Glicko_low_inflation_match_by_match,0.18760386892431194,Overall fixed 2025 performance.
+overall_2025,log_loss,Validation_best_Elo,0.5565342559485486,Overall fixed 2025 performance.
+overall_2025,log_loss,AdaptiveK_PreviousYearGames_Elo_scale300,0.5591847915469786,Overall fixed 2025 performance.
+overall_2025,log_loss,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,0.5591847915469793,Overall fixed 2025 performance.
+overall_2025,log_loss,Glicko_low_inflation_match_by_match,0.55177872430023,Overall fixed 2025 performance.
+overall_2025,accuracy,Validation_best_Elo,0.7044555760611653,Overall fixed 2025 performance.
+overall_2025,accuracy,AdaptiveK_PreviousYearGames_Elo_scale300,0.7062131997539327,Overall fixed 2025 performance.
+overall_2025,accuracy,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,0.7062131997539327,Overall fixed 2025 performance.
+overall_2025,accuracy,Glicko_low_inflation_match_by_match,0.7114860708322348,Overall fixed 2025 performance.
+first_1,brier,Validation_best_Elo,0.21052176486868873,Early-game focal-player appearance Brier.
+first_1,brier,AdaptiveK_PreviousYearGames_Elo_scale300,0.2253324654057314,Early-game focal-player appearance Brier.
+first_1,brier,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,0.225332465405726,Early-game focal-player appearance Brier.
+first_1,brier,Glicko_low_inflation_match_by_match,0.3223155238041685,Early-game focal-player appearance Brier.
+first_5,brier,Validation_best_Elo,0.23380795352427225,Early-game focal-player appearance Brier.
+first_5,brier,AdaptiveK_PreviousYearGames_Elo_scale300,0.24064404614453028,Early-game focal-player appearance Brier.
+first_5,brier,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,0.24064404614452767,Early-game focal-player appearance Brier.
+first_5,brier,Glicko_low_inflation_match_by_match,0.2538089414373357,Early-game focal-player appearance Brier.
+first_10,brier,Validation_best_Elo,0.22107566026958406,Early-game focal-player appearance Brier.
+first_10,brier,AdaptiveK_PreviousYearGames_Elo_scale300,0.22803452481270634,Early-game focal-player appearance Brier.
+first_10,brier,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,0.22803452481271044,Early-game focal-player appearance Brier.
+first_10,brier,Glicko_low_inflation_match_by_match,0.2314886029340631,Early-game focal-player appearance Brier.
+first_20,brier,Validation_best_Elo,0.2126556705433081,Early-game focal-player appearance Brier.
+first_20,brier,AdaptiveK_PreviousYearGames_Elo_scale300,0.21792612032985328,Early-game focal-player appearance Brier.
+first_20,brier,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,0.21792612032985983,Early-game focal-player appearance Brier.
+first_20,brier,Glicko_low_inflation_match_by_match,0.21653766118561682,Early-game focal-player appearance Brier.
+overall_2025,delta_brier_reference_minus_candidate,AdaptiveK_PreviousYearGames_Elo_scale300 minus Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,-4.718447854656915e-16,Positive means candidate model has lower Brier.
+overall_2025,delta_brier_reference_minus_candidate,Validation_best_Elo minus Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,-0.0007087824761129458,Positive means candidate model has lower Brier.
+overall_2025,delta_brier_reference_minus_candidate,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300 minus Glicko_low_inflation_match_by_match,0.0031775536118821557,Positive means candidate model has lower Brier.
+overall_2025,brier_recovery_fraction,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,-1.484930997549006e-13,0 means no recovery; 1 means full recovery of Glicko gap
+overall_2025,log_loss_recovery_fraction,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,-8.994433787615628e-14,0 means no recovery; 1 means full recovery of Glicko gap
+overall_2025,percentage_matches_K_A_differs_from_K_B,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,52.94841374461727,Key Step 38 result.
+overall_2025,mean_absolute_K_difference,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,6.215836189471834,Key Step 38 result.
+overall_2025,total_rating_drift,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,-2097.905115870651,Key Step 38 result.
+overall_2025,whether_recentering_changes_probabilities,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,False,Key Step 38 result.
+validation_2023_2024,whether_asymmetric_improves_validation_performance,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,False,Key Step 38 result.
+overall_2025,whether_asymmetric_improves_fixed_2025_performance,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,False,Key Step 38 result.
+first_20,whether_asymmetric_improves_early_game_performance,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,False,Key Step 38 result.
+overall_2025,whether_asymmetric_matches_low_inflation_glicko,Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300,False,Key Step 38 result.

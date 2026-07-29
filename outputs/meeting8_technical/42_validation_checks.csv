@@ -1,0 +1,55 @@
+check_name,passed,observed,expected,severity,detail
+step24_file_exists,True,True,True,error,Validated model implementation must be present.
+step33_file_exists,True,True,True,error,Frozen Step 33 output must be present.
+step34_file_exists,True,True,True,error,Frozen Step 34 output must be present.
+full_history_rows,True,456382,456382,error,Full-history row count.
+full_history_fcode_unique,True,456382,456382,error,match_id is defined as unique fcode.
+winner_ids_not_missing,True,0,0,error,Winner IDs must be complete.
+loser_ids_not_missing,True,0,0,error,Loser IDs must be complete.
+winner_never_equals_loser,True,0,0,error,Self-matches are invalid.
+history_year_range,True,1985-2025,1985-2025,error,Frozen history range.
+exact_match_sequence_unique,True,456382,456382,error,Frozen processing sequence must be one-to-one.
+one_strict_entry_row_per_player,True,5143,5143,error,Strict classification is one row per player.
+unique_players,True,5143,5143,error,Expected full-history player count.
+system_start_players,True,314,314,error,1985 model-start cohort.
+within_burn_in_players,True,456,456,error,1986-1989 recorded-entry cohort.
+post_burn_in_1990_2024_players,True,4297,4297,error,1990-2024 recorded-entry cohort.
+test_year_entrants,True,76,76,error,2025 held-out entry cohort.
+cohort_counts_sum,True,5143,5143,error,Cohorts are mutually exclusive and exhaustive.
+one_first_appearance_diagnostic_per_player,True,"rows=5143, unique=5143",5143,error,One strict prematch diagnostic per player.
+first_appearance_focal_ratings_1500,True,1500.0,1500.0,error,Fixed rating anchor is unchanged.
+first_appearance_focal_rds_350,True,350.0,350.0,error,Fixed RD anchor is unchanged.
+primary_probabilities_in_unit_interval,True,0.039847856600-0.984718055061,"[0,1]",error,Meeting 7 convention probabilities.
+direct_probabilities_in_unit_interval,True,0.011017831290-0.988238400550,"[0,1]",error,Direct-focal sensitivity probabilities.
+step33_rows,True,11379,11379,error,Frozen Step 33 row count.
+step33_match_id_unique,True,11379,11379,error,Step 33 is one row per test match.
+step33_all_2025,True,[2025],[2025],error,Step 33 must contain only the held-out year.
+step34_rows,True,22758,22758,error,Frozen Step 34 appearance-row count.
+step34_every_match_two_rows,True,0,0,error,Each match has one A and one B focal row.
+step34_debut_formula_correct,True,True,True,error,debut_flag equals total_games_before == 0.
+step34_appearance_number_formula_correct,True,True,True,error,appearance_number equals total_games_before + 1.
+step33_debut_appearances,True,76,76,error,Step 33 long debut rows.
+step33_unique_debut_players,True,76,76,error,Step 33 debut players.
+step33_unique_debut_matches,True,74,74,error,Step 33 debut matches.
+exactly_one_debut_matches,True,72,72,error,Matches with exactly one debuting player.
+both_debut_matches,True,2,2,error,Matches with two debuting players.
+full_history_step33_keys_identical,True,True,True,error,2025 player-match debut keys.
+full_history_step34_keys_identical,True,True,True,error,2025 player-match first-appearance keys.
+step33_step34_keys_identical,True,True,True,error,Frozen downstream key agreement.
+match_sequence_agrees_across_sources,True,76,76,error,"Full-history, Step 33, and Step 34 processing positions."
+opponent_id_agrees_across_sources,True,76,76,error,Opponent identity agreement.
+all_2025_first_appearances_post_burn_in,True,76,76,error,Held-out first appearances are not model-start rows.
+all_burn_in_definitions_retain_76_test_rows,True,"[76, 76, 76, 76]","[76, 76, 76, 76]",error,Classification sensitivity only.
+current_2025_probabilities_reproduce_step34,True,5.284661597215745e-13,<1e-10,error,Frozen Meeting 7 probability convention.
+current_2025_mean_probability,True,0.7434483364117653,0.743448,error,Rounded Meeting 7 headline.
+current_2025_empirical_win_rate,True,0.40789473684210525,0.407895,error,Rounded Meeting 7 headline.
+current_2025_brier,True,0.3223155238042425,0.322316,error,Rounded Meeting 7 headline.
+current_2025_mean_opponent_rating,True,1180.7550147538468,1180.755,error,Rounded Meeting 7 mechanism result.
+event_dates_complete,False,46,0,warning,Missing dates are retained; date-based active scales are unavailable for affected rows.
+contemporaneous_scale_available_for_all_entries,False,2,0,warning,Unavailable values are expected at the beginning of 1985 before any player is established.
+active_365d_scale_available_for_all_entries,False,2,0,warning,The secondary date-based scale can be unavailable for missing dates or an empty active pool.
+annual_entry_cohorts_at_least_20,True,0,0,warning,Small annual cohorts should not be overinterpreted.
+probability_convention_bias_difference_below_0_01,False,0.04464506725752726,<=0.01,warning,Material convention differences are reported as sensitivity evidence and do not replace the current convention.
+strict_classification_agrees_with_step41,True,0,0,warning,Any mismatch is saved separately and does not silently replace Step 41.
+all_output_tables_created,True,"['42_strict_player_entry_classification.csv', '42_step41_entry_classification_mismatches.csv', '42_prematch_contemporaneous_scale_diagnostics.csv', '42_entry_year_scale_summary.csv', '42_entry_cohort_scale_summary.csv', '42_2025_crossfile_entry_audit.csv', '42_probability_orientation_sensitivity.csv', '42_burnin_sensitivity_audit.csv', '42_validation_checks.csv', '42_figure_manifest.csv']","['42_strict_player_entry_classification.csv', '42_step41_entry_classification_mismatches.csv', '42_prematch_contemporaneous_scale_diagnostics.csv', '42_entry_year_scale_summary.csv', '42_entry_cohort_scale_summary.csv', '42_2025_crossfile_entry_audit.csv', '42_probability_orientation_sensitivity.csv', '42_burnin_sensitivity_audit.csv', '42_validation_checks.csv', '42_figure_manifest.csv']",error,Every requested Step 42 CSV output exists.
+all_figures_created_and_nonempty,True,"{'42_fig01_entry_anchor_vs_contemporaneous_scale.png': 106247, '42_fig02_entry_anchor_vs_actual_opponent.png': 160373, '42_fig03_historical_orientation_sensitivity.png': 105468}",all three figures exist and are non-empty,error,Meeting-ready figure files.

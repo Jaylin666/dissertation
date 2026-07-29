@@ -1,0 +1,3 @@
+model,maximum_absolute_reconstruction_error,mean_absolute_reconstruction_error,rows_above_tolerance,tolerance,status,details
+Glicko_low,1.4035883566521079e-11,3.2630644152604275e-12,0,1e-10,PASS,Current Step 33 convention reproduced as smaller-ID direct probability.
+Glicko_C0,1.3866630066416974e-11,3.5809314075642058e-12,0,1e-10,PASS,Current Step 33 convention reproduced as smaller-ID direct probability.

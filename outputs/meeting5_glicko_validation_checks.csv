@@ -1,0 +1,17 @@
+﻿check_id,check_group,description,expected_behaviour,observed_value,pass,notes
+A1,Formula sanity checks,Equal ratings expected score,Expected score should be approximately 0.5,0.500000000000,True,
+A2,Formula sanity checks,Higher-rated player expected score,Expected score should be above 0.5,0.595113968002,True,
+A3,Formula sanity checks,Lower-rated player expected score,Expected score should be below 0.5,0.404886031998,True,
+A4,Formula sanity checks,Single-game update direction for equal players,"Winner rating should increase, loser rating should decrease, and RD should not increase",A rating 1500.0->1662.212; B rating 1500.0->1337.788; RD 350.0->290.231,True,
+A5,Formula sanity checks,Upset example direction,Weaker player should gain rating points and stronger player should lose points,weaker change=44.195; stronger change=-44.195,True,
+B1,Official-style update example,Batch rating-period update,"New rating should be around 1464 and new RD around 151, tolerance +/-2",new_rating=1464.106; new_rd=151.399,True,"Uses initial rating=1500, RD=200, opponents 1400/RD30 win, 1550/RD100 loss, 1700/RD300 loss."
+C1,RD boundary and behaviour checks,RD constants detected,"DEFAULT_RD, MIN_RD, and MAX_RD should be defined",DEFAULT_RD=350.0; MIN_RD=30.0; MAX_RD=350.0,True,
+C2,RD boundary and behaviour checks,RD after normal update,RD should decrease or at least not increase after a played game,before=350.000; after=290.231,True,
+C3,RD boundary and behaviour checks,Full-data final RD lower bound,No final RD should fall below MIN_RD,min observed RD=30.000; MIN_RD=30.0,True,
+C4,RD boundary and behaviour checks,Full-data final RD upper bound,No final RD should exceed MAX_RD/new-player RD,max observed RD=302.938; MAX_RD=350.0,True,
+C5,RD boundary and behaviour checks,Full-data RD collapse diagnostic,Players at MIN_RD should not be almost all players,1295/5143 players at MIN_RD (25.2%); median RD=58.601,True,"This is a diagnostic threshold, not a theoretical rule."
+D1,Prediction-before-update checks,Prediction probability range,All saved prediction probabilities should be finite and between 0 and 1,min=0.000899; max=0.999354; nonfinite=0; out_of_range=0,True,
+D2,Prediction-before-update checks,2025 evaluation row count,2025 evaluation rows should equal 11379,2025 rows=11379,True,
+D3,Prediction-before-update checks,Prediction uses pre-update player state,Recomputed Glicko expected score from pre-rating/RD columns should match saved pred_a_win,max abs difference=1.44328993201e-15,True,
+D4,Prediction-before-update checks,Before/after rating columns are saved,Saved predictions should include both pre-update and post-update state if direct audit is required,before/after columns present=True,True,This supports direct inspection of pre-match prediction versus post-match update.
+E1,Active-player Elo-vs-Glicko rating-list similarity,High-volume active player similarity,Glicko and Elo should not produce completely different lists for well-observed players,group=active_2025_games_ge5_total_games_ge100; n=565; Spearman=0.9218; Top50=0.800; Top100=0.830,True,"Threshold is diagnostic, not a formal performance criterion."

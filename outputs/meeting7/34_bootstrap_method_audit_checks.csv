@@ -1,0 +1,12 @@
+﻿check_name,status,observed,expected,details
+bootstrap_resampling_unit_is_focal_player_id,PASS,bootstrap_type=['player_cluster']; cluster_variable=['player_id'],bootstrap_type=player_cluster and cluster_variable=player_id,"The Step 34 appearance dataset has one row per focal player appearance, so player_id is the focal-player cluster."
+sampled_from_unique_focal_players_with_replacement,PASS,clusters=255; sampled_clusters=255; largest_multiplicity=4,draw number equals unique focal-player clusters and at least one duplicate can occur,Deterministic audit sample draws integer positions over the unique player_id cluster table.
+sampled_player_retains_all_appearance_rows,PASS,sampled_rows=1634,sampled rows equal the sum of whole selected player clusters,This mirrors the production bootstrap's grouped sum/count aggregation.
+repeated_player_cluster_repeated_in_full,PASS,largest_multiplicity=4,"if a player cluster is drawn k times, its full contribution is counted k times",
+paired_difference_bootstrapped_directly,PASS,0.0,<1e-12,"Bootstrap point estimates match precomputed paired per-appearance differences, not separately bootstrapped model means."
+same_bootstrap_sample_used_for_paired_models,PASS,paired difference columns diff_brier/diff_log_loss/diff_accuracy are built before cluster aggregation,Elo and Glicko evaluated on the same sampled appearance rows in every replicate,
+percentile_confidence_intervals_recorded,PASS,ci_lower and ci_upper present and ordered,2.5% and 97.5% percentiles of paired bootstrap differences,"Production function uses np.quantile(estimates, [0.025, 0.975])."
+fixed_random_seed_available,PASS,20260715,integer random seed,
+cumulative_thresholds_bootstrapped_separately,PASS,"rows=54; thresholds=[1, 5, 10, 20, 30, 50]","54 rows and thresholds [1, 5, 10, 20, 30, 50]",
+subset_cluster_appearance_match_counts_recorded,PASS,missing_count_values=0,"appearances, players, matches, clusters recorded for every bootstrap row",
+bootstrap_repetitions_fixed_at_2000,PASS,[2000],2000,

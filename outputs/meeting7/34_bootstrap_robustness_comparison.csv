@@ -1,0 +1,13 @@
+﻿threshold,group,metric,appearance_level_point_estimate,appearance_level_ci_lower,appearance_level_ci_upper,match_level_point_estimate,match_level_ci_lower,match_level_ci_upper,same_sign,appearance_ci_excludes_zero,match_ci_excludes_zero,appearance_ci_direction,match_ci_direction,qualitative_conclusion_consistent
+1,first_1,delta_brier,-0.111793758935,-0.15635332607,-0.0659631825643,-0.11481521188,-0.158208864773,-0.0691230515529,True,True,True,negative,negative,True
+1,first_1,delta_log_loss,-0.292283892348,-0.422794320644,-0.16727998409,-0.300183457006,-0.422358532239,-0.179979238414,True,True,True,negative,negative,True
+5,first_5,delta_brier,-0.0200009879131,-0.0363746091393,-0.0023958141905,-0.0197558654357,-0.0405064694335,0.00099029550546,True,True,False,negative,includes_zero,True
+5,first_5,delta_log_loss,-0.0624953086525,-0.108211017371,-0.0148076501251,-0.0590329403358,-0.112109494783,-0.00541317997615,True,True,True,negative,negative,True
+10,first_10,delta_brier,-0.0104129426645,-0.0228132341612,0.00218510428801,-0.00772118921606,-0.020850325151,0.00671410121717,True,False,False,includes_zero,includes_zero,True
+10,first_10,delta_log_loss,-0.0374912740897,-0.069446283061,-0.00626656775837,-0.0281940246486,-0.0622866147613,0.00835466891246,True,True,False,negative,includes_zero,True
+20,first_20,delta_brier,-0.00388199064231,-0.0108506957079,0.00308038326708,-0.00124889854642,-0.0102008302561,0.00760647794489,True,False,False,includes_zero,includes_zero,True
+20,first_20,delta_log_loss,-0.0174371459455,-0.0361044455644,0.00119506380871,-0.00889832557972,-0.0313706751125,0.0132366684807,True,False,False,includes_zero,includes_zero,True
+30,first_30,delta_brier,-0.00249949002973,-0.00801722633242,0.0030664990435,-1.76617430039e-05,-0.006641662897,0.00677128075465,True,False,False,includes_zero,includes_zero,True
+30,first_30,delta_log_loss,-0.0128721234963,-0.0271841286848,0.00243736033205,-0.00510073187142,-0.0220341385167,0.0120008289548,True,False,False,includes_zero,includes_zero,True
+50,first_50,delta_brier,-0.000663400917964,-0.00518089846656,0.00352520848929,0.00194640098026,-0.0031521920019,0.00697607407396,False,False,False,includes_zero,includes_zero,True
+50,first_50,delta_log_loss,-0.00687076046508,-0.0177418375729,0.00424247265827,0.0011720334448,-0.0118050273562,0.0140411053994,False,False,False,includes_zero,includes_zero,True

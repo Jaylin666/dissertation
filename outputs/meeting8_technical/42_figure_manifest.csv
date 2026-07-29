@@ -1,0 +1,4 @@
+figure_id,path,description,source_table,interpretation_limit
+42_fig01,outputs\meeting8_technical\figures\42_fig01_entry_anchor_vs_contemporaneous_scale.png,The fixed 1500 anchor and the median established-player scale calculated immediately before each entrant's first recorded match.,42_entry_year_scale_summary.csv,Prematch descriptive scale alignment; not a causal estimate.
+42_fig02,outputs\meeting8_technical\figures\42_fig02_entry_anchor_vs_actual_opponent.png,The fixed 1500 anchor compared with mean and median actual first-opponent ratings.,42_entry_year_scale_summary.csv,First recorded appearance does not establish true career debut.
+42_fig03,outputs\meeting8_technical\figures\42_fig03_historical_orientation_sensitivity.png,First-appearance prediction bias under the current and direct-focal probability conventions.,42_entry_cohort_scale_summary.csv,Sensitivity only; it does not replace the formal Meeting 7 convention.

@@ -1,0 +1,11 @@
+﻿check_name,passed,observed,expected,severity,detail
+bootstrap_ci_row_count,True,288,288,error,
+bootstrap_ci_no_nan_core_values,True,0,0,error,
+bootstrap_ci_bounds_ordered,True,checked,ci_lower <= ci_upper,error,
+bootstrap_replications_2000,True,[2000],2000,error,
+bootstrap_uses_player_cluster_resampling,True,1.0,1.0,error,
+bootstrap_points_match_pairwise_table,True,4.797551245161458e-13,<1e-12,error,
+figure_manifest_row_count,True,6,6,error,
+all_figures_exist,True,none,all manifest paths exist,error,
+all_figures_nonempty,True,none,all figure files non-empty,error,
+no_step34_calibration_outputs_created,True,checked,True,error,

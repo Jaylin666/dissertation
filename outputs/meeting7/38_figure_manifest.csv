@@ -1,0 +1,8 @@
+figure_id,path,exists,description
+38_fig01_overall_brier_comparison,outputs\meeting7\figures\38_fig01_overall_brier_comparison.png,True,38 fig01 overall brier comparison
+38_fig02_overall_logloss_comparison,outputs\meeting7\figures\38_fig02_overall_logloss_comparison.png,True,38 fig02 overall logloss comparison
+38_fig03_early_game_brier_comparison,outputs\meeting7\figures\38_fig03_early_game_brier_comparison.png,True,38 fig03 early game brier comparison
+38_fig04_asymmetric_k_distribution,outputs\meeting7\figures\38_fig04_asymmetric_k_distribution.png,True,38 fig04 asymmetric k distribution
+38_fig05_k_a_vs_k_b,outputs\meeting7\figures\38_fig05_k_a_vs_k_b.png,True,38 fig05 k a vs k b
+38_fig06_rating_drift,outputs\meeting7\figures\38_fig06_rating_drift.png,True,38 fig06 rating drift
+38_fig07_glicko_gap_recovery,outputs\meeting7\figures\38_fig07_glicko_gap_recovery.png,True,38 fig07 glicko gap recovery

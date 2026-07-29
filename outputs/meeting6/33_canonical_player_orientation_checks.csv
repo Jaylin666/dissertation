@@ -1,0 +1,9 @@
+check_name,passed,observed,expected,severity,detail
+feature_rows,True,11379,11379,error,
+match_id_unique,True,0,0,error,
+player_a_is_lower_player_id,True,True,True,error,"Current Step 28/29 canonical A equals min(winner_id, loser_id)."
+player_b_is_higher_player_id,True,True,True,error,
+canonical_pair_stable_by_player_id_only,True,True,True,error,
+two_distinct_players_per_match,True,True,True,error,
+outcome_a_matches_winner_id,True,True,True,error,
+canonical_a_b_independent_of_actual_outcome,True,"A=min player ID, B=max player ID",no winner/loser rule,error,

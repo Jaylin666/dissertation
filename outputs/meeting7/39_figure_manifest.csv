@@ -1,0 +1,5 @@
+figure_id,path,exists,description
+39_fig01_complement_gap_by_group,outputs\meeting7\figures\39_fig01_complement_gap_by_group.png,True,39 fig01 complement gap by group
+39_fig02_first1_probability_by_convention,outputs\meeting7\figures\39_fig02_first1_probability_by_convention.png,True,39 fig02 first1 probability by convention
+39_fig03_elo_glicko_delta_brier_by_convention,outputs\meeting7\figures\39_fig03_elo_glicko_delta_brier_by_convention.png,True,39 fig03 elo glicko delta brier by convention
+39_fig04_current_vs_midpoint_probability,outputs\meeting7\figures\39_fig04_current_vs_midpoint_probability.png,True,39 fig04 current vs midpoint probability

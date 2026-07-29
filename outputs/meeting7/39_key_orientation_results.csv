@@ -1,0 +1,23 @@
+metric,value,details
+current_overall_glicko_brier,0.18760386892430575,Match-level all 2025 matches.
+current_first_1_glicko_brier,0.32231552380393214,Appearance-level first_1.
+current_first_1_mean_probability,0.7434483364113538,Appearance-level first_1.
+current_first_1_prediction_bias,0.3355535995692485,Appearance-level first_1.
+reversed_overall_glicko_brier,0.1880981532817149,Match-level all 2025 matches.
+reversed_first_1_glicko_brier,0.36037466450061634,Appearance-level first_1.
+reversed_first_1_mean_probability,0.7869939795121185,Appearance-level first_1.
+reversed_first_1_prediction_bias,0.3790992426700132,Appearance-level first_1.
+midpoint_overall_glicko_brier,0.1878307345367521,Match-level all 2025 matches.
+midpoint_first_1_glicko_brier,0.3404367523541816,Appearance-level first_1.
+midpoint_first_1_mean_probability,0.7652211579617361,Appearance-level first_1.
+midpoint_first_1_prediction_bias,0.3573264211196308,Appearance-level first_1.
+direct_focal_first_1_mean_probability,0.7880934036688146,Diagnostic only; not a primary match-level forecast.
+first_1_empirical_win_rate,0.40789473684210525,Appearance-level first_1.
+share_first_1_focal_players_smaller_id_side,5.2631578947368425,Percentage.
+share_first_1_focal_players_larger_id_side,94.73684210526316,Percentage.
+overall_mean_absolute_complement_gap,0.003929870555154637,"Glicko low, all 2025 matches."
+overall_maximum_absolute_complement_gap,0.0817971491396412,"Glicko low, all 2025 matches."
+first_1_mean_absolute_complement_gap,0.05693430346970361,"Glicko low, either player first_1 match subset."
+maximum_current_reconstruction_error,1.4035883566521079e-11,Across Glicko low and C0.
+final_conclusion_code,ROBUST_TO_ORIENTATION,Decision-rule conclusion.
+meeting7_conclusion_change_required,False,Whether existing Meeting 7 statements require material changes.

@@ -1,0 +1,12 @@
+﻿check_name,status,observed,expected,details
+input_rows_22758,PASS,22758,22758,
+unique_matches_11379,PASS,11379,11379,
+two_appearances_per_match,PASS,0,0,
+required_columns_present,PASS,none,all required Step 35 columns,
+required_model_probability_columns_present,PASS,none,"['Validation_best_Elo', 'Glicko_low_fixed', 'Glicko_C0_fixed', 'best_AdaptiveK']",
+appearance_number_equals_total_games_before_plus_one,PASS,checked,True,
+outcome_focal_binary,PASS,"[0, 1]","{0,1}",
+all_focal_probabilities_in_range,PASS,checked,"[0,1]",
+glicko_rating_rd_columns_present,PASS,"['rating_focal_Glicko_low', 'rating_opponent_Glicko_low', 'rd_focal_Glicko_low', 'rd_opponent_Glicko_low']",required for Step 35 RD mechanism,
+old_glicko_probability_columns_not_present_or_used,PASS,none,do not use old orientation-dependent Glicko probabilities,
+required_analysis_columns_finite,PASS,checked,no missing or infinite values,

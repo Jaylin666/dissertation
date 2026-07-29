@@ -1,0 +1,5 @@
+﻿rating_period,periods,games,update_operations,mean_games_per_period,median_games_per_period,max_games_per_period,mean_players_updated_per_period,median_players_updated_per_period,max_players_updated_per_period,runtime_seconds
+match_by_match,456382,456382,912764,1.0,1.0,1,2.0,2.0,2,11.308667
+event_level,17357,456382,179090,26.29382957884427,20.0,365,10.31802730886674,8.0,96,34.249668400000004
+monthly,482,456382,109234,946.850622406639,871.5,2241,226.6265560165975,192.0,511,11.488781799999998
+yearly,41,456382,40573,11131.268292682927,11388.0,16777,989.5853658536586,1149.0,1310,7.343947600000007

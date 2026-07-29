@@ -1,0 +1,6 @@
+﻿model,evaluation_games,unique_game_ids,missing_game_ids_vs_union,extra_game_ids_vs_reference,probability_min,probability_max,probability_nan_count,probability_inf_count,probability_out_of_range_count,status
+Conservative_Elo,11379,11379,0,0,0.04626740049236532,0.9907246839721562,0,0,0,ok
+Default_Elo,11379,11379,0,0,0.046125152634901606,0.9964503565924091,0,0,0,ok
+Validation_best_Elo,11379,11379,0,0,0.02283423033626694,0.9990348310435345,0,0,0,ok
+Glicko_C0_match_by_match,11379,11379,0,0,0.02857337050834,0.9982603587205968,0,0,0,ok
+Glicko_low_inflation_match_by_match,11379,11379,0,0,0.0274268803506535,0.9994583892292984,0,0,0,ok

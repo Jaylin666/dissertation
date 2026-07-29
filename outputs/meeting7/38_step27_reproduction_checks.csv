@@ -1,0 +1,10 @@
+check,expected,actual,difference,tolerance,status,details
+step27_saved_prediction_rows,11379.0,11379.0,0.0,0.0,PASS,Saved Step 27 best-model rows for 2025.
+reproduced_prediction_rows,11379.0,11379.0,0.0,0.0,PASS,Reproduced canonical A/B adaptive-K rows for 2025.
+merged_prediction_rows,11379.0,11379.0,0.0,0.0,PASS,Rows matched by fcode between Step 27 and Step 38 reproduction.
+max_abs_prediction_difference,0.0,9.992007221626409e-16,9.992007221626409e-16,1e-12,PASS,Maximum absolute 2025 probability difference versus saved Step 27 predictions.
+max_abs_winner_K_difference,0.0,0.0,0.0,1e-12,PASS,Winner K matches saved Step 27 diagnostics.
+max_abs_loser_K_difference,0.0,0.0,0.0,1e-12,PASS,Loser K matches saved Step 27 diagnostics.
+reproduced_2025_brier,0.1907814225361941,0.1907814225361941,0.0,1e-05,PASS,Metric comparison allows small differences because Step 27 metrics are rounded in CSV.
+reproduced_2025_log_loss,0.5591847915469793,0.5591847915469793,0.0,1e-05,PASS,Metric comparison allows small differences because Step 27 metrics are rounded in CSV.
+reproduced_2025_accuracy,0.706301080938571,0.706301080938571,0.0,1e-05,PASS,Metric comparison allows small differences because Step 27 metrics are rounded in CSV.

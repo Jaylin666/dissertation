@@ -1,0 +1,27 @@
+﻿group_type,group,games,percentage
+min_total_games_before,100+,6994,0.6146410053607523
+min_total_games_before,51-100,1606,0.1411371825292205
+min_total_games_before,21-50,1258,0.1105545302750681
+min_total_games_before,6-20,1056,0.09280253097811758
+min_total_games_before,1-5,391,0.03436154319360225
+min_total_games_before,0,74,0.006503207663239301
+min_games_last_365_days,30+,3901,0.34282450127427716
+min_games_last_365_days,16-30,3121,0.2742771772563494
+min_games_last_365_days,6-15,2649,0.23279725810703927
+min_games_last_365_days,1-5,1365,0.11995781703137358
+min_games_last_365_days,0,270,0.02372791985235961
+min_games_last_365_days,Missing date information,73,0.006415326478600931
+max_days_since_last_game,0-90 days,10327,0.9075489937604359
+max_days_since_last_game,181-365 days,504,0.04429211705773794
+max_days_since_last_game,91-180 days,205,0.01801564285086563
+max_days_since_last_game,366-730 days,113,0.009930573864135688
+max_days_since_last_game,No previous history,74,0.006503207663239301
+max_days_since_last_game,Missing date information,73,0.006415326478600931
+max_days_since_last_game,1096+ days,49,0.004306178047280077
+max_days_since_last_game,731-1095 days,34,0.0029879602777045434
+flag,either player debut,74,0.006503207663239301
+flag,either player inactive >= 365 days,198,0.017400474558397046
+flag,either player inactive >= 730 days,83,0.007294138324984621
+flag,both players active in last 365 days,11036,0.9698567536690395
+flag,either player has <= 5 games in last 365 days,1635,0.1436857368837332
+flag,either player has <= 5 total previous games,465,0.04086475085684155

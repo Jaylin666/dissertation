@@ -1,0 +1,15 @@
+﻿metric,group,value,detail
+first_1_Glicko_low_fixed_prediction_bias,first_1,0.33555359957,positive means focal players are over-predicted
+first_1_Validation_best_Elo_prediction_bias,first_1,0.130641585609,positive means focal players are over-predicted
+first_5_Glicko_low_fixed_prediction_bias,first_5,0.14302039805,positive means focal players are over-predicted
+first_5_Validation_best_Elo_prediction_bias,first_5,0.0896495112384,positive means focal players are over-predicted
+appearance_1_elo_minus_glicko_delta_brier,appearance_1,-0.111793758935,"Delta = Elo Brier - Glicko Brier; positive means Glicko lower, negative means Elo lower"
+appearance_5_elo_minus_glicko_delta_brier,appearance_5,0.02273829521,"Delta = Elo Brier - Glicko Brier; positive means Glicko lower, negative means Elo lower"
+appearance_10_elo_minus_glicko_delta_brier,appearance_10,-0.00366218912396,"Delta = Elo Brier - Glicko Brier; positive means Glicko lower, negative means Elo lower"
+appearance_20_elo_minus_glicko_delta_brier,appearance_20,0.00618249987163,"Delta = Elo Brier - Glicko Brier; positive means Glicko lower, negative means Elo lower"
+first_1_glicko_mean_rd,first_1,350,debut-stage mean RD
+first_5_glicko_mean_rd,first_5,266.145820543,weighted across stage bins
+first_10_glicko_mean_rd,first_10,217.050156635,weighted across stage bins
+first_20_glicko_mean_rd,first_20,177.512412658,weighted across stage bins
+first_1_glicko_extreme_prediction_proportion,first_1,0.105263157895,p < 0.10 or p > 0.90
+first_5_glicko_extreme_prediction_proportion,first_5,0.128078817734,p < 0.10 or p > 0.90

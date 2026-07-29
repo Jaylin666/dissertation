@@ -1,0 +1,72 @@
+# Python cache and environments
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# IDE and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+~$*
+*.bak
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# Private meeting and communication material
+notes/
+*.docx
+*meeting内容*.docx
+*meeting_notes*.docx
+*meeting*transcript*
+*会议纪要*
+*邮件内容*.docx
+
+# Large or reproducible source and processed data
+data_raw/
+raw_data/
+data_processed/
+downloads/
+outputs/elo_optimization/
+outputs/glicko_implementation/
+
+# Large or reproducible row-level analysis outputs
+outputs/**/*predictions*.csv
+outputs/**/*appearance_dataset*.csv
+outputs/**/*orientation_dataset*.csv
+outputs/**/*match_diagnostics*.csv
+outputs/**/*per_match*.csv
+outputs/**/*player_perspective*.csv
+outputs/**/*final_ratings*.csv
+outputs/**/*rating_history*.csv
+outputs/**/*update_history*.csv
+outputs/**/*period_summary*.csv
+outputs/meeting8_technical/41_debut_appearance_diagnostics.csv
+outputs/meeting8_technical/41_player_entry_classification.csv
+outputs/meeting8_technical/42_prematch_contemporaneous_scale_diagnostics.csv
+outputs/meeting8_technical/42_strict_player_entry_classification.csv
+outputs/meeting7/34_figure_manifest.csv
+outputs/meeting7/35_figure_manifest.csv
+outputs/meeting7/36_figure_manifest.csv
+outputs/meeting7/37_figure_manifest.csv
+
+# Keep only the deliberately staged compact result snapshot.
+outputs/
