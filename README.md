@@ -17,9 +17,9 @@ including:
 - early-game and first-recorded-appearance diagnostics;
 - burn-in definitions and rating-scale alignment.
 
-Scripts in `code/` are numbered in the order in which the analysis was
-developed. Later scripts reuse and audit earlier validated components rather
-than silently replacing them.
+Active modules in `code/` are organised by responsibility. The original
+numbered development sequence is preserved under `archive/legacy_steps/` and
+mapped in `CODE_MAP.md`.
 
 ## Current main findings
 
@@ -43,8 +43,14 @@ the first-appearance prediction error.
 
 ## Repository structure
 
-- `code/`: numbered data-processing, Elo, Glicko, evaluation, robustness, and
-  diagnostic scripts.
+- `code/`: active modular data, model, pipeline, analysis, CLI, and validation
+  code.
+- `archive/legacy_steps/`: preserved numbered research scripts and historical
+  one-off experiments.
+- `tests/`: equation, orientation, entry-definition, and golden-output
+  regression tests.
+- `refactor/`: audit inventory, dependency map, refactor plan, and validation
+  evidence.
 - `outputs/`: selected compact result tables, validation checks, summaries,
   manifests, and figures.
 - `outputs/meeting6/`: orientation correction and supporting diagnostics.
@@ -61,12 +67,27 @@ Install the external Python dependencies with:
 python -m pip install -r requirements.txt
 ```
 
-The numbered scripts document the analysis sequence and use project-relative
-paths. However, this repository is not fully self-contained: raw match data
-and several large generated intermediate tables are intentionally not tracked.
-To reproduce the full workflow, obtain the annual source data separately,
-place it under `data_raw/`, and run the required numbered construction scripts
-before downstream analyses.
+The supported interface is the command-line module:
+
+```bash
+python -m code.cli --help
+python -m code.cli validate
+python -m unittest discover -s tests -v
+python -m compileall -f code
+```
+
+Full runs are explicit and can be redirected to a protected output root:
+
+```bash
+python -m code.cli run-elo --full-run --output-root outputs/refactor_validation
+python -m code.cli entry-diagnostics --full-run --output-root outputs/refactor_validation
+```
+
+See `code/README.md` for all entry points. This repository is not fully
+self-contained: raw match data and several large generated intermediate tables
+are intentionally not tracked. To reproduce the full workflow, obtain the
+annual source data separately, place it under `data_raw/`, and build the
+full-history input before downstream analyses.
 
 The repository retains compact summaries and validation artifacts rather than
 large per-match predictions, player-appearance tables, complete rating
