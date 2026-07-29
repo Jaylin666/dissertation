@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable, Sequence
 
+import numpy as np
 import pandas as pd
 
 
@@ -101,3 +102,71 @@ def stable_match_sort(
     if temporary_missing in ordered.columns:
         ordered = ordered.drop(columns=[temporary_missing])
     return ordered.reset_index(drop=True)
+
+
+def add_event_ordering_columns(matches: pd.DataFrame) -> pd.DataFrame:
+    """Add the frozen event-order date without modifying raw date fields."""
+
+    ordered = matches.copy()
+    if "event_date_raw" not in ordered.columns:
+        ordered["event_date_raw"] = pd.NA
+    if "event_date_parsed" not in ordered.columns:
+        ordered["event_date_parsed"] = pd.NA
+
+    if (
+        "event_order_date" in ordered.columns
+        and "event_date_ordering_method" in ordered.columns
+    ):
+        ordered["event_order_date"] = pd.to_datetime(
+            ordered["event_order_date"],
+            errors="coerce",
+        )
+        return ordered
+
+    parsed = pd.to_datetime(ordered["event_date_parsed"], errors="coerce")
+    ordered["event_order_date"] = parsed
+    ordered["event_date_ordering_method"] = np.where(
+        parsed.notna(),
+        "parsed_full_date",
+        "fallback_no_date",
+    )
+
+    missing_parsed = parsed.isna()
+    raw = ordered.loc[missing_parsed, "event_date_raw"].astype("string").str.strip()
+    extracted = raw.str.extract(r"^(?P<month>\d{1,2})\.(?P<year>\d{2}|\d{4})$")
+    valid_month_year = extracted["month"].notna()
+
+    if valid_month_year.any():
+        months = pd.to_numeric(
+            extracted.loc[valid_month_year, "month"],
+            errors="coerce",
+        )
+        raw_years = extracted.loc[valid_month_year, "year"].astype(str)
+        years_numeric = raw_years.astype(int)
+        years = np.where(
+            raw_years.str.len().eq(2),
+            np.where(
+                years_numeric >= 85,
+                1900 + years_numeric,
+                2000 + years_numeric,
+            ),
+            years_numeric,
+        )
+        valid_month = months.between(1, 12).fillna(False)
+        valid_mask = valid_month.to_numpy(dtype=bool)
+        valid_index = extracted.loc[valid_month_year].index[valid_mask]
+        imputed_dates = pd.to_datetime(
+            {
+                "year": np.asarray(years)[valid_mask],
+                "month": months.loc[valid_index].astype(int).to_numpy(),
+                "day": np.repeat(15, len(valid_index)),
+            },
+            errors="coerce",
+        )
+        ordered.loc[valid_index, "event_order_date"] = imputed_dates.to_numpy()
+        ordered.loc[
+            valid_index,
+            "event_date_ordering_method",
+        ] = "month_year_imputed"
+
+    return ordered

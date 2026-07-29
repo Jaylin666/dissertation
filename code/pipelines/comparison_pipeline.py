@@ -32,7 +32,7 @@ import pandas as pd
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_DIR = PROJECT_ROOT / "outputs" / "meeting6"
 FIGURE_DIR = OUTPUT_DIR / "figures"
 
@@ -42,6 +42,20 @@ STEP31_DEBUT_OPPONENT_SUMMARY_PATH = OUTPUT_DIR / "31_debut_opponent_rating_summ
 STEP31_UNIQUE_PLAYER_SNAPSHOT_PATH = OUTPUT_DIR / "31_unique_player_rating_snapshot.csv"
 STEP32_DIRECT_PATH = OUTPUT_DIR / "32_glicko_direct_probability_comparison.csv"
 STEP32_IMPACT_PATH = OUTPUT_DIR / "32_orientation_impact_on_metrics.csv"
+
+
+def configure_output_root(output_root: str | Path) -> Path:
+    """Redirect Step 33 generated artifacts while retaining frozen inputs."""
+
+    global OUTPUT_DIR, FIGURE_DIR
+
+    root = Path(output_root)
+    if not root.is_absolute():
+        root = PROJECT_ROOT / root
+    OUTPUT_DIR = root.resolve() / "meeting6"
+    FIGURE_DIR = OUTPUT_DIR / "figures"
+    return OUTPUT_DIR
+
 
 RANDOM_SEED = 20260715
 BOOTSTRAP_REPS = 2_000

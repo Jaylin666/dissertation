@@ -1,18 +1,33 @@
+"""Build the canonical checked 1985-2025 match dataset.
+
+The implementation preserves the historical annual-file parsing, missing-date
+handling, joins, identifier fields, and chronological ordering from Steps 07
+and 13. Missing parsed dates are retained and sorted after dated events within
+their year.
+"""
+
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
+from code.config import (
+    EXPECTED_FULL_HISTORY_MATCHES,
+    EXPECTED_TEST_MATCHES,
+    EXPECTED_UNIQUE_PLAYERS,
+    FULL_HISTORY_END_YEAR,
+    FULL_HISTORY_START_YEAR,
+    TEST_YEAR,
+)
 
-# Default range for the third-meeting prototype.
-# These two values can be changed later, for example to 1985 and 2025.
-START_YEAR = 2015
-END_YEAR = 2025
+
+START_YEAR = FULL_HISTORY_START_YEAR
+END_YEAR = FULL_HISTORY_END_YEAR
 
 
 try:
-    PROJECT_ROOT = Path(__file__).resolve().parents[1]
+    PROJECT_ROOT = Path(__file__).resolve().parents[2]
 except NameError:
     # Helps if the whole file is run in Spyder/IPython instead of as a script.
     PROJECT_ROOT = Path.cwd().resolve()
@@ -20,12 +35,15 @@ except NameError:
         PROJECT_ROOT = PROJECT_ROOT.parent
 
 DATA_RAW = PROJECT_ROOT / "data_raw"
-DATA_PROCESSED = PROJECT_ROOT / "data_processed"
-DATA_PROCESSED.mkdir(exist_ok=True)
+OUTPUT_DIR = PROJECT_ROOT / "outputs" / "elo_optimization"
 
-MATCHES_OUTPUT_PATH = DATA_PROCESSED / f"matches_{START_YEAR}_{END_YEAR}_checked.csv"
-YEARLY_SUMMARY_PATH = DATA_PROCESSED / "multiyear_yearly_check_summary.csv"
-OVERALL_SUMMARY_PATH = DATA_PROCESSED / "multiyear_data_check_summary.csv"
+MATCHES_OUTPUT_PATH = OUTPUT_DIR / f"matches_{START_YEAR}_{END_YEAR}_checked.csv"
+YEARLY_SUMMARY_PATH = (
+    OUTPUT_DIR / f"full_history_yearly_check_summary_{START_YEAR}_{END_YEAR}.csv"
+)
+OVERALL_SUMMARY_PATH = (
+    OUTPUT_DIR / f"full_history_data_check_summary_{START_YEAR}_{END_YEAR}.csv"
+)
 
 
 GAME_COLS = ["fcode", "code", "year", "event", "winner", "loser", "country", "tp"]
@@ -499,7 +517,11 @@ def build_multiyear_dataset(start_year: int, end_year: int) -> Tuple[pd.DataFram
             for col in ["year", "event_date_parsed", "event", "code", "fcode"]
             if col in matches.columns
         ]
-        matches = matches.sort_values(sort_cols, na_position="last").reset_index(drop=True)
+        matches = matches.sort_values(
+            sort_cols,
+            kind="mergesort",
+            na_position="last",
+        ).reset_index(drop=True)
     else:
         matches = pd.DataFrame()
 
@@ -541,6 +563,11 @@ def create_data_check_summary(matches: pd.DataFrame) -> pd.DataFrame:
         "missing_hidx_rows": missing_hidx_rows,
         "missing_winner_names": count_missing(matches["winner_name"]),
         "missing_loser_names": count_missing(matches["loser_name"]),
+        "missing_event_date_parsed": (
+            int(matches["event_date_parsed"].isna().sum())
+            if "event_date_parsed" in matches.columns
+            else len(matches)
+        ),
         "number_of_unique_players": int(players.nunique()),
         "number_of_unique_events": int(matches[["year", "event"]].drop_duplicates().shape[0]),
     }
@@ -553,6 +580,7 @@ def save_outputs(
     overall_summary: pd.DataFrame,
 ) -> Dict[str, Path]:
     """Save the multi-year match data and check summaries."""
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     matches.to_csv(MATCHES_OUTPUT_PATH, index=False)
     yearly_summary.to_csv(YEARLY_SUMMARY_PATH, index=False)
     overall_summary.to_csv(OVERALL_SUMMARY_PATH, index=False)
@@ -561,6 +589,46 @@ def save_outputs(
         "yearly_summary": YEARLY_SUMMARY_PATH,
         "overall_summary": OVERALL_SUMMARY_PATH,
     }
+
+
+def configure_output_root(output_root: str | Path) -> Path:
+    """Redirect canonical builder outputs below a temporary output root."""
+
+    global OUTPUT_DIR, MATCHES_OUTPUT_PATH, YEARLY_SUMMARY_PATH, OVERALL_SUMMARY_PATH
+
+    root = Path(output_root)
+    if not root.is_absolute():
+        root = PROJECT_ROOT / root
+    OUTPUT_DIR = root.resolve() / "elo_optimization"
+    MATCHES_OUTPUT_PATH = OUTPUT_DIR / f"matches_{START_YEAR}_{END_YEAR}_checked.csv"
+    YEARLY_SUMMARY_PATH = (
+        OUTPUT_DIR / f"full_history_yearly_check_summary_{START_YEAR}_{END_YEAR}.csv"
+    )
+    OVERALL_SUMMARY_PATH = (
+        OUTPUT_DIR / f"full_history_data_check_summary_{START_YEAR}_{END_YEAR}.csv"
+    )
+    return OUTPUT_DIR
+
+
+def validate_canonical_counts(matches: pd.DataFrame) -> Dict[str, bool]:
+    """Validate the frozen full-history, player, and 2025 evaluation counts."""
+
+    players = pd.concat([matches["winner"], matches["loser"]]).dropna().nunique()
+    test_matches = int((pd.to_numeric(matches["year"], errors="coerce") == TEST_YEAR).sum())
+    checks = {
+        "full_history_match_count": len(matches) == EXPECTED_FULL_HISTORY_MATCHES,
+        "unique_player_count": int(players) == EXPECTED_UNIQUE_PLAYERS,
+        "test_year_match_count": test_matches == EXPECTED_TEST_MATCHES,
+    }
+    failures = [name for name, passed in checks.items() if not passed]
+    if failures:
+        raise ValueError(
+            "Canonical checked-match counts failed: "
+            + ", ".join(failures)
+            + f"; observed matches={len(matches)}, players={int(players)}, "
+            + f"{TEST_YEAR} matches={test_matches}"
+        )
+    return checks
 
 
 def print_command_line_summary(
@@ -589,6 +657,7 @@ def print_command_line_summary(
 
 def main() -> None:
     matches, yearly_summary = build_multiyear_dataset(START_YEAR, END_YEAR)
+    validate_canonical_counts(matches)
     overall_summary = create_data_check_summary(matches)
     output_paths = save_outputs(matches, yearly_summary, overall_summary)
     print_command_line_summary(START_YEAR, END_YEAR, overall_summary, output_paths)

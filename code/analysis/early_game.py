@@ -26,7 +26,7 @@ import pandas as pd
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 MEETING6_DIR = PROJECT_ROOT / "outputs" / "meeting6"
 OUTPUT_DIR = PROJECT_ROOT / "outputs" / "meeting7"
@@ -51,6 +51,56 @@ MATCH_LEVEL_ROBUSTNESS_PATH = OUTPUT_DIR / "34_match_level_early_game_robustness
 MATCH_LEVEL_BOOTSTRAP_CI_PATH = OUTPUT_DIR / "34_match_level_bootstrap_confidence_intervals.csv"
 BOOTSTRAP_ROBUSTNESS_COMPARISON_PATH = OUTPUT_DIR / "34_bootstrap_robustness_comparison.csv"
 BOOTSTRAP_ROBUSTNESS_VALIDATION_PATH = OUTPUT_DIR / "34_bootstrap_robustness_validation_checks.csv"
+
+
+def configure_output_root(output_root: str | Path) -> Path:
+    """Redirect Step 34 generated artifacts while retaining Step 33 input."""
+
+    global OUTPUT_DIR, FIGURE_DIR
+    global VALIDATION_CHECKS_PATH, APPEARANCE_DATASET_PATH
+    global EXACT_APPEARANCE_COUNTS_PATH, CUMULATIVE_PERFORMANCE_PATH
+    global STAGE_PERFORMANCE_PATH, EXACT_PERFORMANCE_PATH
+    global PAIRWISE_DIFFERENCES_PATH, METRIC_VALIDATION_CHECKS_PATH
+    global BOOTSTRAP_CI_PATH, FIGURE_MANIFEST_PATH
+    global BOOTSTRAP_FIGURE_VALIDATION_PATH, BOOTSTRAP_METHOD_AUDIT_PATH
+    global BOOTSTRAP_METADATA_PATH, MATCH_LEVEL_ROBUSTNESS_PATH
+    global MATCH_LEVEL_BOOTSTRAP_CI_PATH, BOOTSTRAP_ROBUSTNESS_COMPARISON_PATH
+    global BOOTSTRAP_ROBUSTNESS_VALIDATION_PATH
+
+    root = Path(output_root)
+    if not root.is_absolute():
+        root = PROJECT_ROOT / root
+    OUTPUT_DIR = root.resolve() / "meeting7"
+    FIGURE_DIR = OUTPUT_DIR / "figures"
+    VALIDATION_CHECKS_PATH = OUTPUT_DIR / "34_input_validation_checks.csv"
+    APPEARANCE_DATASET_PATH = OUTPUT_DIR / "34_early_game_appearance_dataset.csv"
+    EXACT_APPEARANCE_COUNTS_PATH = OUTPUT_DIR / "34_exact_appearance_counts.csv"
+    CUMULATIVE_PERFORMANCE_PATH = OUTPUT_DIR / "34_cumulative_threshold_model_performance.csv"
+    STAGE_PERFORMANCE_PATH = OUTPUT_DIR / "34_stage_bin_model_performance.csv"
+    EXACT_PERFORMANCE_PATH = OUTPUT_DIR / "34_exact_appearance_model_performance.csv"
+    PAIRWISE_DIFFERENCES_PATH = OUTPUT_DIR / "34_pairwise_model_differences.csv"
+    METRIC_VALIDATION_CHECKS_PATH = OUTPUT_DIR / "34_metric_validation_checks.csv"
+    BOOTSTRAP_CI_PATH = OUTPUT_DIR / "34_bootstrap_confidence_intervals.csv"
+    FIGURE_MANIFEST_PATH = OUTPUT_DIR / "34_figure_manifest.csv"
+    BOOTSTRAP_FIGURE_VALIDATION_PATH = (
+        OUTPUT_DIR / "34_bootstrap_figure_validation_checks.csv"
+    )
+    BOOTSTRAP_METHOD_AUDIT_PATH = OUTPUT_DIR / "34_bootstrap_method_audit_checks.csv"
+    BOOTSTRAP_METADATA_PATH = OUTPUT_DIR / "34_bootstrap_metadata.csv"
+    MATCH_LEVEL_ROBUSTNESS_PATH = (
+        OUTPUT_DIR / "34_match_level_early_game_robustness.csv"
+    )
+    MATCH_LEVEL_BOOTSTRAP_CI_PATH = (
+        OUTPUT_DIR / "34_match_level_bootstrap_confidence_intervals.csv"
+    )
+    BOOTSTRAP_ROBUSTNESS_COMPARISON_PATH = (
+        OUTPUT_DIR / "34_bootstrap_robustness_comparison.csv"
+    )
+    BOOTSTRAP_ROBUSTNESS_VALIDATION_PATH = (
+        OUTPUT_DIR / "34_bootstrap_robustness_validation_checks.csv"
+    )
+    return OUTPUT_DIR
+
 
 EXPECTED_MATCHES = 11_379
 EXPECTED_APPEARANCE_ROWS = EXPECTED_MATCHES * 2

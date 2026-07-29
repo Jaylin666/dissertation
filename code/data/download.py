@@ -1,3 +1,5 @@
+"""Download annual source files when the user has authorised data access."""
+
 from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError

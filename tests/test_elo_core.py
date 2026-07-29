@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import unittest
 
+import pandas as pd
+
 from code.config import DEFAULT_ELO, VALIDATION_BEST_ELO
 from code.models.elo import (
     adaptive_k_previous_year,
@@ -11,6 +13,7 @@ from code.models.elo import (
     expected_score,
     update_with_config,
 )
+from code.pipelines.elo_pipeline import player_a_accuracy
 
 
 class EloCoreTests(unittest.TestCase):
@@ -47,6 +50,15 @@ class EloCoreTests(unittest.TestCase):
         self.assertEqual(adaptive_k_previous_year(5), 30.0)
         self.assertEqual(adaptive_k_previous_year(6), 20.0)
         self.assertEqual(adaptive_k_previous_year(31), 10.0)
+
+    def test_accuracy_preserves_player_a_tie_rule(self) -> None:
+        predictions = pd.DataFrame(
+            {
+                "pred_a_win": [0.5, 0.5],
+                "outcome_a": [1, 0],
+            }
+        )
+        self.assertEqual(player_a_accuracy(predictions), 0.5)
 
 
 if __name__ == "__main__":
