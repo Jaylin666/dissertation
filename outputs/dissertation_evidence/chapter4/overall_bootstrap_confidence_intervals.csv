@@ -1,0 +1,7 @@
+diff_name,diff_label,games,unique_events,point_estimate,ci_lower,ci_upper,ci_excludes_zero,bootstrap_type,bootstrap_replications,small_sample_warning
+delta_brier_glicko_vs_elo,Brier: Glicko low vs validation-best Elo,11379,629,0.00246877113577,0.00104512101398,0.00391054036157,True,event_cluster,2000,False
+delta_logloss_glicko_vs_elo,Log loss: Glicko low vs validation-best Elo,11379,629,0.00475553164832,0.00130475367488,0.00830701001134,True,event_cluster,2000,False
+delta_brier_inflation,Brier: low RD inflation vs Glicko C0,11379,629,0.00810382441625,0.00626038646071,0.00998958812673,True,event_cluster,2000,False
+delta_logloss_inflation,Log loss: low RD inflation vs Glicko C0,11379,629,0.0201788496113,0.0157849107483,0.0246645869664,True,event_cluster,2000,False
+delta_brier_glicko_vs_adaptive,Brier: Glicko low vs best adaptive-K,11379,629,0.00317755361188,0.00179804714804,0.00462965000364,True,event_cluster,2000,False
+delta_logloss_glicko_vs_adaptive,Log loss: Glicko low vs best adaptive-K,11379,629,0.00740606724675,0.00396935018949,0.011107033155,True,event_cluster,2000,False

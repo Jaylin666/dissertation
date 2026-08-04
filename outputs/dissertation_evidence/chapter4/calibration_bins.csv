@@ -1,0 +1,301 @@
+sample,model,model_display,bin_label,bin_lower,bin_upper,games,mean_player_a_probability,empirical_player_a_win_rate,calibration_gap
+Overall,Glicko_low_fixed,Glicko low inflation,0.0-0.1,0,0.1,492,0.060004223704,0.0691056910569,0.0091014673529
+Overall,Glicko_low_fixed,Glicko low inflation,0.1-0.2,0.1,0.2,897,0.15170661818,0.179487179487,0.0277805613073
+Overall,Glicko_low_fixed,Glicko low inflation,0.2-0.3,0.2,0.3,1082,0.251241054914,0.267097966728,0.0158569118141
+Overall,Glicko_low_fixed,Glicko low inflation,0.3-0.4,0.3,0.4,1223,0.351434845622,0.359771054783,0.00833620916083
+Overall,Glicko_low_fixed,Glicko low inflation,0.4-0.5,0.4,0.5,1359,0.450108080776,0.442236938926,-0.00787114185063
+Overall,Glicko_low_fixed,Glicko low inflation,0.5-0.6,0.5,0.6,1405,0.550124799625,0.548042704626,-0.00208209499855
+Overall,Glicko_low_fixed,Glicko low inflation,0.6-0.7,0.6,0.7,1432,0.649639800649,0.63687150838,-0.0127682922695
+Overall,Glicko_low_fixed,Glicko low inflation,0.7-0.8,0.7,0.8,1276,0.749900755654,0.726489028213,-0.0234117274411
+Overall,Glicko_low_fixed,Glicko low inflation,0.8-0.9,0.8,0.9,1222,0.85027819053,0.837152209493,-0.0131259810377
+Overall,Glicko_low_fixed,Glicko low inflation,0.9-1.0,0.9,1,991,0.945983733697,0.944500504541,-0.00148322915638
+Overall,Validation_best_Elo,Validation-best Elo,0.0-0.1,0,0.1,438,0.0569322824014,0.0433789954338,-0.0135532869676
+Overall,Validation_best_Elo,Validation-best Elo,0.1-0.2,0.1,0.2,744,0.153264390598,0.172043010753,0.0187786201548
+Overall,Validation_best_Elo,Validation-best Elo,0.2-0.3,0.2,0.3,1091,0.253682456064,0.264894592117,0.0112121360532
+Overall,Validation_best_Elo,Validation-best Elo,0.3-0.4,0.3,0.4,1373,0.353394118191,0.367079388201,0.0136852700101
+Overall,Validation_best_Elo,Validation-best Elo,0.4-0.5,0.4,0.5,1517,0.4503424565,0.44825313118,-0.00208932531991
+Overall,Validation_best_Elo,Validation-best Elo,0.5-0.6,0.5,0.6,1522,0.549517620723,0.547963206307,-0.00155441441598
+Overall,Validation_best_Elo,Validation-best Elo,0.6-0.7,0.6,0.7,1412,0.647549293406,0.650849858357,0.00330056495142
+Overall,Validation_best_Elo,Validation-best Elo,0.7-0.8,0.7,0.8,1200,0.748509917259,0.724166666667,-0.0243432505921
+Overall,Validation_best_Elo,Validation-best Elo,0.8-0.9,0.8,0.9,1081,0.849528953101,0.844588344126,-0.00494060897519
+Overall,Validation_best_Elo,Validation-best Elo,0.9-1.0,0.9,1,1001,0.945474775737,0.937062937063,-0.00841183867403
+Overall,best_AdaptiveK,Best adaptive-K Elo,0.0-0.1,0,0.1,228,0.0627840700991,0.0219298245614,-0.0408542455377
+Overall,best_AdaptiveK,Best adaptive-K Elo,0.1-0.2,0.1,0.2,600,0.155255193425,0.113333333333,-0.0419218600917
+Overall,best_AdaptiveK,Best adaptive-K Elo,0.2-0.3,0.2,0.3,1067,0.253673238497,0.247422680412,-0.00625055808456
+Overall,best_AdaptiveK,Best adaptive-K Elo,0.3-0.4,0.3,0.4,1534,0.351570715187,0.356584093872,0.00501337868479
+Overall,best_AdaptiveK,Best adaptive-K Elo,0.4-0.5,0.4,0.5,1706,0.451293143675,0.41735052755,-0.0339426161254
+Overall,best_AdaptiveK,Best adaptive-K Elo,0.5-0.6,0.5,0.6,1797,0.548507944079,0.569282136895,0.0207741928157
+Overall,best_AdaptiveK,Best adaptive-K Elo,0.6-0.7,0.6,0.7,1567,0.648025985979,0.652839821315,0.00481383533599
+Overall,best_AdaptiveK,Best adaptive-K Elo,0.7-0.8,0.7,0.8,1192,0.746630104051,0.77432885906,0.0276987550094
+Overall,best_AdaptiveK,Best adaptive-K Elo,0.8-0.9,0.8,0.9,1048,0.848838944788,0.86927480916,0.0204358643722
+Overall,best_AdaptiveK,Best adaptive-K Elo,0.9-1.0,0.9,1,640,0.940617723238,0.9640625,0.0234447767618
+Overall,Glicko_C0_fixed,Glicko C0,0.0-0.1,0,0.1,194,0.0662900649157,0.10824742268,0.0419573577647
+Overall,Glicko_C0_fixed,Glicko C0,0.1-0.2,0.1,0.2,567,0.15401724952,0.169312169312,0.0152949197921
+Overall,Glicko_C0_fixed,Glicko C0,0.2-0.3,0.2,0.3,873,0.254523613583,0.222222222222,-0.0323013913613
+Overall,Glicko_C0_fixed,Glicko C0,0.3-0.4,0.3,0.4,1310,0.351903715288,0.308396946565,-0.0435067687235
+Overall,Glicko_C0_fixed,Glicko C0,0.4-0.5,0.4,0.5,1591,0.451135224101,0.409805153991,-0.0413300701101
+Overall,Glicko_C0_fixed,Glicko C0,0.5-0.6,0.5,0.6,1710,0.549911584836,0.502923976608,-0.0469876082283
+Overall,Glicko_C0_fixed,Glicko C0,0.6-0.7,0.6,0.7,1772,0.649231294814,0.6230248307,-0.0262064641141
+Overall,Glicko_C0_fixed,Glicko C0,0.7-0.8,0.7,0.8,1476,0.749443334482,0.737804878049,-0.0116384564332
+Overall,Glicko_C0_fixed,Glicko C0,0.8-0.9,0.8,0.9,1180,0.848004364258,0.841525423729,-0.00647894052966
+Overall,Glicko_C0_fixed,Glicko C0,0.9-1.0,0.9,1,706,0.93984368636,0.963172804533,0.0233291181721
+Overall,Default_Elo,Default Elo,0.0-0.1,0,0.1,184,0.0616172501469,0.0271739130435,-0.0344433371035
+Overall,Default_Elo,Default Elo,0.1-0.2,0.1,0.2,469,0.151866503954,0.0959488272921,-0.0559176766617
+Overall,Default_Elo,Default Elo,0.2-0.3,0.2,0.3,866,0.256779725674,0.228637413395,-0.0281423122787
+Overall,Default_Elo,Default Elo,0.3-0.4,0.3,0.4,1533,0.354278989528,0.331376386171,-0.0229026033568
+Overall,Default_Elo,Default Elo,0.4-0.5,0.4,0.5,2061,0.451792919797,0.416302765648,-0.0354901541495
+Overall,Default_Elo,Default Elo,0.5-0.6,0.5,0.6,2018,0.547790959407,0.574331020813,0.0265400614054
+Overall,Default_Elo,Default Elo,0.6-0.7,0.6,0.7,1537,0.645978254251,0.66753415745,0.0215559031985
+Overall,Default_Elo,Default Elo,0.7-0.8,0.7,0.8,1158,0.747307147362,0.772884283247,0.0255771358852
+Overall,Default_Elo,Default Elo,0.8-0.9,0.8,0.9,989,0.849407710424,0.868554095046,0.0191463846219
+Overall,Default_Elo,Default Elo,0.9-1.0,0.9,1,564,0.939791558226,0.957446808511,0.0176552502849
+Either player debut,Glicko_low_fixed,Glicko low inflation,0.0-0.1,0,0.1,8,0.0724963923166,0.5,0.427503607683
+Either player debut,Glicko_low_fixed,Glicko low inflation,0.1-0.2,0.1,0.2,33,0.154144967054,0.424242424242,0.270097457189
+Either player debut,Glicko_low_fixed,Glicko low inflation,0.2-0.3,0.2,0.3,14,0.259319491991,0.785714285714,0.526394793723
+Either player debut,Glicko_low_fixed,Glicko low inflation,0.3-0.4,0.3,0.4,5,0.360018441919,0.8,0.439981558081
+Either player debut,Glicko_low_fixed,Glicko low inflation,0.4-0.5,0.4,0.5,2,0.44340267776,1,0.55659732224
+Either player debut,Glicko_low_fixed,Glicko low inflation,0.5-0.6,0.5,0.6,5,0.52230925261,0.8,0.27769074739
+Either player debut,Glicko_low_fixed,Glicko low inflation,0.6-0.7,0.6,0.7,4,0.657448746922,1,0.342551253078
+Either player debut,Glicko_low_fixed,Glicko low inflation,0.7-0.8,0.7,0.8,2,0.706335961879,1,0.293664038121
+Either player debut,Glicko_low_fixed,Glicko low inflation,0.8-0.9,0.8,0.9,1,0.845232809701,1,0.154767190299
+Either player debut,Glicko_low_fixed,Glicko low inflation,0.9-1.0,0.9,1,0,,,
+Either player debut,Validation_best_Elo,Validation-best Elo,0.0-0.1,0,0.1,0,,,
+Either player debut,Validation_best_Elo,Validation-best Elo,0.1-0.2,0.1,0.2,0,,,
+Either player debut,Validation_best_Elo,Validation-best Elo,0.2-0.3,0.2,0.3,11,0.262424777027,0.181818181818,-0.0806065952085
+Either player debut,Validation_best_Elo,Validation-best Elo,0.3-0.4,0.3,0.4,22,0.346007502819,0.5,0.153992497181
+Either player debut,Validation_best_Elo,Validation-best Elo,0.4-0.5,0.4,0.5,17,0.447180166399,0.647058823529,0.199878657131
+Either player debut,Validation_best_Elo,Validation-best Elo,0.5-0.6,0.5,0.6,12,0.538159017368,0.833333333333,0.295174315965
+Either player debut,Validation_best_Elo,Validation-best Elo,0.6-0.7,0.6,0.7,4,0.649255833555,1,0.350744166445
+Either player debut,Validation_best_Elo,Validation-best Elo,0.7-0.8,0.7,0.8,2,0.787721831443,1,0.212278168557
+Either player debut,Validation_best_Elo,Validation-best Elo,0.8-0.9,0.8,0.9,4,0.869102066585,1,0.130897933415
+Either player debut,Validation_best_Elo,Validation-best Elo,0.9-1.0,0.9,1,2,0.916435237103,1,0.083564762897
+Either player debut,best_AdaptiveK,Best adaptive-K Elo,0.0-0.1,0,0.1,0,,,
+Either player debut,best_AdaptiveK,Best adaptive-K Elo,0.1-0.2,0.1,0.2,2,0.182548233906,0,-0.182548233906
+Either player debut,best_AdaptiveK,Best adaptive-K Elo,0.2-0.3,0.2,0.3,12,0.265206908944,0.333333333333,0.0681264243898
+Either player debut,best_AdaptiveK,Best adaptive-K Elo,0.3-0.4,0.3,0.4,24,0.344397492284,0.5,0.155602507716
+Either player debut,best_AdaptiveK,Best adaptive-K Elo,0.4-0.5,0.4,0.5,15,0.442278306108,0.733333333333,0.291055027226
+Either player debut,best_AdaptiveK,Best adaptive-K Elo,0.5-0.6,0.5,0.6,11,0.518483249223,0.818181818182,0.299698568959
+Either player debut,best_AdaptiveK,Best adaptive-K Elo,0.6-0.7,0.6,0.7,3,0.632337877467,1,0.367662122533
+Either player debut,best_AdaptiveK,Best adaptive-K Elo,0.7-0.8,0.7,0.8,3,0.738360754681,1,0.261639245319
+Either player debut,best_AdaptiveK,Best adaptive-K Elo,0.8-0.9,0.8,0.9,4,0.843064218552,1,0.156935781448
+Either player debut,best_AdaptiveK,Best adaptive-K Elo,0.9-1.0,0.9,1,0,,,
+Either player debut,Glicko_C0_fixed,Glicko C0,0.0-0.1,0,0.1,7,0.0594856493639,0.285714285714,0.22622863635
+Either player debut,Glicko_C0_fixed,Glicko C0,0.1-0.2,0.1,0.2,32,0.144318399972,0.53125,0.386931600028
+Either player debut,Glicko_C0_fixed,Glicko C0,0.2-0.3,0.2,0.3,16,0.243366008782,0.625,0.381633991218
+Either player debut,Glicko_C0_fixed,Glicko C0,0.3-0.4,0.3,0.4,7,0.334359049028,0.857142857143,0.522783808115
+Either player debut,Glicko_C0_fixed,Glicko C0,0.4-0.5,0.4,0.5,4,0.449277974308,1,0.550722025692
+Either player debut,Glicko_C0_fixed,Glicko C0,0.5-0.6,0.5,0.6,6,0.527485051346,0.833333333333,0.305848281987
+Either player debut,Glicko_C0_fixed,Glicko C0,0.6-0.7,0.6,0.7,0,,,
+Either player debut,Glicko_C0_fixed,Glicko C0,0.7-0.8,0.7,0.8,1,0.759793972906,1,0.240206027094
+Either player debut,Glicko_C0_fixed,Glicko C0,0.8-0.9,0.8,0.9,1,0.865099834129,1,0.134900165871
+Either player debut,Glicko_C0_fixed,Glicko C0,0.9-1.0,0.9,1,0,,,
+Either player debut,Default_Elo,Default Elo,0.0-0.1,0,0.1,0,,,
+Either player debut,Default_Elo,Default Elo,0.1-0.2,0.1,0.2,0,,,
+Either player debut,Default_Elo,Default Elo,0.2-0.3,0.2,0.3,2,0.272596870778,0,-0.272596870778
+Either player debut,Default_Elo,Default Elo,0.3-0.4,0.3,0.4,17,0.361095321662,0.411764705882,0.0506693842207
+Either player debut,Default_Elo,Default Elo,0.4-0.5,0.4,0.5,33,0.449830530664,0.575757575758,0.125927045093
+Either player debut,Default_Elo,Default Elo,0.5-0.6,0.5,0.6,14,0.529945494978,0.857142857143,0.327197362165
+Either player debut,Default_Elo,Default Elo,0.6-0.7,0.6,0.7,3,0.658612090864,1,0.341387909136
+Either player debut,Default_Elo,Default Elo,0.7-0.8,0.7,0.8,3,0.768857335044,1,0.231142664956
+Either player debut,Default_Elo,Default Elo,0.8-0.9,0.8,0.9,2,0.835569193497,1,0.164430806503
+Either player debut,Default_Elo,Default Elo,0.9-1.0,0.9,1,0,,,
+Minimum total games <=5,Glicko_low_fixed,Glicko low inflation,0.0-0.1,0,0.1,36,0.0661471424897,0.305555555556,0.239408413066
+Minimum total games <=5,Glicko_low_fixed,Glicko low inflation,0.1-0.2,0.1,0.2,83,0.150280669685,0.385542168675,0.23526149899
+Minimum total games <=5,Glicko_low_fixed,Glicko low inflation,0.2-0.3,0.2,0.3,64,0.249999635611,0.5,0.250000364389
+Minimum total games <=5,Glicko_low_fixed,Glicko low inflation,0.3-0.4,0.3,0.4,41,0.351039471586,0.536585365854,0.185545894267
+Minimum total games <=5,Glicko_low_fixed,Glicko low inflation,0.4-0.5,0.4,0.5,57,0.44813294811,0.491228070175,0.0430951220651
+Minimum total games <=5,Glicko_low_fixed,Glicko low inflation,0.5-0.6,0.5,0.6,41,0.546998717867,0.658536585366,0.111537867499
+Minimum total games <=5,Glicko_low_fixed,Glicko low inflation,0.6-0.7,0.6,0.7,46,0.64871062506,0.739130434783,0.0904198097228
+Minimum total games <=5,Glicko_low_fixed,Glicko low inflation,0.7-0.8,0.7,0.8,36,0.754989901426,0.611111111111,-0.143878790315
+Minimum total games <=5,Glicko_low_fixed,Glicko low inflation,0.8-0.9,0.8,0.9,40,0.845301979134,0.85,0.00469802086568
+Minimum total games <=5,Glicko_low_fixed,Glicko low inflation,0.9-1.0,0.9,1,21,0.944050889431,0.904761904762,-0.0392889846694
+Minimum total games <=5,Validation_best_Elo,Validation-best Elo,0.0-0.1,0,0.1,1,0.0923179592106,0,-0.0923179592106
+Minimum total games <=5,Validation_best_Elo,Validation-best Elo,0.1-0.2,0.1,0.2,11,0.163926790304,0.636363636364,0.47243684606
+Minimum total games <=5,Validation_best_Elo,Validation-best Elo,0.2-0.3,0.2,0.3,60,0.259269468016,0.333333333333,0.074063865317
+Minimum total games <=5,Validation_best_Elo,Validation-best Elo,0.3-0.4,0.3,0.4,111,0.353994914706,0.486486486486,0.13249157178
+Minimum total games <=5,Validation_best_Elo,Validation-best Elo,0.4-0.5,0.4,0.5,104,0.447885336091,0.480769230769,0.0328838946782
+Minimum total games <=5,Validation_best_Elo,Validation-best Elo,0.5-0.6,0.5,0.6,75,0.543152454621,0.613333333333,0.0701808787127
+Minimum total games <=5,Validation_best_Elo,Validation-best Elo,0.6-0.7,0.6,0.7,38,0.640009017804,0.710526315789,0.0705172979851
+Minimum total games <=5,Validation_best_Elo,Validation-best Elo,0.7-0.8,0.7,0.8,21,0.743915593464,0.857142857143,0.113227263679
+Minimum total games <=5,Validation_best_Elo,Validation-best Elo,0.8-0.9,0.8,0.9,26,0.847739487082,0.923076923077,0.0753374359947
+Minimum total games <=5,Validation_best_Elo,Validation-best Elo,0.9-1.0,0.9,1,18,0.962266152797,0.833333333333,-0.128932819464
+Minimum total games <=5,best_AdaptiveK,Best adaptive-K Elo,0.0-0.1,0,0.1,1,0.0965524804319,1,0.903447519568
+Minimum total games <=5,best_AdaptiveK,Best adaptive-K Elo,0.1-0.2,0.1,0.2,17,0.173433768218,0.352941176471,0.179507408252
+Minimum total games <=5,best_AdaptiveK,Best adaptive-K Elo,0.2-0.3,0.2,0.3,69,0.262409489485,0.391304347826,0.128894858341
+Minimum total games <=5,best_AdaptiveK,Best adaptive-K Elo,0.3-0.4,0.3,0.4,116,0.353750052323,0.534482758621,0.180732706298
+Minimum total games <=5,best_AdaptiveK,Best adaptive-K Elo,0.4-0.5,0.4,0.5,107,0.446519533832,0.448598130841,0.00207859700868
+Minimum total games <=5,best_AdaptiveK,Best adaptive-K Elo,0.5-0.6,0.5,0.6,71,0.536582932743,0.633802816901,0.0972198841585
+Minimum total games <=5,best_AdaptiveK,Best adaptive-K Elo,0.6-0.7,0.6,0.7,36,0.635695522088,0.805555555556,0.169860033468
+Minimum total games <=5,best_AdaptiveK,Best adaptive-K Elo,0.7-0.8,0.7,0.8,24,0.735383775781,0.958333333333,0.222949557552
+Minimum total games <=5,best_AdaptiveK,Best adaptive-K Elo,0.8-0.9,0.8,0.9,11,0.847269664909,0.909090909091,0.061821244182
+Minimum total games <=5,best_AdaptiveK,Best adaptive-K Elo,0.9-1.0,0.9,1,13,0.947468800437,0.769230769231,-0.178238031207
+Minimum total games <=5,Glicko_C0_fixed,Glicko C0,0.0-0.1,0,0.1,37,0.0666863610388,0.297297297297,0.230610936259
+Minimum total games <=5,Glicko_C0_fixed,Glicko C0,0.1-0.2,0.1,0.2,85,0.147559672351,0.411764705882,0.264205033532
+Minimum total games <=5,Glicko_C0_fixed,Glicko C0,0.2-0.3,0.2,0.3,58,0.244208129624,0.5,0.255791870376
+Minimum total games <=5,Glicko_C0_fixed,Glicko C0,0.3-0.4,0.3,0.4,52,0.351103060459,0.480769230769,0.12966617031
+Minimum total games <=5,Glicko_C0_fixed,Glicko C0,0.4-0.5,0.4,0.5,45,0.452658321976,0.555555555556,0.10289723358
+Minimum total games <=5,Glicko_C0_fixed,Glicko C0,0.5-0.6,0.5,0.6,48,0.542764562507,0.625,0.0822354374933
+Minimum total games <=5,Glicko_C0_fixed,Glicko C0,0.6-0.7,0.6,0.7,48,0.655924373366,0.625,-0.0309243733657
+Minimum total games <=5,Glicko_C0_fixed,Glicko C0,0.7-0.8,0.7,0.8,45,0.74983972708,0.8,0.0501602729196
+Minimum total games <=5,Glicko_C0_fixed,Glicko C0,0.8-0.9,0.8,0.9,31,0.848378966119,0.806451612903,-0.0419273532161
+Minimum total games <=5,Glicko_C0_fixed,Glicko C0,0.9-1.0,0.9,1,16,0.941320638902,0.9375,-0.00382063890181
+Minimum total games <=5,Default_Elo,Default Elo,0.0-0.1,0,0.1,0,,,
+Minimum total games <=5,Default_Elo,Default Elo,0.1-0.2,0.1,0.2,1,0.190443069329,0,-0.190443069329
+Minimum total games <=5,Default_Elo,Default Elo,0.2-0.3,0.2,0.3,23,0.262264216497,0.521739130435,0.259474913937
+Minimum total games <=5,Default_Elo,Default Elo,0.3-0.4,0.3,0.4,96,0.361165978811,0.458333333333,0.0971673545222
+Minimum total games <=5,Default_Elo,Default Elo,0.4-0.5,0.4,0.5,181,0.451115752065,0.458563535912,0.00744778384672
+Minimum total games <=5,Default_Elo,Default Elo,0.5-0.6,0.5,0.6,101,0.537539607365,0.673267326733,0.135727719368
+Minimum total games <=5,Default_Elo,Default Elo,0.6-0.7,0.6,0.7,22,0.638425908001,0.818181818182,0.179755910181
+Minimum total games <=5,Default_Elo,Default Elo,0.7-0.8,0.7,0.8,20,0.734786504915,0.95,0.215213495085
+Minimum total games <=5,Default_Elo,Default Elo,0.8-0.9,0.8,0.9,9,0.847723180086,0.888888888889,0.0411657088033
+Minimum total games <=5,Default_Elo,Default Elo,0.9-1.0,0.9,1,12,0.946411088027,0.75,-0.196411088027
+Minimum recent games <=5,Glicko_low_fixed,Glicko low inflation,0.0-0.1,0,0.1,99,0.058768364771,0.141414141414,0.0826457766432
+Minimum recent games <=5,Glicko_low_fixed,Glicko low inflation,0.1-0.2,0.1,0.2,190,0.151662669354,0.257894736842,0.106232067488
+Minimum recent games <=5,Glicko_low_fixed,Glicko low inflation,0.2-0.3,0.2,0.3,182,0.250791344343,0.373626373626,0.122835029284
+Minimum recent games <=5,Glicko_low_fixed,Glicko low inflation,0.3-0.4,0.3,0.4,179,0.351473027376,0.413407821229,0.0619347938533
+Minimum recent games <=5,Glicko_low_fixed,Glicko low inflation,0.4-0.5,0.4,0.5,185,0.454655834206,0.459459459459,0.00480362525331
+Minimum recent games <=5,Glicko_low_fixed,Glicko low inflation,0.5-0.6,0.5,0.6,162,0.548428267945,0.530864197531,-0.0175640704141
+Minimum recent games <=5,Glicko_low_fixed,Glicko low inflation,0.6-0.7,0.6,0.7,187,0.653382515871,0.620320855615,-0.0330616602563
+Minimum recent games <=5,Glicko_low_fixed,Glicko low inflation,0.7-0.8,0.7,0.8,150,0.74849408326,0.686666666667,-0.0618274165933
+Minimum recent games <=5,Glicko_low_fixed,Glicko low inflation,0.8-0.9,0.8,0.9,164,0.848481446142,0.780487804878,-0.0679936412643
+Minimum recent games <=5,Glicko_low_fixed,Glicko low inflation,0.9-1.0,0.9,1,137,0.945533460982,0.948905109489,0.00337164850718
+Minimum recent games <=5,Validation_best_Elo,Validation-best Elo,0.0-0.1,0,0.1,48,0.0499794250004,0,-0.0499794250004
+Minimum recent games <=5,Validation_best_Elo,Validation-best Elo,0.1-0.2,0.1,0.2,78,0.153957891513,0.217948717949,0.0639908264356
+Minimum recent games <=5,Validation_best_Elo,Validation-best Elo,0.2-0.3,0.2,0.3,190,0.255642009012,0.268421052632,0.0127790436192
+Minimum recent games <=5,Validation_best_Elo,Validation-best Elo,0.3-0.4,0.3,0.4,252,0.35514245618,0.452380952381,0.0972384962009
+Minimum recent games <=5,Validation_best_Elo,Validation-best Elo,0.4-0.5,0.4,0.5,274,0.450369153805,0.43795620438,-0.0124129494251
+Minimum recent games <=5,Validation_best_Elo,Validation-best Elo,0.5-0.6,0.5,0.6,236,0.549425407956,0.529661016949,-0.0197643910073
+Minimum recent games <=5,Validation_best_Elo,Validation-best Elo,0.6-0.7,0.6,0.7,187,0.645082800787,0.652406417112,0.00732361632542
+Minimum recent games <=5,Validation_best_Elo,Validation-best Elo,0.7-0.8,0.7,0.8,132,0.743349427501,0.659090909091,-0.0842585184104
+Minimum recent games <=5,Validation_best_Elo,Validation-best Elo,0.8-0.9,0.8,0.9,117,0.85100913948,0.888888888889,0.0378797494084
+Minimum recent games <=5,Validation_best_Elo,Validation-best Elo,0.9-1.0,0.9,1,121,0.948782808441,0.933884297521,-0.0148985109199
+Minimum recent games <=5,best_AdaptiveK,Best adaptive-K Elo,0.0-0.1,0,0.1,30,0.0567167032036,0.0333333333333,-0.0233833698703
+Minimum recent games <=5,best_AdaptiveK,Best adaptive-K Elo,0.1-0.2,0.1,0.2,75,0.160588759411,0.133333333333,-0.0272554260775
+Minimum recent games <=5,best_AdaptiveK,Best adaptive-K Elo,0.2-0.3,0.2,0.3,202,0.256609968371,0.306930693069,0.0503207246982
+Minimum recent games <=5,best_AdaptiveK,Best adaptive-K Elo,0.3-0.4,0.3,0.4,277,0.350169784462,0.451263537906,0.101093753444
+Minimum recent games <=5,best_AdaptiveK,Best adaptive-K Elo,0.4-0.5,0.4,0.5,306,0.449314009175,0.411764705882,-0.0375493032929
+Minimum recent games <=5,best_AdaptiveK,Best adaptive-K Elo,0.5-0.6,0.5,0.6,253,0.546807233915,0.569169960474,0.0223627265592
+Minimum recent games <=5,best_AdaptiveK,Best adaptive-K Elo,0.6-0.7,0.6,0.7,185,0.648886805794,0.659459459459,0.0105726536657
+Minimum recent games <=5,best_AdaptiveK,Best adaptive-K Elo,0.7-0.8,0.7,0.8,123,0.741862108807,0.772357723577,0.0304956147698
+Minimum recent games <=5,best_AdaptiveK,Best adaptive-K Elo,0.8-0.9,0.8,0.9,106,0.851746421613,0.88679245283,0.0350460312169
+Minimum recent games <=5,best_AdaptiveK,Best adaptive-K Elo,0.9-1.0,0.9,1,78,0.941836524247,0.948717948718,0.00688142447135
+Minimum recent games <=5,Glicko_C0_fixed,Glicko C0,0.0-0.1,0,0.1,55,0.0631012196383,0.254545454545,0.191444234907
+Minimum recent games <=5,Glicko_C0_fixed,Glicko C0,0.1-0.2,0.1,0.2,143,0.151268054222,0.307692307692,0.15642425347
+Minimum recent games <=5,Glicko_C0_fixed,Glicko C0,0.2-0.3,0.2,0.3,149,0.249081699191,0.355704697987,0.106622998795
+Minimum recent games <=5,Glicko_C0_fixed,Glicko C0,0.3-0.4,0.3,0.4,198,0.348919881681,0.373737373737,0.0248174920568
+Minimum recent games <=5,Glicko_C0_fixed,Glicko C0,0.4-0.5,0.4,0.5,204,0.448437992031,0.436274509804,-0.0121634822271
+Minimum recent games <=5,Glicko_C0_fixed,Glicko C0,0.5-0.6,0.5,0.6,221,0.55217664425,0.434389140271,-0.117787503978
+Minimum recent games <=5,Glicko_C0_fixed,Glicko C0,0.6-0.7,0.6,0.7,199,0.650274552033,0.613065326633,-0.0372092253999
+Minimum recent games <=5,Glicko_C0_fixed,Glicko C0,0.7-0.8,0.7,0.8,196,0.748835016139,0.647959183673,-0.100875832466
+Minimum recent games <=5,Glicko_C0_fixed,Glicko C0,0.8-0.9,0.8,0.9,168,0.848859187574,0.797619047619,-0.051240139955
+Minimum recent games <=5,Glicko_C0_fixed,Glicko C0,0.9-1.0,0.9,1,102,0.941984299221,0.980392156863,0.0384078576413
+Minimum recent games <=5,Default_Elo,Default Elo,0.0-0.1,0,0.1,19,0.0519369332157,0,-0.0519369332157
+Minimum recent games <=5,Default_Elo,Default Elo,0.1-0.2,0.1,0.2,39,0.15740994788,0.025641025641,-0.131768922239
+Minimum recent games <=5,Default_Elo,Default Elo,0.2-0.3,0.2,0.3,102,0.261819020999,0.274509803922,0.0126907829224
+Minimum recent games <=5,Default_Elo,Default Elo,0.3-0.4,0.3,0.4,280,0.356500057063,0.382142857143,0.0256428000801
+Minimum recent games <=5,Default_Elo,Default Elo,0.4-0.5,0.4,0.5,435,0.451751775158,0.422988505747,-0.0287632694106
+Minimum recent games <=5,Default_Elo,Default Elo,0.5-0.6,0.5,0.6,330,0.543844820394,0.6,0.0561551796059
+Minimum recent games <=5,Default_Elo,Default Elo,0.6-0.7,0.6,0.7,171,0.648022390995,0.666666666667,0.0186442756715
+Minimum recent games <=5,Default_Elo,Default Elo,0.7-0.8,0.7,0.8,102,0.745157483732,0.754901960784,0.00974447705205
+Minimum recent games <=5,Default_Elo,Default Elo,0.8-0.9,0.8,0.9,94,0.850636834028,0.904255319149,0.053618485121
+Minimum recent games <=5,Default_Elo,Default Elo,0.9-1.0,0.9,1,63,0.938367212319,0.936507936508,-0.0018592758113
+Inactive >=365 days,Glicko_low_fixed,Glicko low inflation,0.0-0.1,0,0.1,9,0.0520698433017,0.111111111111,0.0590412678094
+Inactive >=365 days,Glicko_low_fixed,Glicko low inflation,0.1-0.2,0.1,0.2,16,0.156349504315,0.1875,0.0311504956846
+Inactive >=365 days,Glicko_low_fixed,Glicko low inflation,0.2-0.3,0.2,0.3,25,0.24848481205,0.16,-0.08848481205
+Inactive >=365 days,Glicko_low_fixed,Glicko low inflation,0.3-0.4,0.3,0.4,16,0.348302318154,0.3125,-0.0358023181539
+Inactive >=365 days,Glicko_low_fixed,Glicko low inflation,0.4-0.5,0.4,0.5,22,0.454228741491,0.363636363636,-0.0905923778546
+Inactive >=365 days,Glicko_low_fixed,Glicko low inflation,0.5-0.6,0.5,0.6,24,0.54437156538,0.625,0.08062843462
+Inactive >=365 days,Glicko_low_fixed,Glicko low inflation,0.6-0.7,0.6,0.7,24,0.659073125072,0.458333333333,-0.200739791739
+Inactive >=365 days,Glicko_low_fixed,Glicko low inflation,0.7-0.8,0.7,0.8,18,0.745646155646,0.833333333333,0.087687177687
+Inactive >=365 days,Glicko_low_fixed,Glicko low inflation,0.8-0.9,0.8,0.9,26,0.850712687006,0.730769230769,-0.119943456237
+Inactive >=365 days,Glicko_low_fixed,Glicko low inflation,0.9-1.0,0.9,1,18,0.950295350548,0.944444444444,-0.00585090610356
+Inactive >=365 days,Validation_best_Elo,Validation-best Elo,0.0-0.1,0,0.1,4,0.0548617903998,0,-0.0548617903998
+Inactive >=365 days,Validation_best_Elo,Validation-best Elo,0.1-0.2,0.1,0.2,15,0.154188780388,0.133333333333,-0.0208554470543
+Inactive >=365 days,Validation_best_Elo,Validation-best Elo,0.2-0.3,0.2,0.3,22,0.251066457194,0.136363636364,-0.11470282083
+Inactive >=365 days,Validation_best_Elo,Validation-best Elo,0.3-0.4,0.3,0.4,29,0.360322032617,0.48275862069,0.122436588073
+Inactive >=365 days,Validation_best_Elo,Validation-best Elo,0.4-0.5,0.4,0.5,24,0.450881578596,0.333333333333,-0.117548245262
+Inactive >=365 days,Validation_best_Elo,Validation-best Elo,0.5-0.6,0.5,0.6,28,0.54816120934,0.535714285714,-0.0124469236259
+Inactive >=365 days,Validation_best_Elo,Validation-best Elo,0.6-0.7,0.6,0.7,22,0.642051676217,0.636363636364,-0.00568803985314
+Inactive >=365 days,Validation_best_Elo,Validation-best Elo,0.7-0.8,0.7,0.8,21,0.73556468827,0.571428571429,-0.164136116841
+Inactive >=365 days,Validation_best_Elo,Validation-best Elo,0.8-0.9,0.8,0.9,16,0.856489087777,0.8125,-0.0439890877771
+Inactive >=365 days,Validation_best_Elo,Validation-best Elo,0.9-1.0,0.9,1,17,0.944208287644,1,0.0557917123561
+Inactive >=365 days,best_AdaptiveK,Best adaptive-K Elo,0.0-0.1,0,0.1,2,0.0384740681774,0,-0.0384740681774
+Inactive >=365 days,best_AdaptiveK,Best adaptive-K Elo,0.1-0.2,0.1,0.2,12,0.158327526774,0,-0.158327526774
+Inactive >=365 days,best_AdaptiveK,Best adaptive-K Elo,0.2-0.3,0.2,0.3,24,0.251820906231,0.208333333333,-0.0434875728977
+Inactive >=365 days,best_AdaptiveK,Best adaptive-K Elo,0.3-0.4,0.3,0.4,29,0.348770117304,0.344827586207,-0.00394253109679
+Inactive >=365 days,best_AdaptiveK,Best adaptive-K Elo,0.4-0.5,0.4,0.5,25,0.449175247964,0.4,-0.0491752479635
+Inactive >=365 days,best_AdaptiveK,Best adaptive-K Elo,0.5-0.6,0.5,0.6,33,0.536558127279,0.545454545455,0.008896418176
+Inactive >=365 days,best_AdaptiveK,Best adaptive-K Elo,0.6-0.7,0.6,0.7,30,0.649490357819,0.633333333333,-0.0161570244853
+Inactive >=365 days,best_AdaptiveK,Best adaptive-K Elo,0.7-0.8,0.7,0.8,14,0.74615752626,0.642857142857,-0.103300383403
+Inactive >=365 days,best_AdaptiveK,Best adaptive-K Elo,0.8-0.9,0.8,0.9,19,0.853119232611,0.894736842105,0.0416176094939
+Inactive >=365 days,best_AdaptiveK,Best adaptive-K Elo,0.9-1.0,0.9,1,10,0.939875359076,1,0.0601246409245
+Inactive >=365 days,Glicko_C0_fixed,Glicko C0,0.0-0.1,0,0.1,2,0.0419192759846,0.5,0.458080724015
+Inactive >=365 days,Glicko_C0_fixed,Glicko C0,0.1-0.2,0.1,0.2,14,0.154957584451,0.214285714286,0.0593281298348
+Inactive >=365 days,Glicko_C0_fixed,Glicko C0,0.2-0.3,0.2,0.3,16,0.245122512344,0.3125,0.0673774876559
+Inactive >=365 days,Glicko_C0_fixed,Glicko C0,0.3-0.4,0.3,0.4,16,0.352654839623,0.3125,-0.0401548396228
+Inactive >=365 days,Glicko_C0_fixed,Glicko C0,0.4-0.5,0.4,0.5,21,0.453108289627,0.238095238095,-0.215013051532
+Inactive >=365 days,Glicko_C0_fixed,Glicko C0,0.5-0.6,0.5,0.6,34,0.554719820203,0.382352941176,-0.172366879027
+Inactive >=365 days,Glicko_C0_fixed,Glicko C0,0.6-0.7,0.6,0.7,34,0.652627717622,0.588235294118,-0.0643924235039
+Inactive >=365 days,Glicko_C0_fixed,Glicko C0,0.7-0.8,0.7,0.8,24,0.745970993443,0.583333333333,-0.162637660109
+Inactive >=365 days,Glicko_C0_fixed,Glicko C0,0.8-0.9,0.8,0.9,21,0.848652358808,0.809523809524,-0.0391285492845
+Inactive >=365 days,Glicko_C0_fixed,Glicko C0,0.9-1.0,0.9,1,16,0.953384728846,0.9375,-0.0158847288461
+Inactive >=365 days,Default_Elo,Default Elo,0.0-0.1,0,0.1,2,0.059109178511,0,-0.059109178511
+Inactive >=365 days,Default_Elo,Default Elo,0.1-0.2,0.1,0.2,3,0.154261878567,0,-0.154261878567
+Inactive >=365 days,Default_Elo,Default Elo,0.2-0.3,0.2,0.3,15,0.254804539997,0.133333333333,-0.121471206663
+Inactive >=365 days,Default_Elo,Default Elo,0.3-0.4,0.3,0.4,34,0.34888659034,0.235294117647,-0.113592472693
+Inactive >=365 days,Default_Elo,Default Elo,0.4-0.5,0.4,0.5,42,0.452267576327,0.428571428571,-0.0236961477558
+Inactive >=365 days,Default_Elo,Default Elo,0.5-0.6,0.5,0.6,44,0.544851673167,0.568181818182,0.0233301450149
+Inactive >=365 days,Default_Elo,Default Elo,0.6-0.7,0.6,0.7,20,0.647840716976,0.6,-0.047840716976
+Inactive >=365 days,Default_Elo,Default Elo,0.7-0.8,0.7,0.8,14,0.742237578966,0.785714285714,0.0434767067486
+Inactive >=365 days,Default_Elo,Default Elo,0.8-0.9,0.8,0.9,16,0.853070966934,0.875,0.0219290330657
+Inactive >=365 days,Default_Elo,Default Elo,0.9-1.0,0.9,1,8,0.936143952187,1,0.0638560478128
+Both players active last 365 days,Glicko_low_fixed,Glicko low inflation,0.0-0.1,0,0.1,473,0.059824537462,0.061310782241,0.001486244779
+Both players active last 365 days,Glicko_low_fixed,Glicko low inflation,0.1-0.2,0.1,0.2,842,0.151534544407,0.171021377672,0.0194868332657
+Both players active last 365 days,Glicko_low_fixed,Glicko low inflation,0.2-0.3,0.2,0.3,1034,0.251092840018,0.264023210832,0.0129303708139
+Both players active last 365 days,Glicko_low_fixed,Glicko low inflation,0.3-0.4,0.3,0.4,1192,0.351377317066,0.35822147651,0.00684415944387
+Both players active last 365 days,Glicko_low_fixed,Glicko low inflation,0.4-0.5,0.4,0.5,1323,0.449941545509,0.442176870748,-0.00776467476027
+Both players active last 365 days,Glicko_low_fixed,Glicko low inflation,0.5-0.6,0.5,0.6,1365,0.550314826296,0.54652014652,-0.0037946797757
+Both players active last 365 days,Glicko_low_fixed,Glicko low inflation,0.6-0.7,0.6,0.7,1395,0.649369308039,0.637992831541,-0.0113764764977
+Both players active last 365 days,Glicko_low_fixed,Glicko low inflation,0.7-0.8,0.7,0.8,1251,0.749952459756,0.726618705036,-0.0233337547204
+Both players active last 365 days,Glicko_low_fixed,Glicko low inflation,0.8-0.9,0.8,0.9,1190,0.850249011691,0.840336134454,-0.00991287723708
+Both players active last 365 days,Glicko_low_fixed,Glicko low inflation,0.9-1.0,0.9,1,971,0.945826756676,0.94438722966,-0.00143952701587
+Both players active last 365 days,Validation_best_Elo,Validation-best Elo,0.0-0.1,0,0.1,432,0.0568096593926,0.0439814814815,-0.0128281779111
+Both players active last 365 days,Validation_best_Elo,Validation-best Elo,0.1-0.2,0.1,0.2,721,0.153043489237,0.174757281553,0.0217137923165
+Both players active last 365 days,Validation_best_Elo,Validation-best Elo,0.2-0.3,0.2,0.3,1053,0.253638154351,0.268755935423,0.0151177810717
+Both players active last 365 days,Validation_best_Elo,Validation-best Elo,0.3-0.4,0.3,0.4,1311,0.353298296688,0.363081617086,0.00978332039858
+Both players active last 365 days,Validation_best_Elo,Validation-best Elo,0.4-0.5,0.4,0.5,1463,0.450326478685,0.446343130554,-0.00398334813115
+Both players active last 365 days,Validation_best_Elo,Validation-best Elo,0.5-0.6,0.5,0.6,1472,0.549535618702,0.547554347826,-0.00198127087616
+Both players active last 365 days,Validation_best_Elo,Validation-best Elo,0.6-0.7,0.6,0.7,1380,0.647593594304,0.65,0.0024064056959
+Both players active last 365 days,Validation_best_Elo,Validation-best Elo,0.7-0.8,0.7,0.8,1167,0.74873589236,0.727506426735,-0.021229465625
+Both players active last 365 days,Validation_best_Elo,Validation-best Elo,0.8-0.9,0.8,0.9,1057,0.849315580489,0.845789971618,-0.003525608871
+Both players active last 365 days,Validation_best_Elo,Validation-best Elo,0.9-1.0,0.9,1,980,0.945484897633,0.935714285714,-0.00977061191841
+Both players active last 365 days,best_AdaptiveK,Best adaptive-K Elo,0.0-0.1,0,0.1,226,0.0629992028594,0.0221238938053,-0.0408753090541
+Both players active last 365 days,best_AdaptiveK,Best adaptive-K Elo,0.1-0.2,0.1,0.2,581,0.155109880748,0.117039586919,-0.0380702938284
+Both players active last 365 days,best_AdaptiveK,Best adaptive-K Elo,0.2-0.3,0.2,0.3,1023,0.253435015477,0.24926686217,-0.00416815330652
+Both players active last 365 days,best_AdaptiveK,Best adaptive-K Elo,0.3-0.4,0.3,0.4,1470,0.351692284572,0.355102040816,0.00340975624419
+Both players active last 365 days,best_AdaptiveK,Best adaptive-K Elo,0.4-0.5,0.4,0.5,1653,0.451437031153,0.413793103448,-0.0376439277045
+Both players active last 365 days,best_AdaptiveK,Best adaptive-K Elo,0.5-0.6,0.5,0.6,1746,0.548994845827,0.568728522337,0.0197336765094
+Both players active last 365 days,best_AdaptiveK,Best adaptive-K Elo,0.6-0.7,0.6,0.7,1521,0.648083304317,0.652859960552,0.00477665623525
+Both players active last 365 days,best_AdaptiveK,Best adaptive-K Elo,0.7-0.8,0.7,0.8,1168,0.746663024041,0.77654109589,0.0298780718498
+Both players active last 365 days,best_AdaptiveK,Best adaptive-K Elo,0.8-0.9,0.8,0.9,1020,0.848796398268,0.870588235294,0.0217918370258
+Both players active last 365 days,best_AdaptiveK,Best adaptive-K Elo,0.9-1.0,0.9,1,628,0.940527591216,0.963375796178,0.0228482049628
+Both players active last 365 days,Glicko_C0_fixed,Glicko C0,0.0-0.1,0,0.1,185,0.0668109972764,0.0972972972973,0.0304863000209
+Both players active last 365 days,Glicko_C0_fixed,Glicko C0,0.1-0.2,0.1,0.2,518,0.154464067216,0.146718146718,-0.00774592049827
+Both players active last 365 days,Glicko_C0_fixed,Glicko C0,0.2-0.3,0.2,0.3,837,0.254934050797,0.213859020311,-0.0410750304863
+Both players active last 365 days,Glicko_C0_fixed,Glicko C0,0.3-0.4,0.3,0.4,1279,0.352029682042,0.307271305708,-0.044758376334
+Both players active last 365 days,Glicko_C0_fixed,Glicko C0,0.4-0.5,0.4,0.5,1556,0.451142777933,0.410025706941,-0.0411170709924
+Both players active last 365 days,Glicko_C0_fixed,Glicko C0,0.5-0.6,0.5,0.6,1660,0.549854951985,0.504819277108,-0.045035674877
+Both players active last 365 days,Glicko_C0_fixed,Glicko C0,0.6-0.7,0.6,0.7,1722,0.649172280447,0.624854819977,-0.0243174604703
+Both players active last 365 days,Glicko_C0_fixed,Glicko C0,0.7-0.8,0.7,0.8,1441,0.749556978582,0.741151977793,-0.008405000789
+Both players active last 365 days,Glicko_C0_fixed,Glicko C0,0.8-0.9,0.8,0.9,1151,0.847960394999,0.84448305821,-0.00347733678855
+Both players active last 365 days,Glicko_C0_fixed,Glicko C0,0.9-1.0,0.9,1,687,0.939469596888,0.963609898108,0.02414030122
+Both players active last 365 days,Default_Elo,Default Elo,0.0-0.1,0,0.1,182,0.0616448113737,0.0274725274725,-0.0341722839012
+Both players active last 365 days,Default_Elo,Default Elo,0.1-0.2,0.1,0.2,462,0.151862688325,0.0974025974026,-0.0544600909229
+Both players active last 365 days,Default_Elo,Default Elo,0.2-0.3,0.2,0.3,842,0.256632337653,0.231591448931,-0.0250408887218
+Both players active last 365 days,Default_Elo,Default Elo,0.3-0.4,0.3,0.4,1471,0.354339457332,0.333106730116,-0.0212327272164
+Both players active last 365 days,Default_Elo,Default Elo,0.4-0.5,0.4,0.5,1974,0.451839946705,0.413373860182,-0.0384660865227
+Both players active last 365 days,Default_Elo,Default Elo,0.5-0.6,0.5,0.6,1953,0.54798521478,0.573476702509,0.025491487729
+Both players active last 365 days,Default_Elo,Default Elo,0.6-0.7,0.6,0.7,1500,0.645981752611,0.668666666667,0.0226849140555
+Both players active last 365 days,Default_Elo,Default Elo,0.7-0.8,0.7,0.8,1132,0.747430799227,0.77296819788,0.0255373986525
+Both players active last 365 days,Default_Elo,Default Elo,0.8-0.9,0.8,0.9,966,0.849347487268,0.870600414079,0.0212529268108
+Both players active last 365 days,Default_Elo,Default Elo,0.9-1.0,0.9,1,554,0.939768262969,0.956678700361,0.016910437392

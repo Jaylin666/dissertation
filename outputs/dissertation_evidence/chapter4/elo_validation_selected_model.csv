@@ -1,0 +1,2 @@
+K,scale,validation_games,validation_log_loss,validation_brier_score,validation_accuracy,rank_by_validation_log_loss
+30,300,23888,0.5686408711815781,0.19464392044295012,0.6961235766912257,1

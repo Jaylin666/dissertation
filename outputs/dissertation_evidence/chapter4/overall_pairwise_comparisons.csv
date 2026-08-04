@@ -1,0 +1,4 @@
+comparison,games,events,delta_brier,delta_logloss,delta_accuracy,positive_means
+Glicko low fixed vs validation-best Elo,11379,629,0.00246877113577,0.00475553164832,0.00703049477107,Glicko low fixed is better
+Low-inflation Glicko vs Glicko C0,11379,629,0.00810382441625,0.0201788496113,0.017751999297,Low-inflation Glicko is better
+Glicko low fixed vs best adaptive-K Elo,11379,629,0.00317755361188,0.00740606724675,0.0052728710783,Glicko low fixed is better
