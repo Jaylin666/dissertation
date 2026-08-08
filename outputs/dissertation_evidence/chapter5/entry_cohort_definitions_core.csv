@@ -1,0 +1,5 @@
+cohort,interpretation,players
+system_start_left_censored,model-start / left-censored,314
+within_5y_burn_in_recorded_entry,within 1986-1989 burn-in,456
+post_burn_in_recorded_entry,1990-2024 post-burn-in recorded entrants,4297
+test_year_recorded_entry,2025 held-out recorded entrants,76

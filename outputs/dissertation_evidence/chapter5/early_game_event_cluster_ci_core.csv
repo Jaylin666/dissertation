@@ -1,0 +1,7 @@
+group,threshold,metric,metric_definition,unique_games,unique_events,bootstrap_unit,bootstrap_repetitions,point_estimate,ci_lower,ci_upper,ci_excludes_zero
+first_1,1,delta_brier,Elo Brier - Glicko Brier,74,60,event_cluster,2000,-0.11481521188,-0.158208864773,-0.0691230515529,True
+first_1,1,delta_log_loss,Elo log loss - Glicko log loss,74,60,event_cluster,2000,-0.300183457006,-0.422358532239,-0.179979238414,True
+first_1,1,delta_accuracy,Glicko accuracy - Elo accuracy,74,60,event_cluster,2000,-0.135135135135,-0.231711735596,-0.0389485514486,True
+first_5,5,delta_brier,Elo Brier - Glicko Brier,387,98,event_cluster,2000,-0.0197558654357,-0.0405064694335,0.00099029550546,False
+first_10,10,delta_brier,Elo Brier - Glicko Brier,785,165,event_cluster,2000,-0.00772118921606,-0.020850325151,0.00671410121717,False
+first_20,20,delta_brier,Elo Brier - Glicko Brier,1463,260,event_cluster,2000,-0.00124889854642,-0.0102008302561,0.00760647794489,False

@@ -1,0 +1,3 @@
+model,appearances,players,unique_games,mean_predicted_win_probability,empirical_win_rate,prediction_bias,brier,log_loss,accuracy
+Validation-best Elo,76,76,74,0.538536322451,0.407894736842,0.130641585609,0.210521764869,0.603290493694,0.644736842105
+Glicko low inflation,76,76,74,0.743448336412,0.407894736842,0.33555359957,0.322315523804,0.895574386042,0.513157894737

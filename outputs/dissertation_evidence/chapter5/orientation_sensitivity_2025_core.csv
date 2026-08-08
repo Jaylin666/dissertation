@@ -1,0 +1,2 @@
+group,first_appearances,mean_current_probability,mean_direct_focal_probability,empirical_win_rate,current_prediction_bias,direct_prediction_bias,current_brier,direct_brier,qualitative_overprediction_direction_agrees
+test_year_recorded_entry,76,0.7434483364117653,0.7880934036692926,0.40789473684210525,0.3355535995696601,0.38019866682718734,0.3223155238042425,0.3598584161452452,True

@@ -1,0 +1,5 @@
+local_figure,chapter_section,local_status,original_source_path,use
+stage_brier_replot.png,5.3,derived replot from frozen values,outputs/meeting7/figures/34_fig04_stage_brier_by_model.png,preferred performance figure
+predicted_vs_empirical_replot.png,5.4,derived replot from frozen values,outputs/meeting7/figures/35_fig01_predicted_vs_empirical_by_stage.png,preferred first-appearance mechanism figure
+prematch_scale_alignment_2025_replot.png,5.5.3,derived 2025-only replot from frozen Step 42 values,outputs/meeting8_technical/figures/42_fig01_entry_anchor_vs_contemporaneous_scale.png,compact local substitute; original GitHub figure remains provenance source
+SOURCE ONLY: 42_fig02_entry_anchor_vs_actual_opponent.png,5.5.3 / appendix,source figure not embedded,outputs/meeting8_technical/figures/42_fig02_entry_anchor_vs_actual_opponent.png,secondary candidate
