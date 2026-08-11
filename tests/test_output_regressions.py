@@ -20,19 +20,25 @@ class GoldenOutputRegressionTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.overall = pd.read_csv(
-            ROOT / "outputs" / "meeting6" / "33_overall_model_metrics.csv"
+            ROOT
+            / "outputs"
+            / "dissertation_evidence"
+            / "chapter4"
+            / "overall_model_metrics.csv"
         )
         cls.early = pd.read_csv(
             ROOT
             / "outputs"
-            / "meeting7"
-            / "34_cumulative_threshold_model_performance.csv"
+            / "dissertation_evidence"
+            / "chapter5"
+            / "first_appearance_mechanism_core.csv"
         )
         cls.entry = pd.read_csv(
             ROOT
             / "outputs"
-            / "meeting8_technical"
-            / "42_entry_cohort_scale_summary.csv"
+            / "dissertation_evidence"
+            / "chapter5"
+            / "prematch_scale_alignment_2025_core.csv"
         )
 
     def test_overall_core_model_metrics_are_frozen(self) -> None:
@@ -54,14 +60,10 @@ class GoldenOutputRegressionTests(unittest.TestCase):
             )
 
     def test_first_appearance_headline_values(self) -> None:
-        first = self.early[
-            (self.early["group_type"] == "cumulative_threshold")
-            & (self.early["group"] == "first_1")
-            & (self.early["model"] == "Glicko_low_fixed")
-        ].iloc[0]
+        first = self.early[self.early["model"] == "Glicko low inflation"].iloc[0]
         self.assertEqual(int(first["appearances"]), 76)
         self.assertAlmostEqual(
-            float(first["mean_predicted_probability"]),
+            float(first["mean_predicted_win_probability"]),
             FIRST_APPEARANCE_GOLDEN.mean_current_probability,
             places=12,
         )
@@ -77,21 +79,19 @@ class GoldenOutputRegressionTests(unittest.TestCase):
         )
 
     def test_entry_scale_headline_values(self) -> None:
-        row = self.entry[
-            self.entry["group"] == "test_year_recorded_entry"
-        ].iloc[0]
+        metrics = self.entry.set_index("metric")["value"].astype(float)
         self.assertAlmostEqual(
-            float(row["mean_opponent_rating"]),
+            metrics["mean_actual_first_opponent_rating"],
             FIRST_APPEARANCE_GOLDEN.mean_opponent_rating,
             places=6,
         )
         self.assertAlmostEqual(
-            float(row["mean_initial_minus_opponent_rating"]),
+            metrics["mean_initial_minus_actual_opponent_rating"],
             FIRST_APPEARANCE_GOLDEN.mean_initial_minus_opponent_gap,
             places=6,
         )
         self.assertAlmostEqual(
-            float(row["mean_initial_minus_contemporaneous_median"]),
+            metrics["mean_initial_minus_contemporaneous_median"],
             FIRST_APPEARANCE_GOLDEN.mean_initial_minus_contemporaneous_median_gap,
             places=6,
         )

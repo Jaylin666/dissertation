@@ -4,10 +4,15 @@ __pycache__/
 *.pyo
 .pytest_cache/
 .mypy_cache/
+.coverage
+htmlcov/
 .ipynb_checkpoints/
 .venv/
 venv/
 env/
+build/
+dist/
+*.egg-info/
 
 # IDE and operating-system files
 .vscode/
@@ -46,60 +51,8 @@ raw_data/
 data_processed/
 downloads/
 
-# Large or reproducible analysis outputs
-# Compact summaries, validation tables, manifests, and final figures remain trackable.
-outputs/**/cache/
-outputs/**/intermediate/
-outputs/**/temporary/
-outputs/**/tmp/
-outputs/refactor_validation/
-
-# Semantically row-level datasets and histories
-outputs/**/*per_match*.csv
-outputs/**/*appearance_dataset*.csv
-outputs/**/*orientation_dataset*.csv
-outputs/**/*match_diagnostics*.csv
-outputs/**/*player_perspective*.csv
-outputs/**/*rating_history*.csv
-outputs/**/*prediction_history*.csv
-outputs/**/*predictions_full*.csv
-outputs/**/*update_history*.csv
-
-# Existing large or reproducible files with unique names
-outputs/elo_optimization/elo_event_level_volatility_player_event.csv
-outputs/elo_optimization/matches_1985_2025_checked.csv
-outputs/elo_optimization/elo_single_year_rerun_final_ratings.csv
-outputs/elo_optimization/elo_burnin_final_ratings_all_runs.csv
-outputs/glicko_implementation/glicko_rating_period_predictions_1985_2025.csv
-outputs/glicko_implementation/glicko_mbm_predictions_1985_2025.csv
-outputs/glicko_implementation/glicko_rating_period_period_summary.csv
-outputs/glicko_implementation/glicko_rating_period_final_ratings.csv
-outputs/glicko_implementation/glicko_mbm_final_ratings_1985_2025.csv
-outputs/meeting5_adaptive_k_elo/meeting5_adaptive_k_elo_predictions_2025.csv
-outputs/meeting5_adaptive_k_elo/meeting5_adaptive_k_elo_final_ratings.csv
-outputs/meeting5_fair_elo_vs_glicko/meeting5_fair_elo_vs_glicko_predictions_2025.csv
-outputs/meeting5_fair_elo_vs_glicko/meeting5_fair_elo_vs_glicko_final_ratings.csv
-outputs/meeting5_glicko_rating_period_runtime/meeting5_glicko_rating_period_predictions_2025.csv
-outputs/meeting5_glicko_rating_period_runtime/meeting5_glicko_rating_period_final_ratings.csv
-outputs/meeting5_glicko_rd_inflation/meeting5_glicko_rd_inflation_predictions_2025.csv
-outputs/meeting5_glicko_rd_inflation/meeting5_glicko_rd_inflation_final_ratings.csv
-outputs/meeting6/28_prematch_match_features_2025.csv
-outputs/meeting6/28_prematch_player_features_2025_long.csv
-outputs/meeting6/32_glicko_direct_probability_comparison.csv
-outputs/meeting6/33_glicko_probability_reconstruction_checks.csv
-outputs/meeting7/37_initial_rating_appearance_predictions_2025.csv
-outputs/meeting7/38_lower_rated_player_update_diagnostic.csv
-outputs/meeting8_technical/41_debut_appearance_diagnostics.csv
-outputs/meeting8_technical/41_player_entry_classification.csv
-outputs/meeting8_technical/42_prematch_contemporaneous_scale_diagnostics.csv
-outputs/meeting8_technical/42_strict_player_entry_classification.csv
-
-# Legacy generated metadata containing machine-local paths
-outputs/meeting5_adaptive_k_elo/meeting5_adaptive_k_elo_summary.md
-outputs/meeting5_fair_elo_vs_glicko/meeting5_fair_elo_vs_glicko_summary.md
-outputs/meeting5_glicko_rating_period_runtime/meeting5_glicko_rating_period_runtime_summary.md
-outputs/meeting5_glicko_rd_inflation/meeting5_glicko_rd_inflation_summary.md
-outputs/meeting7/34_figure_manifest.csv
-outputs/meeting7/35_figure_manifest.csv
-outputs/meeting7/36_figure_manifest.csv
-outputs/meeting7/37_figure_manifest.csv
+# Generated analysis outputs are local by default. The two controlled evidence
+# packages are the only supported tracked content under outputs/.
+outputs/*
+!outputs/dissertation_evidence/
+!outputs/dissertation_evidence/**

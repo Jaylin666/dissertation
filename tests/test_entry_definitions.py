@@ -23,14 +23,17 @@ from code.config import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MEETING8 = ROOT / "outputs" / "meeting8_technical"
+CHAPTER5_EVIDENCE = ROOT / "outputs" / "dissertation_evidence" / "chapter5"
+ARCHIVED_MEETING8 = ROOT / "archive" / "research_outputs" / "meeting8_technical"
 
 
 class EntryDefinitionTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.cohorts = pd.read_csv(MEETING8 / "42_entry_cohort_scale_summary.csv")
-        cls.audit = pd.read_csv(MEETING8 / "42_2025_crossfile_entry_audit.csv")
+        cls.cohorts = pd.read_csv(CHAPTER5_EVIDENCE / "entry_cohort_definitions_core.csv")
+        cls.audit = pd.read_csv(
+            ARCHIVED_MEETING8 / "42_2025_crossfile_entry_audit.csv"
+        )
 
     def test_cohort_boundaries(self) -> None:
         self.assertEqual(cohort_for_year(1985), "system_start_left_censored")
@@ -40,7 +43,7 @@ class EntryDefinitionTests(unittest.TestCase):
         self.assertEqual(cohort_for_year(2025), "test_year_recorded_entry")
 
     def test_frozen_burnin_cohort_counts(self) -> None:
-        counts = self.cohorts.set_index("group")["n_unique_players"].astype(int)
+        counts = self.cohorts.set_index("cohort")["players"].astype(int)
         self.assertEqual(
             int(counts["system_start_left_censored"]),
             EXPECTED_SYSTEM_START_PLAYERS,

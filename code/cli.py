@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 from pathlib import Path
 import sys
 from typing import Callable, Sequence
@@ -15,6 +16,7 @@ from code.config import (
     EXPECTED_FULL_HISTORY_MATCHES,
     EXPECTED_TEST_MATCHES,
     EXPECTED_UNIQUE_PLAYERS,
+    FIRST_APPEARANCE_GOLDEN,
     FULL_HISTORY_END_YEAR,
     FULL_HISTORY_START_YEAR,
     GLICKO_LOW_INFLATION,
@@ -26,6 +28,8 @@ from code.validation_utils import robust_bool
 
 
 DEFAULT_VALIDATION_ROOT = "outputs/refactor_validation"
+EVIDENCE_ROOT = PROJECT_ROOT / "outputs" / "dissertation_evidence"
+ARCHIVED_OUTPUT_ROOT = PROJECT_ROOT / "archive" / "research_outputs"
 
 
 def _add_run_options(parser: argparse.ArgumentParser) -> None:
@@ -91,15 +95,15 @@ def _print_run_header(
 
 def _validation_files() -> list[Path]:
     return [
-        PROJECT_ROOT / "outputs" / "meeting6" / "33_canonical_player_orientation_checks.csv",
-        PROJECT_ROOT / "outputs" / "meeting6" / "33_final_validation_checks.csv",
-        PROJECT_ROOT / "outputs" / "meeting7" / "34_input_validation_checks.csv",
-        PROJECT_ROOT / "outputs" / "meeting7" / "34_metric_validation_checks.csv",
-        PROJECT_ROOT / "outputs" / "meeting7" / "34_bootstrap_figure_validation_checks.csv",
-        PROJECT_ROOT / "outputs" / "meeting7" / "34_bootstrap_method_audit_checks.csv",
-        PROJECT_ROOT / "outputs" / "meeting7" / "34_bootstrap_robustness_validation_checks.csv",
-        PROJECT_ROOT / "outputs" / "meeting8_technical" / "41_validation_checks.csv",
-        PROJECT_ROOT / "outputs" / "meeting8_technical" / "42_validation_checks.csv",
+        ARCHIVED_OUTPUT_ROOT / "meeting6" / "33_canonical_player_orientation_checks.csv",
+        ARCHIVED_OUTPUT_ROOT / "meeting6" / "33_final_validation_checks.csv",
+        ARCHIVED_OUTPUT_ROOT / "meeting7" / "34_input_validation_checks.csv",
+        ARCHIVED_OUTPUT_ROOT / "meeting7" / "34_metric_validation_checks.csv",
+        ARCHIVED_OUTPUT_ROOT / "meeting7" / "34_bootstrap_figure_validation_checks.csv",
+        ARCHIVED_OUTPUT_ROOT / "meeting7" / "34_bootstrap_method_audit_checks.csv",
+        ARCHIVED_OUTPUT_ROOT / "meeting7" / "34_bootstrap_robustness_validation_checks.csv",
+        ARCHIVED_OUTPUT_ROOT / "meeting8_technical" / "41_validation_checks.csv",
+        ARCHIVED_OUTPUT_ROOT / "meeting8_technical" / "42_validation_checks.csv",
     ]
 
 
@@ -134,23 +138,32 @@ def validate_compact_outputs() -> bool:
                 name = getattr(row, "check_name", "unnamed_check")
                 failures.append(f"{path.name}: {name}")
 
-    overall_path = (
-        PROJECT_ROOT / "outputs" / "meeting6" / "33_overall_model_metrics.csv"
-    )
+    overall_path = EVIDENCE_ROOT / "chapter4" / "overall_model_metrics.csv"
     overall = pd.read_csv(overall_path)
     if not (overall["evaluation_games"].astype(int) == EXPECTED_TEST_MATCHES).all():
         failures.append("Step 33 evaluation row counts differ from 11,379")
 
-    entry_path = (
-        PROJECT_ROOT
-        / "outputs"
-        / "meeting8_technical"
-        / "42_entry_cohort_scale_summary.csv"
-    )
+    entry_path = EVIDENCE_ROOT / "chapter5" / "entry_cohort_definitions_core.csv"
     entry = pd.read_csv(entry_path)
-    test_rows = entry[entry["group"] == "test_year_recorded_entry"]
-    if len(test_rows) != 1 or int(test_rows.iloc[0]["n_unique_players"]) != 76:
+    test_rows = entry[entry["cohort"] == "test_year_recorded_entry"]
+    if len(test_rows) != 1 or int(test_rows.iloc[0]["players"]) != 76:
         failures.append("Step 42 test-year entrant count differs from 76")
+
+    first_path = EVIDENCE_ROOT / "chapter5" / "first_appearance_mechanism_core.csv"
+    first = pd.read_csv(first_path)
+    first_rows = first[first["model"] == "Glicko low inflation"]
+    if len(first_rows) != 1:
+        failures.append("Chapter 5 Glicko first-appearance row is missing or duplicated")
+    else:
+        first_row = first_rows.iloc[0]
+        if int(first_row["appearances"]) != 76:
+            failures.append("Chapter 5 first-appearance count differs from 76")
+        if not math.isclose(
+            float(first_row["brier"]),
+            FIRST_APPEARANCE_GOLDEN.brier_score,
+            abs_tol=1e-6,
+        ):
+            failures.append("Chapter 5 first-appearance Brier score changed")
 
     print(f"Tracked error-level checks inspected: {total_error_checks}")
     print(f"Failures: {len(failures)}")
