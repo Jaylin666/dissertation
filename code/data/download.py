@@ -1,12 +1,10 @@
 """Download annual source files when the user has authorised data access."""
 
 from pathlib import Path
-from urllib.request import Request, urlopen
-from urllib.error import HTTPError, URLError
 import time
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
-
-# 1. 基础设置
 
 BASE_URLS = [
     "http://rank.worldcroquet.org/cgs/data_dir",
@@ -15,9 +13,6 @@ BASE_URLS = [
 
 DATA_DIR = Path("data_raw")
 DATA_DIR.mkdir(exist_ok=True)
-
-
-# 2. 需要下载的文件
 
 
 YEARLY_PATTERNS = [
@@ -35,15 +30,8 @@ STATIC_FILES = [
 ]
 
 
-
-# 3. 单个文件下载函数
-
-
 def download_file(filename, output_dir=DATA_DIR, overwrite=False):
-    """
-    下载单个文件。
-    如果本地已经存在，并且 overwrite=False，则跳过。
-    """
+    """Download one source file, unless a non-empty local copy exists."""
 
     output_path = output_dir / filename
 
@@ -59,12 +47,7 @@ def download_file(filename, output_dir=DATA_DIR, overwrite=False):
         try:
             print("[DOWNLOAD]", url)
 
-            request = Request(
-                url,
-                headers={
-                    "User-Agent": "Mozilla/5.0"
-                }
-            )
+            request = Request(url, headers={"User-Agent": "Mozilla/5.0"})
 
             with urlopen(request, timeout=30) as response:
                 content = response.read()
@@ -72,39 +55,37 @@ def download_file(filename, output_dir=DATA_DIR, overwrite=False):
             if not content:
                 raise RuntimeError("Downloaded content is empty")
 
-            with open(output_path, "wb") as f:
-                f.write(content)
+            with open(output_path, "wb") as output_file:
+                output_file.write(content)
 
             size_kb = output_path.stat().st_size / 1024
             print("[OK]", filename, "saved,", round(size_kb, 2), "KB")
             return True
 
-        except HTTPError as e:
-            last_error = e
-            print("[FAILED]", filename, "HTTP error:", e.code)
+        except HTTPError as error:
+            last_error = error
+            print("[FAILED]", filename, "HTTP error:", error.code)
 
-        except URLError as e:
-            last_error = e
-            print("[FAILED]", filename, "URL error:", e)
+        except URLError as error:
+            last_error = error
+            print("[FAILED]", filename, "URL error:", error)
 
-        except Exception as e:
-            last_error = e
-            print("[FAILED]", filename, "error:", e)
+        except Exception as error:
+            last_error = error
+            print("[FAILED]", filename, "error:", error)
 
     print("[WARNING] Could not download:", filename)
     print("          Last error:", last_error)
     return False
 
 
-
-# 4. 批量下载函数
-
-
-def download_all_years(start_year=1985, end_year=2025, overwrite=False, sleep_seconds=0.2):
-    """
-    批量下载所有年份文件。
-    start_year 和 end_year 都包含在内。
-    """
+def download_all_years(
+    start_year=1985,
+    end_year=2025,
+    overwrite=False,
+    sleep_seconds=0.2,
+):
+    """Download all expected files for the inclusive year range."""
 
     success_files = []
     failed_files = []
@@ -118,7 +99,6 @@ def download_all_years(start_year=1985, end_year=2025, overwrite=False, sleep_se
 
         for pattern in YEARLY_PATTERNS:
             filename = pattern.format(year=year)
-
             ok = download_file(filename, output_dir=DATA_DIR, overwrite=overwrite)
 
             if ok:
@@ -149,20 +129,14 @@ def download_all_years(start_year=1985, end_year=2025, overwrite=False, sleep_se
 
     if failed_files:
         print("\nFailed list:")
-        for f in failed_files:
-            print(" -", f)
+        for filename in failed_files:
+            print(" -", filename)
 
     return success_files, failed_files
 
 
-
-# 5. 检查本地文件
-
-
 def check_downloaded_files(start_year=1985, end_year=2025):
-    """
-    检查 data_raw 文件夹里应该有的文件是否存在。
-    """
+    """Report expected source files that are present or missing locally."""
 
     expected_files = []
 
@@ -191,37 +165,25 @@ def check_downloaded_files(start_year=1985, end_year=2025):
 
     if missing_files:
         print("\nMissing list:")
-        for f in missing_files:
-            print(" -", f)
+        for filename in missing_files:
+            print(" -", filename)
 
     return existing_files, missing_files
 
 
-
-# 6. 主程序
-
-
 if __name__ == "__main__":
-
-    # 先建议你只下载 2025 年测试
-    # 确认没问题后，再改成 1985 到 2025
-
-    #START_YEAR = 2025
-    #END_YEAR = 2025
-
-    # 如果想下载全部年份，改成：
     START_YEAR = 1985
     END_YEAR = 2025
 
-    # overwrite=False 表示已有文件就跳过，不重复下载
+    # Existing non-empty files are retained when overwrite is false.
     download_all_years(
         start_year=START_YEAR,
         end_year=END_YEAR,
         overwrite=False,
-        sleep_seconds=0.2
+        sleep_seconds=0.2,
     )
 
     check_downloaded_files(
         start_year=START_YEAR,
-        end_year=END_YEAR
+        end_year=END_YEAR,
     )

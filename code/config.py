@@ -111,7 +111,7 @@ class GlickoConfig:
         if self.inactivity_unit != "month":
             raise ValueError("The frozen low-inflation configuration uses months")
         if self.rating_period != "match_by_match":
-            raise ValueError("The frozen primary Glicko model is match-by-match")
+            raise ValueError("The frozen primary Glicko model uses one game per period")
 
     @property
     def inactivity_c(self) -> float:

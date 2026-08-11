@@ -1,136 +1,128 @@
 # Croquet Rating Systems Dissertation
 
-This repository contains the technical analysis for an MSc dissertation
-comparing Elo and Glicko-type rating systems for Association Croquet match
-data.
+## Overview
 
-## Project overview
+This repository contains the technical implementation and controlled evidence
+for an MSc dissertation comparing Elo and Glicko-1 rating systems for
+Association Croquet. The empirical analysis and dissertation parameters are
+frozen. The repository is organised to make the current implementation,
+automated validation, Chapter 4 and Chapter 5 evidence, and research history
+easy to distinguish.
 
-The project studies probabilistic match prediction and rating-system behaviour,
-including:
-
-- baseline and validation-selected Elo models;
-- classic Glicko-1;
-- inactivity-based rating-deviation inflation;
-- adaptive-K Elo;
-- a fixed 2025 test evaluation;
-- early-game and first-recorded-appearance diagnostics;
-- burn-in definitions and rating-scale alignment.
-
-Active modules in `code/` are organised by responsibility. The original
-numbered development sequence is preserved under `archive/legacy_steps/` and
-mapped in `CODE_MAP.md`.
-
-## Current main findings
-
-- Low-inflation Glicko performs slightly better overall than the strongest Elo
-  baseline on the fixed 2025 test set.
-- First recorded appearance is the clearest limitation of the selected Glicko
-  specification.
-- The 2025 first-appearance sample consists entirely of players entering the
-  recorded system after a long burn-in, rather than players created at the
-  1985 model start.
-- The fixed entry rating of 1500 is high relative to both the contemporaneous
-  prematch established-player scale and the ratings of actual first opponents.
-- A first recorded appearance does not necessarily represent a true career
-  debut.
-- Historical entry-cohort results are descriptive mechanism evidence; 2025 is
-  the formal held-out test.
-
-These findings support a relative new-player initialisation mismatch
-interpretation. They do not establish that rating-scale movement alone causes
-the first-appearance prediction error.
+The repository is not fully self-contained. Raw source data and large
+row-level intermediates are intentionally excluded from Git and are required
+for a complete reconstruction.
 
 ## Repository structure
 
-- `code/`: active modular data, model, pipeline, analysis, CLI, and validation
-  code.
-- `archive/legacy_steps/`: preserved numbered research scripts and historical
-  one-off experiments.
-- `tests/`: equation, orientation, entry-definition, and golden-output
-  regression tests.
-- `refactor/`: audit inventory, dependency map, refactor plan, and validation
-  evidence.
-- `outputs/`: selected compact result tables, validation checks, summaries,
-  manifests, and figures.
-- `outputs/meeting6/`: orientation correction and supporting diagnostics.
-- `outputs/meeting7/`: early-game, first-appearance, initialisation, adaptive-K,
-  and probability-orientation results.
-- `outputs/meeting8_technical/`: burn-in, rating-scale, strict prematch, and
-  cross-file audits from Steps 41 and 42.
+- `code/`: supported modular implementation and command-line interface.
+  - `models/` contains the canonical Elo and Glicko-1 equations.
+  - `data/` validates and constructs the checked historical game table.
+  - `pipelines/` contains the supported Elo, Glicko, and comparison workflows.
+  - `analysis/` contains orientation, early-game, rating-drift, and
+    recorded-entry diagnostics.
+  - `config.py` records frozen dissertation parameters and expected values.
+- `tests/`: equation, probability-orientation, recorded-entry, and frozen
+  output regression tests.
+- `outputs/dissertation_evidence/`: controlled compact evidence for the
+  dissertation.
+- `archive/`: legacy scripts, historical research outputs, and completed
+  refactor records retained for auditability.
+- `CODE_MAP.md`: map from the chronological research scripts to the current
+  modules or archive.
 
-## Active code structure
+`code/glicko_core.py` is a compatibility layer for historical imports. New
+code should import the canonical implementation from `code/models/glicko.py`.
 
-New users should use the modular code under `code/`:
+## Reproducing the analysis
 
-- `code/models/elo.py` and `code/models/glicko.py` contain the canonical rating
-  equations;
-- `code/data/build_matches.py` validates and constructs the fixed
-  full-history match table;
-- `code/pipelines/` contains the supported Elo, Glicko, and comparison
-  workflows;
-- `code/analysis/` contains orientation, early-game, rating-drift, and entry
-  diagnostics;
-- `code/config.py` records frozen dissertation parameters;
-- `code/cli.py` provides the supported command-line interface.
-
-The active code contains no numbered research scripts. See `code/README.md`
-for the complete command list.
-
-## Legacy research scripts
-
-The original chronological scripts are retained under
-`archive/legacy_steps/` for auditability and research history. They are not
-the recommended entry points for current reproduction, and some require
-historical intermediate output files. `CODE_MAP.md` records the purpose,
-status, outputs, and active replacement for every original numbered script.
-The safety tag `pre-code-cleanup-2026` preserves the exact pre-refactor tree.
-
-## Reproducibility
-
-Install the external Python dependencies with:
+Python 3.10 or later is required. Install the external dependencies in an
+isolated environment:
 
 ```bash
+python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-The supported interface is the command-line module:
+Run the lightweight checks that do not rebuild the historical analysis:
 
 ```bash
-python -m code.cli --help
 python -m code.cli validate
 python -m unittest discover -s tests -v
 python -m compileall -f code
 ```
 
-Full runs are explicit and can be redirected to a protected output root:
+The first command checks tracked validation records and controlled evidence;
+the unit tests cover the rating equations, orientation rules, recorded-entry
+definitions, and frozen headline values. These checks do not rerun the rating
+models or generate new dissertation results.
+
+## Main workflows
+
+Inspect the supported commands and their inputs before attempting a full run:
 
 ```bash
-python -m code.cli run-elo --full-run --output-root outputs/refactor_validation
-python -m code.cli entry-diagnostics --full-run --output-root outputs/refactor_validation
+python -m code.cli --help
+python -m code.cli build-data --help
+python -m code.cli run-elo --help
+python -m code.cli run-glicko --help
+python -m code.cli compare-models --help
+python -m code.cli early-game --help
+python -m code.cli entry-diagnostics --help
 ```
 
-See `code/README.md` for all entry points. This repository is not fully
-self-contained: raw match data and several large generated intermediate tables
-are intentionally not tracked. To reproduce the full workflow, obtain the
-annual source data separately, place it under `data_raw/`, and build the
-full-history input before downstream analyses.
+Computational workflows run only when `--full-run` is supplied and should be
+directed to an ignored local output root, for example:
 
-The repository retains compact summaries and validation artifacts rather than
-large per-match predictions, player-appearance tables, complete rating
-histories, or repeated parameter-search traces. In particular, raw data,
-processed full-history match tables, multi-gigabyte burn-in histories, and
-other reproducible row-level outputs are excluded from Git.
+```bash
+python -m code.cli run-elo --full-run --output-root outputs/reproduction
+```
 
-## Data
+The commands represent the supported data build, Elo, Glicko,
+orientation-corrected comparison, early-game, and recorded-entry workflows.
+They are not a one-command reproduction pipeline: each full run requires its
+documented upstream source or intermediate files. The CLI prints the exact
+paths and frozen parameter configuration before execution.
 
-The analysis uses historical Association Croquet match records organised as
-annual match, event, and player data files. Raw data are not published in this
-repository. Users must obtain permission and access to the underlying source
-data independently.
+## Dissertation evidence
 
-## Status
+The controlled evidence packages are:
 
-The technical analysis is provisionally frozen. The main project focus has
-moved to dissertation writing, with additional computation limited to
-targeted checks required by the written argument.
+- `outputs/dissertation_evidence/chapter4/`: Elo selection, overall model
+  comparison, calibration, Glicko sensitivity, and adaptive-K evidence.
+- `outputs/dissertation_evidence/chapter5/`: early-game performance,
+  first-recorded-appearance mechanisms, entry-scale alignment, and robustness
+  evidence.
+
+Each package contains its own README and manifest. The manifests document
+scope, probability orientation, provenance, reporting status, and hashes.
+Chapter 4 and Chapter 5 files are the compact evidence sources to use when
+checking the dissertation; exploratory or superseded outputs must not replace
+the controlled files.
+
+## Data availability
+
+The analysis uses annual Association Croquet game, event, player, and index
+files for 1985-2025. These raw files are not published in this repository.
+They must be obtained separately from the source provider under the applicable
+access and use conditions, then placed under `data_raw/` using the filenames
+expected by `code/data/download.py` and `code/data/build_matches.py`.
+
+The checked full-history table, per-game predictions, rating histories,
+player-appearance tables, caches, and repeated experiment dumps are also
+excluded from Git. After obtaining the source data, reconstruct the checked
+historical table before running downstream workflows. Generated files under
+`outputs/` are ignored by default; only the reviewed dissertation evidence
+packages are tracked there.
+
+## Legacy material
+
+`archive/legacy_steps/` preserves chronological scripts that are useful for
+provenance but are not supported entry points. `archive/research_outputs/`
+preserves compact pre-evidence results; its README explains how historical
+manifest paths map to the archive. `archive/refactor_history/` records the
+completed modular refactor and its regression checks.
+
+Use the tagged historical snapshots only when an exact earlier layout is
+needed. For current use, start with `code/`, `tests/`, and the controlled
+evidence packages.

@@ -56,7 +56,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     for command, help_text in (
-        ("build-data", "Build or validate the checked 1985-2025 match dataset."),
+        ("build-data", "Build or validate the checked 1985-2025 game dataset."),
         ("run-elo", "Run or validate the frozen Elo configurations."),
         ("run-glicko", "Run or validate the frozen Glicko configurations."),
         ("compare-models", "Recompute or validate orientation-corrected comparisons."),
@@ -187,7 +187,7 @@ def command_build_data(args: argparse.Namespace) -> int:
         [output],
         [
             f"years={FULL_HISTORY_START_YEAR}-{FULL_HISTORY_END_YEAR}",
-            f"expected_matches={EXPECTED_FULL_HISTORY_MATCHES}",
+            f"expected_games={EXPECTED_FULL_HISTORY_MATCHES}",
             f"expected_players={EXPECTED_UNIQUE_PLAYERS}",
             "missing parsed dates are retained",
             "stable chronological ordering",
@@ -199,7 +199,7 @@ def command_build_data(args: argparse.Namespace) -> int:
     else:
         matches = pd.read_csv(build_matches.MATCHES_OUTPUT_PATH, low_memory=False)
         build_matches.validate_canonical_counts(matches)
-        print("Existing checked-match dataset counts: PASS")
+        print("Existing checked-game dataset counts: PASS")
     return 0
 
 
@@ -246,8 +246,8 @@ def command_run_glicko(args: argparse.Namespace) -> int:
             f"initial_rating={GLICKO_LOW_INFLATION.initial_rating}",
             f"initial_rd={GLICKO_LOW_INFLATION.initial_rd}",
             f"rd_bounds={GLICKO_LOW_INFLATION.minimum_rd}-{GLICKO_LOW_INFLATION.maximum_rd}",
-            f"low_inflation_c={GLICKO_LOW_INFLATION.inactivity_c:.12f}",
-            f"rating_period={GLICKO_LOW_INFLATION.rating_period}",
+            f"low_inflation_C={GLICKO_LOW_INFLATION.inactivity_c:.12f}",
+            "rating_period=one_game_per_period",
         ],
     )
     if args.full_run:
@@ -271,7 +271,7 @@ def command_compare_models(args: argparse.Namespace) -> int:
         [
             "formal Glicko convention=direct player-A probability",
             f"bootstrap_repetitions={BOOTSTRAP_REPETITIONS}",
-            f"test_matches={EXPECTED_TEST_MATCHES}",
+            f"test_games={EXPECTED_TEST_MATCHES}",
         ],
     )
     if args.full_run:
@@ -333,7 +333,7 @@ def command_entry_diagnostics(args: argparse.Namespace) -> int:
             "model_start_year=1985",
             "post_burn_in_start_year=1990",
             f"test_year={TEST_YEAR}",
-            f"low_inflation_c={GLICKO_LOW_INFLATION.inactivity_c:.12f}",
+            f"low_inflation_C={GLICKO_LOW_INFLATION.inactivity_c:.12f}",
             "Step 42 strict classification is primary",
             "Step 41 end-of-year scale summaries are retained",
         ],

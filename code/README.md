@@ -3,7 +3,7 @@
 The active code is organised by responsibility rather than meeting number:
 
 - `models/`: canonical Elo and Glicko equations;
-- `data/`: source download and full-history match construction;
+- `data/`: source download and checked historical game construction;
 - `pipelines/`: Elo, Glicko, and orientation-corrected comparison workflows;
 - `analysis/`: orientation, early-game, burn-in, drift, and entry diagnostics;
 - `config.py`: frozen dissertation parameters and expected sample sizes;
@@ -35,14 +35,16 @@ python -m code.cli entry-diagnostics --help
 Run a full workflow below a protected output root:
 
 ```bash
-python -m code.cli run-elo --full-run --output-root outputs/refactor_validation
-python -m code.cli run-glicko --full-run --output-root outputs/refactor_validation
-python -m code.cli compare-models --full-run --output-root outputs/refactor_validation
-python -m code.cli early-game --full-run --output-root outputs/refactor_validation
-python -m code.cli entry-diagnostics --full-run --output-root outputs/refactor_validation
+python -m code.cli run-elo --full-run --output-root outputs/reproduction
+python -m code.cli run-glicko --full-run --output-root outputs/reproduction
+python -m code.cli compare-models --full-run --output-root outputs/reproduction
+python -m code.cli early-game --full-run --output-root outputs/reproduction
+python -m code.cli entry-diagnostics --full-run --output-root outputs/reproduction
 ```
 
 The default CLI mode is validation-only. A computational workflow runs only
 when `--full-run` is supplied. Full runs require the untracked large
-intermediate datasets described in the root `README.md`.
+intermediate datasets described in the root `README.md`. These examples are
+individual entry points, not a claim that all workflows can be reproduced with
+one command.
 
