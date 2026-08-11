@@ -1,2 +1,0 @@
-n_matches,recenter_reference,maximum_absolute_probability_difference,brier_nonrecentered,brier_recentered,difference_in_brier,log_loss_nonrecentered,log_loss_recentered,difference_in_log_loss,probabilities_identical_within_tolerance
-11379,"After each calendar year, shift current ratings and the future-new-player initial rating by the same constant so the active mean is 1500.",3.6637359812630166e-15,0.1907814225361941,0.1907814225361941,0.0,0.5591847915469793,0.5591847915469793,0.0,True

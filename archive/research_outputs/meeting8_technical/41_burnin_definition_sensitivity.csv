@@ -1,5 +1,0 @@
-﻿burn_in_years,burn_in_calendar_years,post_burn_in_start_year,n_post_burn_in_first_appearances,mean_predicted_win_probability,empirical_win_rate,prediction_bias,brier,mean_opponent_rating,mean_focal_minus_opponent_rating,n_2025_first_appearances_retained,interpretation
-1,1985-1985,1986,4829,0.5840572697831062,0.3226340857320356,0.2614231840510706,0.27460732784090425,1394.3601462205131,105.63985377948697,76,Sensitivity only. The primary definition uses five calendar years.
-3,1985-1987,1988,4637,0.5897853351377179,0.32585723528143196,0.26392809985628596,0.2768893593888268,1387.3596095026846,112.64039049731538,76,Sensitivity only. The primary definition uses five calendar years.
-5,1985-1989,1990,4373,0.5985059109079098,0.32860736336611024,0.2698985475417996,0.2803376215604555,1376.3197058939018,123.68029410609836,76,Sensitivity only. The primary definition uses five calendar years.
-10,1985-1994,1995,3710,0.6183027269808165,0.3318059299191375,0.28649679706167896,0.2921951601684605,1350.509559075526,149.49044092447406,76,Sensitivity only. The primary definition uses five calendar years.

@@ -1,4 +1,0 @@
-﻿figure,path,description
-41_fig01,outputs\meeting8_technical\figures\41_fig01_glicko_rating_scale_by_year.png,"Annual mean and median ratings for active players first observed before that year, compared with the fixed 1500 new-player anchor."
-41_fig02,outputs\meeting8_technical\figures\41_fig02_debut_anchor_by_year.png,Mean and median opponent rating faced on first recorded appearance for post-burn-in entry years.
-41_fig03,outputs\meeting8_technical\figures\41_fig03_debut_prediction_by_cohort.png,"Mean current-convention Glicko probability and empirical win rate for the model-start, burn-in, post-burn-in, and 2025 entry cohorts."

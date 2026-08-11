@@ -1,5 +1,0 @@
-﻿predictor,target,n,pearson_correlation,spearman_correlation,status
-opponent_Glicko_low_RD,Glicko_predicted_probability,76,-0.08319011230703104,0.1824172819250752,ok
-opponent_Glicko_low_RD,absolute_distance_from_0_5,76,-0.25275212000133085,0.11966092425485371,ok
-opponent_Glicko_low_RD,Glicko_Brier_loss,76,0.030840067090995855,0.03018867924528302,ok
-opponent_Glicko_low_RD,prediction_bias_contribution,76,-0.15308406975777064,-0.056436618262231474,ok

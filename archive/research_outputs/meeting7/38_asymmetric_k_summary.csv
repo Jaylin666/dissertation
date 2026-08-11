@@ -1,2 +1,0 @@
-n_matches,mean_K_A,mean_K_B,median_K,minimum_K,maximum_K,mean_absolute_K_A_minus_K_B,percentage_matches_K_A_equals_K_B,percentage_matches_K_A_differs_from_K_B,mean_absolute_rating_change,mean_net_rating_change_per_match,total_net_rating_change
-11379,16.2175938131646,17.399595746550663,20.0,10.0,30.0,6.215836189471834,47.05158625538272,52.94841374461727,6.593447861532992,-0.18436638684160764,-2097.9051158706534

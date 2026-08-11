@@ -1,7 +1,7 @@
 # Legacy research steps
 
-This directory preserves the numbered Python scripts in their original
-development order. They record how the analysis evolved across meetings and
+This directory preserves scientifically relevant numbered Python scripts in
+their original development order. They record how the analysis evolved and
 remain useful for scientific audit, provenance, and interpretation of older
 output filenames.
 
@@ -16,11 +16,11 @@ Use the active modules under `code/` and the commands documented in
 chronological script groups to their archive locations and, where applicable,
 their active replacements.
 
-No legacy script was deleted during the refactor. Thirty-eight root-level
-historical scripts were moved here, and the exact original Step 33 script was
-additionally restored from the safety tag for source reference. Steps 7, 24,
-33, 34, 41, and 42 were promoted to active modules while retaining their Git
-history.
+Steps 7, 24, 33, 34, 41, and 42 were promoted to active modules while
+retaining their Git history. Scientific experiments, equation checks, model
+validation, and evidence-generating scripts remain here. Helpers whose sole
+purpose was Word export, translated filename copying, or experiment-plan
+generation are omitted from the final technical deliverable.
 
 The safety tag `pre-code-cleanup-2026` preserves the original runnable
 directory layout. A user who needs that exact historical layout should check

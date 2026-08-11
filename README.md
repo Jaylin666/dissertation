@@ -6,8 +6,8 @@ This repository contains the technical implementation and controlled evidence
 for an MSc dissertation comparing Elo and Glicko-1 rating systems for
 Association Croquet. The empirical analysis and dissertation parameters are
 frozen. The repository is organised to make the current implementation,
-automated validation, Chapter 4 and Chapter 5 evidence, and research history
-easy to distinguish.
+automated validation, Chapter 4 and Chapter 5 evidence, and scientific
+provenance easy to distinguish.
 
 The repository is not fully self-contained. Raw source data and large
 row-level intermediates are intentionally excluded from Git and are required
@@ -26,8 +26,8 @@ for a complete reconstruction.
   output regression tests.
 - `outputs/dissertation_evidence/`: controlled compact evidence for the
   dissertation.
-- `archive/`: legacy scripts, historical research outputs, and completed
-  refactor records retained for auditability.
+- `archive/`: scientifically relevant legacy scripts plus the compact source
+  and validation artefacts needed for provenance and regression checks.
 - `CODE_MAP.md`: map from the chronological research scripts to the current
   modules or archive.
 
@@ -121,13 +121,14 @@ historical table before running downstream workflows. Generated files under
 `outputs/` are ignored by default; only the reviewed dissertation evidence
 packages are tracked there.
 
-## Legacy material
+## Scientific provenance
 
-`archive/legacy_steps/` preserves chronological scripts that are useful for
-provenance but are not supported entry points. `archive/research_outputs/`
-preserves compact pre-evidence results; its README explains how historical
-manifest paths map to the archive. `archive/refactor_history/` records the
-completed modular refactor and its regression checks.
+`archive/legacy_steps/` preserves chronological scientific analysis and
+validation scripts that remain useful for provenance but are not supported
+entry points. Writing-only exporters and experiment-planning helpers are not
+part of the technical deliverable. `archive/research_outputs/` retains only
+compact source artefacts referenced by the controlled-evidence manifests and
+the validation tables read by the current checks.
 
 Use the tagged historical snapshots only when an exact earlier layout is
 needed. For current use, start with `code/`, `tests/`, and the controlled

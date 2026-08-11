@@ -5,8 +5,8 @@ The supported implementation is under `code/`. Chronological scripts under
 dependencies. Archived scripts may rely on historical paths or excluded
 intermediate data and are not guaranteed to run from the archive.
 
-The tags `pre-code-cleanup-2026` and `post-code-cleanup-validated-2026`
-preserve the layouts before and immediately after the modular refactor.
+Earlier layouts remain available through Git history and the repository's
+historical tags when exact development-era paths are required.
 
 ## Current supported implementation
 
@@ -33,10 +33,10 @@ active Glicko-1 formula implementation: `code/models/glicko.py`.
 
 | Historical step or file | Historical purpose | Current status / replacement |
 |---|---|---|
-| Steps 01-06 | Initial inspection, single-year Elo, reporting utilities | Audit-only scripts in `archive/legacy_steps/`; checked loading is consolidated in `code/io_utils.py`. |
+| Steps 01-05 | Initial inspection, single-year Elo, evaluation, and scientific summaries | Audit-only scripts in `archive/legacy_steps/`; checked loading is consolidated in `code/io_utils.py`. |
 | Step 07 | Multi-year checked data construction | Promoted into `code/data/build_matches.py`. |
 | Steps 08-17 | Multi-year Elo, validation, burn-in, stability, and baseline decisions | Core workflow consolidated in `code/pipelines/elo_pipeline.py`; frozen settings are in `code/config.py`; distinct experiments remain audit-only. |
-| Steps 18-23 | Glicko equation checks, baselines, period sensitivity, and validation | Equations and checks consolidated in `code/models/glicko.py` and `tests/test_glicko_core.py`; historical experiments remain audit-only. |
+| Steps 18-21 and 23 | Glicko equation checks, baselines, period sensitivity, and validation | Equations and checks consolidated in `code/models/glicko.py` and `tests/test_glicko_core.py`; historical scientific experiments and checks remain audit-only. |
 | Step 24 | Low-inflation Glicko workflow | Promoted into `code/pipelines/glicko_pipeline.py`. |
 | Step 25 | Rating-period runtime comparison | Audit-only in `archive/legacy_steps/`. |
 | Steps 26-31 | Fair comparison, adaptive-K, prematch features, and pre-correction diagnostics | Superseded historical sequence retained in the archive; applicable helpers are consolidated in the active pipelines and analyses. |
@@ -51,17 +51,19 @@ active Glicko-1 formula implementation: `code/models/glicko.py`.
 | `load_croquet_data.py` | Annual source-file download | Promoted into `code/data/download.py`; raw data remain untracked. |
 | `meeting7_final_code_audit.py` | Historical code/output audit | Audit-only in `archive/legacy_steps/`; current automated checks are under `tests/`. |
 
-The archive README lists the exact retained filenames. Git history records the
-promotions and moves when file-level provenance is required.
+Git history records the promotions and moves when file-level provenance is
+required.
 
 ## Output provenance
 
 Controlled dissertation evidence remains under
 `outputs/dissertation_evidence/chapter4/` and
-`outputs/dissertation_evidence/chapter5/`. Compact chronological Meeting 5-8
-outputs now reside under `archive/research_outputs/`.
+`outputs/dissertation_evidence/chapter5/`. `archive/research_outputs/` retains
+only the compact archived inputs required by current validation/tests and the
+existing source artefacts referenced by the evidence manifests.
 
 Evidence manifests intentionally retain original generation paths such as
-`outputs/meeting6/...`. Map those paths by replacing the leading `outputs/`
-with `archive/research_outputs/`. No evidence values or hashes were changed by
-this reorganisation.
+`outputs/meeting6/...`. Where the corresponding compact source is retained,
+replace the leading `outputs/` with `archive/research_outputs/`. Git history
+and the frozen submission tag preserve the complete published layout. No
+controlled evidence values or hashes were changed by this cleanup.
