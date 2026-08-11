@@ -12,4 +12,3 @@ recommended reproduction entry point.
 
 Use `code/`, `tests/`, and `outputs/dissertation_evidence/` for the supported
 implementation, automated checks, and dissertation evidence respectively.
-

@@ -40,7 +40,7 @@ All three are Step 33 outputs using canonical Player A, `outcome_a` and direct P
 
 Use `glicko_inflation_sensitivity.csv` only as an exploratory 2025 sensitivity comparing the relative ordering of C0, low, medium and high inactivity-inflation settings. This historical table uses actual-winner probability. The formal headline comparison between Glicko C0 and low inflation must come from the Step 33 orientation-corrected files in Section 4.3, not from this sensitivity table.
 
-Use `glicko_rating_period_metrics.csv` for the C=0 comparison of match-by-match, event-level, monthly and yearly rating periods. This table uses fixed canonical Player A, `actual_a_win` and direct Player-A probability. Its match-by-match result reconciles with Step 33 orientation-corrected Glicko C0 within floating-point tolerance. It must not be described as a low-inflation rating-period comparison. The Step 25 low-inflation winner-oriented table can describe historical period ordering but is not the formal numerical source used here.
+Use `glicko_rating_period_metrics.csv` for the C=0 comparison of game-by-game, event-level, monthly and yearly rating periods. This table uses fixed canonical Player A, `actual_a_win` and direct Player-A probability. Its game-by-game result reconciles with Step 33 orientation-corrected Glicko C0 within floating-point tolerance. It must not be described as a low-inflation rating-period comparison. The Step 25 low-inflation winner-oriented table can describe historical period ordering but is not the formal numerical source used here.
 
 ## Section 4.6: Adaptive-K evidence
 
@@ -55,7 +55,7 @@ Use `adaptive_k_recovery.csv` for the short adaptive-K negative/proof-of-concept
 
 ## Probability orientation and supersession rules
 
-For Step 33 evidence, canonical Player A is defined independently of the match result as the lower numeric player identifier, `outcome_a` records whether that player won, and Glicko probabilities are calculated directly from Player A's perspective. This is not actual-winner orientation.
+For Step 33 evidence, canonical Player A is defined independently of the game result as the lower numeric player identifier, `outcome_a` records whether that player won, and Glicko probabilities are calculated directly from Player A's perspective. This is not actual-winner orientation.
 
 Do not use probability-based outputs from Steps 29-31 in place of the Step 33 overall, pairwise, bootstrap or calibration evidence. Step 33 supersedes those older probability-based results. Historical non-probability diagnostics may still be used when their scope is stated correctly.
 

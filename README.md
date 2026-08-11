@@ -94,6 +94,12 @@ The controlled evidence packages are:
   first-recorded-appearance mechanisms, entry-scale alignment, and robustness
   evidence.
 
+The primary Elo specification was selected using chronological validation on
+2023-2024 data; 2025 outcomes were not used for that selection. The Glicko
+inactivity settings and adaptive-K variants were instead explored using the
+2025 evaluation results, so they are exploratory comparisons rather than
+independently validation-selected final models.
+
 Each package contains its own README and manifest. The manifests document
 scope, probability orientation, provenance, reporting status, and hashes.
 Chapter 4 and Chapter 5 files are the compact evidence sources to use when

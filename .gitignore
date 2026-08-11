@@ -56,3 +56,13 @@ downloads/
 outputs/*
 !outputs/dissertation_evidence/
 !outputs/dissertation_evidence/**
+outputs/dissertation_evidence/chapter4/calibration_player_a.pdf
+outputs/dissertation_evidence/chapter4/calibration_player_a_600dpi.png
+outputs/dissertation_evidence/chapter4/overall_brier_zoomed.pdf
+outputs/dissertation_evidence/chapter4/overall_brier_zoomed_600dpi.png
+outputs/dissertation_evidence/chapter5/figures/predicted_vs_empirical_replot.pdf
+outputs/dissertation_evidence/chapter5/figures/predicted_vs_empirical_replot_600dpi.png
+outputs/dissertation_evidence/chapter5/figures/prematch_scale_alignment_2025_replot.pdf
+outputs/dissertation_evidence/chapter5/figures/prematch_scale_alignment_2025_replot_600dpi.png
+outputs/dissertation_evidence/chapter5/figures/stage_brier_replot.pdf
+outputs/dissertation_evidence/chapter5/figures/stage_brier_replot_600dpi.png
