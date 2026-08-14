@@ -1307,6 +1307,42 @@ def plot_errorbar(df: pd.DataFrame, label_col: str, y_col: str, low_col: str, hi
     plt.close(fig)
 
 
+def create_player_a_calibration_gap_figure(
+    calibration_bins: pd.DataFrame,
+    path: Path,
+) -> Path:
+    """Plot calibration gaps for the two reported models."""
+
+    model_order = ["Glicko_low_fixed", "Validation_best_Elo"]
+    expected_bins = [f"{lower / 10:.1f}-{(lower + 1) / 10:.1f}" for lower in range(10)]
+    selected = calibration_bins.loc[
+        calibration_bins["sample"].eq("Overall")
+        & calibration_bins["model"].isin(model_order)
+        & calibration_bins["games"].gt(0)
+    ].copy()
+
+    fig, ax = plt.subplots(figsize=(9.0, 4.6))
+    for model in model_order:
+        model_bins = selected.loc[selected["model"].eq(model)].sort_values("bin_lower")
+        if model_bins["bin_label"].tolist() != expected_bins:
+            raise ValueError(f"Unexpected calibration bins for {model}")
+        ax.plot(
+            model_bins["bin_label"],
+            model_bins["calibration_gap"],
+            marker="o",
+            label=MODEL_LABELS[model],
+        )
+    ax.axhline(0.0, color="#1f77b4", linestyle="--", linewidth=1.0)
+    ax.set_xlabel("Player-A probability interval")
+    ax.set_ylabel("Empirical win rate minus\nmean predicted probability")
+    ax.tick_params(axis="x", rotation=30)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+    return path
+
+
 def create_figures(
     scores: pd.DataFrame,
     overall_metrics: pd.DataFrame,
@@ -1421,20 +1457,8 @@ def create_figures(
     plot_errorbar(pd.DataFrame(rd_rows), "rd_quartile", "delta_brier_glicko_vs_elo", "delta_brier_ci_lower", "delta_brier_ci_upper", "Glicko advantage by no-debut pre-match RD quartile", "Elo Brier - Glicko Brier", fig_path)
     paths.append(fig_path)
 
-    fig_path = FIGURE_DIR / "33_fig07_standard_player_a_calibration.png"
-    fig, ax = plt.subplots(figsize=(6.8, 5.6))
-    cal = calibration_bins.loc[(calibration_bins["sample"] == "Overall") & (calibration_bins["model"].isin(["Glicko_low_fixed", "Validation_best_Elo", "best_AdaptiveK", "Glicko_C0_fixed"])) & (calibration_bins["games"] > 0)].copy()
-    for alias, group in cal.groupby("model", sort=False):
-        ax.plot(group["mean_player_a_probability"], group["empirical_player_a_win_rate"], marker="o", label=MODEL_LABELS[alias])
-    ax.plot([0, 1], [0, 1], color="#666666", linestyle="--", linewidth=1)
-    ax.set_xlabel("Mean predicted player-A win probability")
-    ax.set_ylabel("Empirical player-A win rate")
-    ax.set_title("Standard calibration using common player-A outcome")
-    ax.legend()
-    ax.grid(alpha=0.25)
-    fig.tight_layout()
-    fig.savefig(fig_path, dpi=200)
-    plt.close(fig)
+    fig_path = FIGURE_DIR / "33_fig07_player_a_calibration_gap.png"
+    create_player_a_calibration_gap_figure(calibration_bins, fig_path)
     paths.append(fig_path)
 
     fig_path = FIGURE_DIR / "33_fig08_orientation_sensitivity.png"
