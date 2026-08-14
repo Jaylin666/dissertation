@@ -1,8 +1,4 @@
-"""Canonical reusable Elo equations.
-
-The module contains no file I/O and does not choose an evaluation sample.
-Pipelines supply the frozen configuration and chronological match order.
-"""
+"""Elo equations and adaptive update rules."""
 
 from __future__ import annotations
 
@@ -18,7 +14,7 @@ Number = Union[int, float]
 
 @dataclass(frozen=True)
 class EloUpdate:
-    """One two-player Elo update calculated from pre-match ratings."""
+    """Result of one Elo update."""
 
     winner_rating_before: float
     loser_rating_before: float
@@ -36,7 +32,7 @@ def _finite(value: Number, label: str) -> float:
 
 
 def expected_score(rating_a: Number, rating_b: Number, scale: Number) -> float:
-    """Return the Elo probability that player A beats player B."""
+    """Return player A's expected score."""
 
     rating_a_value = _finite(rating_a, "rating_a")
     rating_b_value = _finite(rating_b, "rating_b")
@@ -55,7 +51,7 @@ def update_winner_loser(
     k_factor: Number,
     scale: Number,
 ) -> EloUpdate:
-    """Update a winner and loser with the historical symmetric Elo equation."""
+    """Update one winner and loser."""
 
     winner_before = _finite(winner_rating, "winner_rating")
     loser_before = _finite(loser_rating, "loser_rating")
@@ -79,7 +75,7 @@ def update_with_config(
     loser_rating: Number,
     config: EloConfig,
 ) -> EloUpdate:
-    """Update a match using one named immutable Elo configuration."""
+    """Update one game with the given configuration."""
 
     return update_winner_loser(
         winner_rating=winner_rating,
@@ -90,7 +86,7 @@ def update_with_config(
 
 
 def adaptive_k_total(previous_total_games: Number) -> float:
-    """Return the historical total-games adaptive K from Step 27."""
+    """Return adaptive K from total prior games."""
 
     games = int(previous_total_games)
     if games < 0:
@@ -103,7 +99,7 @@ def adaptive_k_total(previous_total_games: Number) -> float:
 
 
 def adaptive_k_previous_year(previous_year_games: Number) -> float:
-    """Return the historical previous-year adaptive K from Steps 27 and 38."""
+    """Return adaptive K from previous-year games."""
 
     games = int(previous_year_games)
     if games < 0:

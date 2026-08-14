@@ -1,1 +1,1 @@
-"""Canonical code package for the croquet rating-system dissertation."""
+"""Croquet rating analysis package."""

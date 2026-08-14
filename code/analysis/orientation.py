@@ -1,4 +1,4 @@
-"""Canonical player and probability orientation helpers."""
+"""Player orientation helpers."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ Side = Literal["a", "b"]
 
 
 def canonical_players(player_one: int, player_two: int) -> Tuple[int, int]:
-    """Return deterministic player A and B identifiers."""
+    """Return Player A and Player B in ascending database-ID order."""
 
     first = int(player_one)
     second = int(player_two)
@@ -21,7 +21,7 @@ def canonical_players(player_one: int, player_two: int) -> Tuple[int, int]:
 
 
 def canonical_outcome(winner_id: int, player_a_id: int, player_b_id: int) -> int:
-    """Return one when canonical player A won and zero when player B won."""
+    """Return one for a Player A win and zero for a Player B win."""
 
     winner = int(winner_id)
     player_a = int(player_a_id)
@@ -34,7 +34,7 @@ def canonical_outcome(winner_id: int, player_a_id: int, player_b_id: int) -> int
 
 
 def focal_outcome(outcome_a: int, focal_side: Side) -> int:
-    """Orient the canonical match outcome to one focal player."""
+    """Return the focal-player outcome."""
 
     outcome = int(outcome_a)
     if outcome not in {0, 1}:
@@ -47,7 +47,7 @@ def focal_outcome(outcome_a: int, focal_side: Side) -> int:
 
 
 def focal_probability(probability_a: float, focal_side: Side) -> float:
-    """Orient a canonical player-A probability to one focal player."""
+    """Orient player-A probability to the focal player."""
 
     probability = float(probability_a)
     if not 0.0 <= probability <= 1.0:
@@ -64,6 +64,6 @@ def direct_player_a_glicko_probability(
     rating_b: float,
     rd_b: float,
 ) -> float:
-    """Return the frozen Step 33 direct player-A Glicko probability."""
+    """Return direct Player A probability using the opponent RD."""
 
     return glicko_expected_score(rating_a, rating_b, rd_b)

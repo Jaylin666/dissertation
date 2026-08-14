@@ -1,18 +1,4 @@
-"""Meeting 8 technical diagnostic: burn-in entry status and rating-scale drift.
-
-This script answers the two targeted technical questions raised after Meeting 7:
-
-1. Distinguish players who are first observed at the start of the historical
-   model run from players whose first recorded appearance occurs after a
-   burn-in period.
-2. Diagnose whether the low-inflation Glicko rating scale moves over calendar
-   time and where the fixed new-player anchor of 1500 sits relative to
-   established players and debut opponents.
-
-The script does not tune a new model. It imports and reuses the validated
-Meeting 5 Step 24 low-inflation Glicko configuration and checks its 2025 debut
-rows against the frozen Meeting 7 Step 34 appearance dataset.
-"""
+"""Recorded-entry and prematch rating-scale diagnostics."""
 
 from __future__ import annotations
 
@@ -71,8 +57,6 @@ EXPECTED_2025_MEAN_OPPONENT_RATING = 1180.755
 
 
 def configure_output_root(output_root: str | Path) -> Path:
-    """Redirect Step 41 outputs while retaining frozen default inputs."""
-
     global OUTPUT_DIR, FIGURE_DIR
     global PLAYER_ENTRY_PATH, DEBUT_DETAIL_PATH, DEBUT_COHORT_PATH
     global YEARLY_SCALE_PATH, YEARLY_DEBUT_PATH, BURN_IN_SENSITIVITY_PATH
@@ -103,16 +87,12 @@ def configure_output_root(output_root: str | Path) -> Path:
 
 
 def load_step24_module():
-    """Return the canonical validated Step 24 implementation."""
-
     from code.pipelines import glicko_pipeline
 
     return glicko_pipeline
 
 
 def format_player_name(value: Any) -> str | pd._libs.missing.NAType:
-    """Return a clean player name or pandas NA."""
-
     if pd.isna(value):
         return pd.NA
     text = str(value).strip()
@@ -120,7 +100,7 @@ def format_player_name(value: Any) -> str | pd._libs.missing.NAType:
 
 
 def cohort_for_first_year(first_year: int) -> str:
-    """Assign the primary five-year burn-in cohort."""
+    """Return the recorded-entry cohort for a first year."""
 
     if first_year == MODEL_START_YEAR:
         return "system_start_left_censored"
@@ -134,7 +114,7 @@ def cohort_for_first_year(first_year: int) -> str:
 
 
 def build_player_entry_table(matches: pd.DataFrame) -> pd.DataFrame:
-    """Create one row per player with first-recorded timing and cohort."""
+    """Identify each player's first recorded appearance in game order."""
 
     winner_rows = matches[
         [
@@ -224,16 +204,12 @@ def build_player_entry_table(matches: pd.DataFrame) -> pd.DataFrame:
 
 
 def safe_log_loss(probability: pd.Series, outcome: pd.Series) -> float:
-    """Return mean binary log loss."""
-
     p = probability.astype(float).clip(EPS, 1.0 - EPS)
     y = outcome.astype(float)
     return float(-(y * np.log(p) + (1.0 - y) * np.log(1.0 - p)).mean())
 
 
 def summarise_debut_group(group: pd.DataFrame, label: str) -> dict[str, Any]:
-    """Summarise first-recorded appearances for one cohort or year."""
-
     p = group["p_focal_glicko_low_current"].astype(float)
     y = group["outcome_focal"].astype(float)
     opponent_rating = group["opponent_rating_before"].astype(float)
@@ -268,7 +244,7 @@ def run_low_inflation_diagnostic(
     inactivity_unit: str,
     low_variant: dict[str, Any],
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Run the frozen low-inflation Glicko setting and retain diagnostic state."""
+    """Record prematch low-inflation Glicko states before each update."""
 
     c_value = float(low_variant["c_value"])
     ratings: dict[int, float] = {}
@@ -527,8 +503,6 @@ def run_low_inflation_diagnostic(
 
 
 def build_debut_cohort_summary(debut: pd.DataFrame) -> pd.DataFrame:
-    """Build primary cohort summaries plus useful combined rows."""
-
     order = [
         "system_start_left_censored",
         "within_5y_burn_in_recorded_entry",
@@ -550,8 +524,6 @@ def build_debut_cohort_summary(debut: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_yearly_debut_summary(debut: pd.DataFrame) -> pd.DataFrame:
-    """Summarise the relative new-player anchor for each calendar year."""
-
     rows = []
     for year, group in debut.groupby("year", sort=True):
         row = summarise_debut_group(group, str(int(year)))
@@ -566,7 +538,7 @@ def build_yearly_debut_summary(debut: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_burn_in_sensitivity(debut: pd.DataFrame) -> pd.DataFrame:
-    """Show how reasonable burn-in cutoffs change the historical diagnostic."""
+    """Check recorded-entry cohorts under alternative burn-in lengths."""
 
     rows = []
     for burn_in_years in [1, 3, 5, 10]:
@@ -607,7 +579,7 @@ def build_burn_in_sensitivity(debut: pd.DataFrame) -> pd.DataFrame:
 def build_2025_validation(
     debut: pd.DataFrame,
 ) -> tuple[pd.DataFrame, dict[str, float]]:
-    """Compare rerun 2025 debut rows with the frozen Step 34 appearance data."""
+    """Build checks for 2025 first recorded appearances."""
 
     reference = pd.read_csv(STEP34_APPEARANCE_PATH, low_memory=False)
     reference["first_1"] = reference["first_1"].astype(str).str.lower().eq("true")
@@ -708,8 +680,6 @@ def add_check(
     expected: Any,
     details: str,
 ) -> None:
-    """Append a machine-readable validation check."""
-
     rows.append(
         {
             "check": check,
@@ -730,8 +700,6 @@ def build_validation_checks(
     aggregates: dict[str, float],
     low_variant: dict[str, Any],
 ) -> pd.DataFrame:
-    """Build input, model-reuse, reconciliation, and regression checks."""
-
     rows: list[dict[str, Any]] = []
     all_players = pd.concat([matches["winner"], matches["loser"]]).astype(int).nunique()
     add_check(
@@ -907,8 +875,6 @@ def create_figures(
     yearly_debut: pd.DataFrame,
     cohort_summary: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Create three meeting-ready diagnostic figures."""
-
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     manifest: list[dict[str, Any]] = []
 
@@ -1039,8 +1005,6 @@ def write_summary(
     aggregates: dict[str, float],
     checks: pd.DataFrame,
 ) -> None:
-    """Write a concise dissertation- and meeting-ready interpretation."""
-
     cohort = cohort_summary.set_index("group")
     start = cohort.loc["system_start_left_censored"]
     within = cohort.loc["within_5y_burn_in_recorded_entry"]
@@ -1143,7 +1107,7 @@ def write_summary(
 
 
 def main() -> None:
-    """Run the complete Meeting 8 technical diagnostic."""
+    """Run the rating-scale diagnostics."""
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)

@@ -1,15 +1,4 @@
-"""Meeting 7 step 34: early-game player-appearance analysis.
-
-Part 1 creates the standard player-appearance dataset used by later Meeting 7
-scripts. Part 2 reads that appearance dataset as its only input and calculates
-early-game model performance summary tables.
-
-This script deliberately does not calculate bootstrap intervals, calibration
-tables, figures, or a markdown summary. Those are reserved for later Meeting 7
-steps. Glicko probabilities are taken from the Step 33 fixed player-A
-probability columns during Part 1, not from the old pre-correction Glicko
-columns retained for audit.
-"""
+"""Appearance-level summaries and unique-game bootstrap checks."""
 
 from __future__ import annotations
 
@@ -54,8 +43,6 @@ BOOTSTRAP_ROBUSTNESS_VALIDATION_PATH = OUTPUT_DIR / "34_bootstrap_robustness_val
 
 
 def configure_output_root(output_root: str | Path) -> Path:
-    """Redirect Step 34 generated artifacts while retaining Step 33 input."""
-
     global OUTPUT_DIR, FIGURE_DIR
     global VALIDATION_CHECKS_PATH, APPEARANCE_DATASET_PATH
     global EXACT_APPEARANCE_COUNTS_PATH, CUMULATIVE_PERFORMANCE_PATH
@@ -262,8 +249,6 @@ def add_check(
     severity: str = "error",
     detail: str = "",
 ) -> None:
-    """Append one validation check row."""
-
     rows.append(
         {
             "check_name": check_name,
@@ -277,22 +262,16 @@ def add_check(
 
 
 def bool_series(series: pd.Series) -> pd.Series:
-    """Convert a pandas object/bool series to plain boolean values."""
-
     return series.astype(bool)
 
 
 def load_step33_scores() -> pd.DataFrame:
-    """Load the final Meeting 6 Step 33 per-match score table."""
-
     if not STEP33_SCORES_PATH.exists():
         raise FileNotFoundError(f"Required input not found: {STEP33_SCORES_PATH}")
     return pd.read_csv(STEP33_SCORES_PATH, low_memory=False)
 
 
 def validate_input_scores(scores: pd.DataFrame, rows: list[dict[str, Any]]) -> bool:
-    """Run Step 34 input-level checks before building appearances."""
-
     add_check(rows, "input_rows_11379", len(scores) == EXPECTED_MATCHES, len(scores), EXPECTED_MATCHES)
 
     missing_required = [col for col in REQUIRED_INPUT_COLUMNS if col not in scores.columns]
@@ -363,13 +342,11 @@ def validate_input_scores(scores: pd.DataFrame, rows: list[dict[str, Any]]) -> b
 
 
 def select_existing_columns(df: pd.DataFrame, columns: list[str]) -> list[str]:
-    """Return the requested columns that exist in a data frame."""
-
     return [col for col in columns if col in df.columns]
 
 
 def build_side_appearances(scores: pd.DataFrame, side: str) -> pd.DataFrame:
-    """Build focal-player appearance rows for one canonical side."""
+    """Build focal-player appearance rows from one game side."""
 
     if side not in {"a", "b"}:
         raise ValueError(f"side must be 'a' or 'b', got {side!r}")
@@ -411,7 +388,6 @@ def build_side_appearances(scores: pd.DataFrame, side: str) -> pd.DataFrame:
     else:
         out["outcome_focal"] = (1 - scores["outcome_a"].astype(int)).astype(int)
 
-    # Carry the existing pre-match player-history features into focal orientation.
     for suffix in SIDE_FEATURE_SUFFIXES:
         source_col = f"{side}_{suffix}"
         opponent_col = f"{opponent_side}_{suffix}"
@@ -420,17 +396,14 @@ def build_side_appearances(scores: pd.DataFrame, side: str) -> pd.DataFrame:
         out[output_name] = scores[source_col]
         out[opponent_output_name] = scores[opponent_col]
 
-    # Convert saved player-A probabilities into focal-player probabilities.
-    # This is an orientation transform only; no model probability is recalculated.
     for model_alias, p_a_col in MODEL_PROBABILITY_COLUMNS.items():
+        # Player A is fixed by database ID; side B reverses only the orientation.
         p_a = scores[p_a_col].astype(float)
         out[f"p_focal_{model_alias}"] = p_a if side == "a" else 1.0 - p_a
 
-    # Keep symmetric match-level context features already available in Step 33.
     for col in select_existing_columns(scores, SYMMETRIC_FEATURE_COLUMNS):
         out[col] = scores[col]
 
-    # Keep selected pre-match Glicko rating/RD states for later diagnostics.
     for base_name in ["rating", "rd"]:
         for model in ["Glicko_low", "Glicko_C0"]:
             focal_col = f"{base_name}_{side}_{model}"
@@ -443,8 +416,6 @@ def build_side_appearances(scores: pd.DataFrame, side: str) -> pd.DataFrame:
 
 
 def add_early_game_groups(appearances: pd.DataFrame) -> pd.DataFrame:
-    """Add exact, cumulative, and binned early-career group variables."""
-
     out = appearances.copy()
     for threshold in CUMULATIVE_THRESHOLDS:
         out[f"first_{threshold}"] = out["appearance_number"] <= threshold
@@ -462,7 +433,7 @@ def add_early_game_groups(appearances: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_appearance_dataset(scores: pd.DataFrame) -> pd.DataFrame:
-    """Expand each match into two focal player-appearance rows."""
+    """Build the focal-player appearance dataset."""
 
     parts = [build_side_appearances(scores, "a"), build_side_appearances(scores, "b")]
     appearances = pd.concat(parts, ignore_index=True)
@@ -471,8 +442,6 @@ def build_appearance_dataset(scores: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_exact_appearance_counts(appearances: pd.DataFrame) -> pd.DataFrame:
-    """Count players and matches by exact appearance number for 1 through 20."""
-
     rows = []
     for appearance_number in range(1, 21):
         sub = appearances.loc[appearances["appearance_number"] == appearance_number]
@@ -493,8 +462,6 @@ def validate_appearance_dataset(
     exact_counts: pd.DataFrame,
     rows: list[dict[str, Any]],
 ) -> None:
-    """Run consistency checks for the player-appearance output."""
-
     add_check(
         rows,
         "appearance_rows_22758",
@@ -565,8 +532,6 @@ def validate_appearance_dataset(
 
 
 def write_validation_checks(rows: list[dict[str, Any]]) -> pd.DataFrame:
-    """Write validation checks and print a PASS/FAIL console summary."""
-
     validation = pd.DataFrame(rows)
     validation.to_csv(VALIDATION_CHECKS_PATH, index=False, encoding="utf-8-sig")
 
@@ -581,8 +546,6 @@ def write_validation_checks(rows: list[dict[str, Any]]) -> pd.DataFrame:
 
 
 def load_appearance_dataset() -> pd.DataFrame:
-    """Load the Step 34 player-appearance dataset as the only metric input."""
-
     if not APPEARANCE_DATASET_PATH.exists():
         raise FileNotFoundError(
             f"Required appearance dataset not found: {APPEARANCE_DATASET_PATH}. "
@@ -592,14 +555,10 @@ def load_appearance_dataset() -> pd.DataFrame:
 
 
 def available_performance_models(appearances: pd.DataFrame) -> list[str]:
-    """Return requested performance models with available focal probabilities."""
-
     return [model for model in PERFORMANCE_MODEL_ORDER if f"p_focal_{model}" in appearances.columns]
 
 
 def validate_metric_input(appearances: pd.DataFrame, models: list[str], rows: list[dict[str, Any]]) -> bool:
-    """Validate the appearance dataset before metric calculation."""
-
     required = [
         "match_id",
         "player_id",
@@ -653,7 +612,7 @@ def validate_metric_input(appearances: pd.DataFrame, models: list[str], rows: li
 
 
 def score_model(group: pd.DataFrame, model: str) -> tuple[pd.Series, pd.Series, pd.Series]:
-    """Calculate Step 33-style Brier, log loss, and accuracy for one model."""
+    """Calculate probability scores for one model."""
 
     p = group[f"p_focal_{model}"].astype(float).clip(0.0, 1.0)
     y = group["outcome_focal"].astype(float)
@@ -674,8 +633,6 @@ def model_metric_row(
     appearance_number: int | float | None = None,
     appearance_stage: str | None = None,
 ) -> dict[str, Any]:
-    """Return one model-performance row for one early-game subgroup."""
-
     brier, log_loss, correct = score_model(group, model)
     p = group[f"p_focal_{model}"].astype(float)
     y = group["outcome_focal"].astype(float)
@@ -705,7 +662,7 @@ def model_metric_row(
 
 
 def calculate_cumulative_threshold_performance(appearances: pd.DataFrame, models: list[str]) -> pd.DataFrame:
-    """Calculate model metrics for first-N cumulative early-game groups."""
+    """Calculate performance by cumulative appearance threshold."""
 
     rows: list[dict[str, Any]] = []
     for threshold in CUMULATIVE_THRESHOLDS:
@@ -726,7 +683,7 @@ def calculate_cumulative_threshold_performance(appearances: pd.DataFrame, models
 
 
 def calculate_stage_bin_performance(appearances: pd.DataFrame, models: list[str]) -> pd.DataFrame:
-    """Calculate model metrics for mutually exclusive appearance-stage bins."""
+    """Calculate performance by appearance stage."""
 
     rows: list[dict[str, Any]] = []
     for order, stage in enumerate(STAGE_LABELS, start=1):
@@ -746,7 +703,7 @@ def calculate_stage_bin_performance(appearances: pd.DataFrame, models: list[str]
 
 
 def calculate_exact_appearance_performance(appearances: pd.DataFrame, models: list[str]) -> pd.DataFrame:
-    """Calculate model metrics for exact appearance numbers 1 through 20."""
+    """Calculate performance at each appearance number."""
 
     rows: list[dict[str, Any]] = []
     for appearance_number in range(1, 21):
@@ -775,8 +732,6 @@ def pairwise_difference_row(
     appearance_number: int | float | None = None,
     appearance_stage: str | None = None,
 ) -> dict[str, Any]:
-    """Return paired model differences for one group and comparison."""
-
     left_model = comparison["left_model"]
     right_model = comparison["right_model"]
     left_brier, left_log_loss, left_correct = score_model(group, left_model)
@@ -817,7 +772,7 @@ def pairwise_difference_row(
 
 
 def calculate_pairwise_differences(appearances: pd.DataFrame, models: list[str]) -> pd.DataFrame:
-    """Calculate paired model differences for all Step 34 performance groups."""
+    """Calculate paired score differences between models."""
 
     rows: list[dict[str, Any]] = []
     available = set(models)
@@ -882,8 +837,6 @@ def validate_metric_outputs(
     pairwise: pd.DataFrame,
     rows: list[dict[str, Any]],
 ) -> None:
-    """Validate the Step 34 model-performance summary outputs."""
-
     expected_model_rows = len(models)
     cumulative_expected_rows = len(CUMULATIVE_THRESHOLDS) * expected_model_rows
     stage_expected_rows = len(STAGE_LABELS) * expected_model_rows
@@ -969,8 +922,6 @@ def validate_metric_outputs(
 
 
 def write_metric_validation_checks(rows: list[dict[str, Any]]) -> pd.DataFrame:
-    """Write metric validation checks and print a PASS/FAIL console summary."""
-
     validation = pd.DataFrame(rows)
     validation.to_csv(METRIC_VALIDATION_CHECKS_PATH, index=False, encoding="utf-8-sig")
 
@@ -985,8 +936,6 @@ def write_metric_validation_checks(rows: list[dict[str, Any]]) -> pd.DataFrame:
 
 
 def read_existing_step34_outputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Load Step 34 outputs needed for bootstrap and figures."""
-
     required_paths = [
         APPEARANCE_DATASET_PATH,
         EXACT_APPEARANCE_COUNTS_PATH,
@@ -1010,8 +959,6 @@ def read_existing_step34_outputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataF
 
 
 def build_group_specs(appearances: pd.DataFrame) -> list[dict[str, Any]]:
-    """Create the early-game group definitions shared by metrics and bootstrap."""
-
     groups: list[dict[str, Any]] = []
     for threshold in CUMULATIVE_THRESHOLDS:
         group_name = f"first_{threshold}"
@@ -1056,8 +1003,6 @@ def build_group_specs(appearances: pd.DataFrame) -> list[dict[str, Any]]:
 
 
 def add_pairwise_score_columns(appearances: pd.DataFrame, models: list[str]) -> pd.DataFrame:
-    """Add per-appearance scores and paired difference columns for bootstrap."""
-
     out = appearances.copy()
     for model in models:
         brier, log_loss, correct = score_model(out, model)
@@ -1078,13 +1023,7 @@ def add_pairwise_score_columns(appearances: pd.DataFrame, models: list[str]) -> 
 
 
 def bootstrap_mean_ci(group: pd.DataFrame, value_col: str, seed: int, reps: int = BOOTSTRAP_REPS) -> dict[str, Any]:
-    """Estimate a percentile bootstrap CI for a paired mean difference.
-
-    The primary resampling unit is focal player, because the analysis dataset is
-    at player-appearance level and a player can contribute multiple early-career
-    appearances. If a group has fewer than two player clusters, the function
-    falls back to appearance-level resampling.
-    """
+    """Bootstrap by player, falling back to appearances for one cluster."""
 
     if group.empty:
         return {
@@ -1138,7 +1077,7 @@ def bootstrap_mean_ci(group: pd.DataFrame, value_col: str, seed: int, reps: int 
 
 
 def calculate_bootstrap_confidence_intervals(appearances: pd.DataFrame, models: list[str]) -> pd.DataFrame:
-    """Calculate bootstrap CIs for every pairwise comparison and analysis group."""
+    """Calculate player-cluster intervals for model differences."""
 
     scored = add_pairwise_score_columns(appearances, models)
     groups = build_group_specs(scored)
@@ -1187,8 +1126,6 @@ def calculate_bootstrap_confidence_intervals(appearances: pd.DataFrame, models: 
 
 
 def prepare_plot_style() -> None:
-    """Apply a consistent, restrained matplotlib style for Meeting 7 figures."""
-
     plt.rcParams.update(
         {
             "figure.dpi": 150,
@@ -1209,8 +1146,6 @@ def prepare_plot_style() -> None:
 
 
 def save_current_figure(path: Path) -> None:
-    """Save and close the current matplotlib figure."""
-
     path.parent.mkdir(parents=True, exist_ok=True)
     plt.tight_layout()
     plt.savefig(path, bbox_inches="tight")
@@ -1218,8 +1153,6 @@ def save_current_figure(path: Path) -> None:
 
 
 def create_exact_sample_size_figure(exact_counts: pd.DataFrame) -> Path:
-    """Figure 1: sample size by exact appearance number."""
-
     p = FIGURE_DIR / "34_fig01_exact_appearance_sample_size.png"
     fig, ax = plt.subplots(figsize=(8.0, 4.2))
     ax.bar(exact_counts["appearance_number"], exact_counts["count_appearances"], color="#4C6A92")
@@ -1232,8 +1165,6 @@ def create_exact_sample_size_figure(exact_counts: pd.DataFrame) -> Path:
 
 
 def create_cumulative_brier_figure(cumulative: pd.DataFrame) -> Path:
-    """Figure 2: cumulative first-N Brier score by model."""
-
     p = FIGURE_DIR / "34_fig02_cumulative_brier_by_model.png"
     fig, ax = plt.subplots(figsize=(8.0, 4.4))
     for model in FIGURE_MODEL_ORDER:
@@ -1258,8 +1189,6 @@ def create_cumulative_brier_figure(cumulative: pd.DataFrame) -> Path:
 
 
 def create_cumulative_delta_brier_figure(pairwise: pd.DataFrame, bootstrap: pd.DataFrame) -> Path:
-    """Figure 3: Elo-minus-Glicko cumulative Delta Brier with bootstrap CIs."""
-
     p = FIGURE_DIR / "34_fig03_cumulative_delta_brier_elo_minus_glicko_ci.png"
     comparison = "Validation_best_Elo_minus_Glicko_low_fixed"
     point = pairwise.loc[
@@ -1300,8 +1229,6 @@ def create_cumulative_delta_brier_figure(pairwise: pd.DataFrame, bootstrap: pd.D
 
 
 def create_stage_brier_figure(stage: pd.DataFrame) -> Path:
-    """Figure 4: Brier score by mutually exclusive appearance-stage bin."""
-
     p = FIGURE_DIR / "34_fig04_stage_brier_by_model.png"
     fig, ax = plt.subplots(figsize=(8.4, 4.4))
     x = np.arange(len(STAGE_LABELS))
@@ -1321,8 +1248,6 @@ def create_stage_brier_figure(stage: pd.DataFrame) -> Path:
 
 
 def create_exact_brier_trend_figure(exact: pd.DataFrame) -> Path:
-    """Figure 5: exact appearance-number Brier trend for appearances 1-20."""
-
     p = FIGURE_DIR / "34_fig05_exact_appearance_brier_trend.png"
     fig, ax = plt.subplots(figsize=(8.6, 4.5))
     for model in FIGURE_MODEL_ORDER:
@@ -1348,8 +1273,6 @@ def create_exact_brier_trend_figure(exact: pd.DataFrame) -> Path:
 
 
 def create_stage_predicted_vs_empirical_figure(stage: pd.DataFrame) -> Path:
-    """Figure 6: mean focal win probability vs empirical win rate by stage."""
-
     p = FIGURE_DIR / "34_fig06_stage_predicted_vs_empirical_win_rate.png"
     fig, ax = plt.subplots(figsize=(8.4, 4.6))
     x = np.arange(len(STAGE_LABELS))
@@ -1391,8 +1314,6 @@ def create_early_game_figures(
     pairwise: pd.DataFrame,
     bootstrap: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Create Meeting 7 early-game figures and return a manifest."""
-
     prepare_plot_style()
     figure_specs = [
         (
@@ -1454,8 +1375,6 @@ def validate_bootstrap_and_figures(
     figure_manifest: pd.DataFrame,
     rows: list[dict[str, Any]],
 ) -> None:
-    """Validate bootstrap CI and figure outputs."""
-
     comparisons = [
         comparison
         for comparison in PAIRWISE_COMPARISONS
@@ -1507,8 +1426,6 @@ def validate_bootstrap_and_figures(
 
 
 def write_bootstrap_figure_validation_checks(rows: list[dict[str, Any]]) -> pd.DataFrame:
-    """Write bootstrap/figure validation checks and print PASS/FAIL."""
-
     validation = pd.DataFrame(rows)
     validation.to_csv(BOOTSTRAP_FIGURE_VALIDATION_PATH, index=False, encoding="utf-8-sig")
 
@@ -1530,8 +1447,6 @@ def add_audit_check(
     expected: Any,
     details: str = "",
 ) -> None:
-    """Append one method-audit row with the requested status schema."""
-
     rows.append(
         {
             "check_name": check_name,
@@ -1544,16 +1459,12 @@ def add_audit_check(
 
 
 def load_step33_match_scores() -> pd.DataFrame:
-    """Load Step 33 only for unique match-level robustness checks."""
-
     if not STEP33_SCORES_PATH.exists():
         raise FileNotFoundError(f"Required Step 33 input not found: {STEP33_SCORES_PATH}")
     return pd.read_csv(STEP33_SCORES_PATH, low_memory=False)
 
 
 def read_existing_bootstrap_outputs() -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Read existing appearance-level bootstrap and pairwise outputs."""
-
     required_paths = [BOOTSTRAP_CI_PATH, PAIRWISE_DIFFERENCES_PATH]
     missing = [path for path in required_paths if not path.exists()]
     if missing:
@@ -1565,7 +1476,7 @@ def read_existing_bootstrap_outputs() -> tuple[pd.DataFrame, pd.DataFrame]:
 
 
 def audit_cluster_resampling_mechanics(appearances: pd.DataFrame, threshold: int = 20) -> dict[str, Any]:
-    """Run a deterministic miniature audit of player-cluster resampling logic."""
+    """Check the player-cluster resampling procedure."""
 
     group = appearances.loc[appearances[f"first_{threshold}"].astype(bool)].copy()
     grouped = group.groupby("player_id", sort=False).size().reset_index(name="row_count")
@@ -1605,7 +1516,7 @@ def audit_current_player_cluster_bootstrap(
     bootstrap: pd.DataFrame,
     pairwise: pd.DataFrame,
 ) -> tuple[pd.DataFrame, bool]:
-    """Audit whether the existing appearance-level bootstrap is methodologically valid."""
+    """Audit the current player-cluster bootstrap."""
 
     rows: list[dict[str, Any]] = []
     add_audit_check(
@@ -1717,8 +1628,6 @@ def audit_current_player_cluster_bootstrap(
 
 
 def build_bootstrap_metadata(bootstrap: pd.DataFrame) -> pd.DataFrame:
-    """Create compact cumulative-threshold metadata for existing bootstrap rows."""
-
     cumulative = bootstrap.loc[bootstrap["group_type"] == "cumulative_threshold"].copy().reset_index(drop=False)
     cumulative["random_seed_base"] = RANDOM_SEED
     cumulative["random_seed"] = RANDOM_SEED + cumulative["index"].astype(int) + 1
@@ -1752,8 +1661,6 @@ def build_bootstrap_metadata(bootstrap: pd.DataFrame) -> pd.DataFrame:
 
 
 def choose_event_identifier(scores: pd.DataFrame) -> str:
-    """Choose the Step 33 event identifier consistent with prior event bootstrap."""
-
     if "event_key" in scores.columns and scores["event_key"].notna().all() and scores["event_key"].nunique() >= 2:
         return "event_key"
     if "event_id" in scores.columns and scores["event_id"].notna().all() and scores["event_id"].nunique() >= 2:
@@ -1762,7 +1669,7 @@ def choose_event_identifier(scores: pd.DataFrame) -> str:
 
 
 def prepare_match_level_scores(scores: pd.DataFrame) -> tuple[pd.DataFrame, str]:
-    """Build unique match-level early-game flags from Step 33 scores."""
+    """Collapse focal-player appearances to one score row per game."""
 
     required = [
         "match_id",
@@ -1800,7 +1707,7 @@ def prepare_match_level_scores(scores: pd.DataFrame) -> tuple[pd.DataFrame, str]
 
 
 def calculate_match_level_early_game_robustness(match_scores: pd.DataFrame, event_col: str) -> pd.DataFrame:
-    """Calculate unique match-level paired metrics for cumulative first-N groups."""
+    """Calculate early-game robustness from unique games."""
 
     rows: list[dict[str, Any]] = []
     for threshold in CUMULATIVE_THRESHOLDS:
@@ -1840,7 +1747,7 @@ def cluster_bootstrap_means(
     seed: int,
     reps: int = BOOTSTRAP_REPS,
 ) -> tuple[dict[str, tuple[float, float]], str, int]:
-    """Bootstrap paired mean differences by complete cluster resampling."""
+    """Bootstrap mean differences with event as the cluster."""
 
     actual_cluster_col = cluster_col if group[cluster_col].nunique() >= 2 else "match_id"
     rng = np.random.default_rng(seed)
@@ -1861,7 +1768,7 @@ def cluster_bootstrap_means(
 
 
 def calculate_match_level_bootstrap_confidence_intervals(match_scores: pd.DataFrame, event_col: str) -> pd.DataFrame:
-    """Calculate paired event-cluster bootstrap CIs for match-level early-game samples."""
+    """Calculate event-cluster intervals from unique games."""
 
     diff_specs = [
         ("delta_brier", "match_delta_brier_elo_minus_glicko", "Elo Brier - Glicko Brier"),
@@ -1907,8 +1814,6 @@ def calculate_match_level_bootstrap_confidence_intervals(match_scores: pd.DataFr
 
 
 def ci_direction(lower: float, upper: float) -> str:
-    """Return the qualitative CI direction relative to zero."""
-
     if lower > 0:
         return "positive"
     if upper < 0:
@@ -1917,8 +1822,6 @@ def ci_direction(lower: float, upper: float) -> str:
 
 
 def same_point_sign(a: float, b: float) -> bool:
-    """Check whether two point estimates have the same sign, treating zero softly."""
-
     if a == 0 or b == 0:
         return True
     return bool(np.sign(a) == np.sign(b))
@@ -1928,8 +1831,6 @@ def build_bootstrap_robustness_comparison(
     appearance_bootstrap: pd.DataFrame,
     match_bootstrap: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Compare appearance-level and match-level bootstrap conclusions."""
-
     app = appearance_bootstrap.loc[
         (appearance_bootstrap["group_type"] == "cumulative_threshold")
         & (appearance_bootstrap["comparison"] == "Validation_best_Elo_minus_Glicko_low_fixed")
@@ -1980,8 +1881,6 @@ def build_bootstrap_robustness_comparison(
 
 
 def finite_no_nan(df: pd.DataFrame, cols: list[str]) -> bool:
-    """Check selected numeric columns for finite non-missing values."""
-
     values = df[cols].to_numpy(dtype=float)
     return bool(np.isfinite(values).all())
 
@@ -1996,8 +1895,6 @@ def validate_bootstrap_robustness_outputs(
     robustness_comparison: pd.DataFrame,
     event_col: str,
 ) -> pd.DataFrame:
-    """Validate method-audit and match-level robustness outputs."""
-
     rows: list[dict[str, Any]] = []
     add_check(rows, "appearance_level_bootstrap_method_audit_passed", bool((method_audit["status"] == "PASS").all()), int((method_audit["status"] == "PASS").sum()), len(method_audit))
     add_check(rows, "appearance_level_bootstrap_unit_player_id", bool((appearance_bootstrap["cluster_variable"] == "player_id").all()), sorted(appearance_bootstrap["cluster_variable"].unique().tolist()), "player_id")
@@ -2090,8 +1987,6 @@ def validate_bootstrap_robustness_outputs(
 
 
 def print_validation_table(validation: pd.DataFrame) -> None:
-    """Print validation checks with PASS/FAIL labels."""
-
     for row in validation.itertuples(index=False):
         row_status = "PASS" if bool(row.passed) else "FAIL"
         detail = f" | detail={row.detail}" if hasattr(row, "detail") and isinstance(row.detail, str) and row.detail else ""
@@ -2099,7 +1994,7 @@ def print_validation_table(validation: pd.DataFrame) -> None:
 
 
 def run_bootstrap_audit_and_match_level_robustness() -> None:
-    """Run the requested Step 34 bootstrap audit and robustness supplement."""
+    """Audit appearance resampling and run unique-game robustness checks."""
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     appearances = load_appearance_dataset()
@@ -2168,8 +2063,6 @@ def run_bootstrap_audit_and_match_level_robustness() -> None:
 
 
 def run_part1_data_preparation() -> None:
-    """Create the Step 34 Part 1 outputs."""
-
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     validation_rows: list[dict[str, Any]] = []
@@ -2201,8 +2094,6 @@ def run_part1_data_preparation() -> None:
 
 
 def run_model_performance_analysis() -> None:
-    """Create the Step 34 Part 2 model-performance outputs."""
-
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     metric_validation_rows: list[dict[str, Any]] = []
@@ -2242,8 +2133,6 @@ def run_model_performance_analysis() -> None:
 
 
 def run_bootstrap_and_figures() -> None:
-    """Create Step 34 bootstrap intervals, figures, and validation outputs."""
-
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     appearances = load_appearance_dataset()
@@ -2294,7 +2183,7 @@ def run_bootstrap_and_figures() -> None:
 
 
 def main() -> None:
-    """Run the complete Step 34 workflow in dependency order."""
+    """Run the early-game analysis."""
 
     run_part1_data_preparation()
     run_model_performance_analysis()

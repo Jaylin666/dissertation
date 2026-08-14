@@ -1,4 +1,4 @@
-"""Machine-readable validation checks with preserved severity semantics."""
+"""Validation records and collectors."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ VALID_SEVERITIES = {"error", "warning"}
 
 @dataclass(frozen=True)
 class CheckRecord:
-    """One validation observation."""
+    """One validation result."""
 
     check_name: str
     passed: bool
@@ -31,7 +31,7 @@ class CheckRecord:
 
 
 class ValidationCollector:
-    """Collect validation checks without weakening error-level failures."""
+    """Collect validation results by severity."""
 
     def __init__(self) -> None:
         self._records: list[CheckRecord] = []
@@ -94,7 +94,7 @@ class ValidationCollector:
 
 
 def robust_bool(value: Any) -> bool:
-    """Convert supported boolean representations without truthiness shortcuts."""
+    """Convert a supported value to bool."""
 
     if isinstance(value, bool):
         return value

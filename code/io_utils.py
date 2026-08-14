@@ -1,4 +1,4 @@
-"""Shared project-relative file and table helpers."""
+"""Project file and table helpers."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def project_path(*parts: str) -> Path:
 
 
 def resolve_output_root(output_root: str | Path | None = None) -> Path:
-    """Resolve an optional output root without requiring it to exist."""
+    """Resolve an optional output root."""
 
     if output_root is None:
         return DEFAULT_OUTPUT_ROOT
@@ -31,7 +31,7 @@ def resolve_output_root(output_root: str | Path | None = None) -> Path:
 
 
 def ensure_directory(path: str | Path) -> Path:
-    """Create and return one directory."""
+    """Create and return a directory."""
 
     result = Path(path)
     result.mkdir(parents=True, exist_ok=True)
@@ -43,7 +43,7 @@ def require_columns(
     required: Iterable[str],
     label: str,
 ) -> None:
-    """Raise a clear error if a table lacks required columns."""
+    """Raise an error when required columns are missing."""
 
     missing = [column for column in required if column not in table.columns]
     if missing:
@@ -56,7 +56,7 @@ def read_csv_checked(
     *,
     low_memory: bool = False,
 ) -> pd.DataFrame:
-    """Read a CSV and apply an optional required-column check."""
+    """Read a CSV and check its required columns."""
 
     source = Path(path)
     if not source.exists():
@@ -83,7 +83,7 @@ def stable_match_sort(
     event_column: str = "event",
     match_column: str = "fcode",
 ) -> pd.DataFrame:
-    """Apply the frozen stable chronological order without dropping missing dates."""
+    """Sort games chronologically while retaining missing dates."""
 
     require_columns(matches, [year_column, event_column, match_column], "matches")
     ordered = matches.copy()
@@ -105,7 +105,7 @@ def stable_match_sort(
 
 
 def add_event_ordering_columns(matches: pd.DataFrame) -> pd.DataFrame:
-    """Add the frozen event-order date without modifying raw date fields."""
+    """Add ordering dates without changing the raw date fields."""
 
     ordered = matches.copy()
     if "event_date_raw" not in ordered.columns:
@@ -155,6 +155,7 @@ def add_event_ordering_columns(matches: pd.DataFrame) -> pd.DataFrame:
         valid_month = months.between(1, 12).fillna(False)
         valid_mask = valid_month.to_numpy(dtype=bool)
         valid_index = extracted.loc[valid_month_year].index[valid_mask]
+        # The 15th orders month-year records only; it is not a recorded game date.
         imputed_dates = pd.to_datetime(
             {
                 "year": np.asarray(years)[valid_mask],

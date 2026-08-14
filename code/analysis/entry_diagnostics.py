@@ -1,13 +1,4 @@
-"""Meeting 8 Step 42: prematch entry-scale and cross-file audit.
-
-This supplementary diagnostic uses the exact Step 24 model-processing order to
-identify every player's first recorded appearance, measures the contemporaneous
-rating scale immediately before that appearance, reconciles the 2025 definition
-with Steps 33 and 34, and audits a direct-focal probability sensitivity.
-
-It does not create a new rating model, tune parameters, or replace the frozen
-Meeting 7 probability convention.
-"""
+"""First recorded appearance and prematch scale diagnostics."""
 
 from __future__ import annotations
 
@@ -91,8 +82,6 @@ EXPECTED_BOTH_DEBUT_MATCHES = 2
 
 
 def configure_output_root(output_root: str | Path) -> Path:
-    """Redirect Step 42 outputs and its Step 41 inputs to a validation root."""
-
     global OUTPUT_DIR, FIGURE_DIR
     global STEP41_CLASSIFICATION_PATH, STEP41_YEARLY_SCALE_PATH
     global STRICT_ENTRY_PATH, STEP41_MISMATCH_PATH, PREMATCH_DIAGNOSTIC_PATH
@@ -126,15 +115,13 @@ def configure_output_root(output_root: str | Path) -> Path:
 
 
 def load_step24_module() -> Any:
-    """Return the canonical validated Step 24 implementation."""
-
     from code.pipelines import glicko_pipeline
 
     return glicko_pipeline
 
 
 def robust_bool_value(value: Any) -> bool:
-    """Convert common boolean representations without relying on truthiness."""
+    """Convert a supported value to bool."""
 
     if isinstance(value, (bool, np.bool_)):
         return bool(value)
@@ -154,8 +141,6 @@ def robust_bool_value(value: Any) -> bool:
 
 
 def robust_bool_series(series: pd.Series, column_name: str) -> pd.Series:
-    """Convert a complete series with explicit validation."""
-
     if series.isna().any():
         raise ValueError(f"{column_name} contains missing boolean values")
     try:
@@ -165,7 +150,7 @@ def robust_bool_series(series: pd.Series, column_name: str) -> pd.Series:
 
 
 def cohort_for_year(first_year: int) -> str:
-    """Assign the mutually exclusive primary entry cohort."""
+    """Return the recorded-entry cohort for a year."""
 
     if first_year == MODEL_START_YEAR:
         return "system_start_left_censored"
@@ -179,8 +164,6 @@ def cohort_for_year(first_year: int) -> str:
 
 
 def evidence_status_for_year(year: int) -> str:
-    """Return a cautious evidence label for one entry year."""
-
     if year == MODEL_START_YEAR:
         return "model-start left-censored descriptive context"
     if year < POST_BURN_IN_START_YEAR:
@@ -191,8 +174,6 @@ def evidence_status_for_year(year: int) -> str:
 
 
 def safe_log_loss_scalar(probability: float, outcome: int) -> float:
-    """Return binary log loss for one observation with safe clipping."""
-
     p = float(np.clip(float(probability), EPS, 1.0 - EPS))
     y = float(outcome)
     return float(-(y * np.log(p) + (1.0 - y) * np.log(1.0 - p)))
@@ -207,8 +188,6 @@ def add_check(
     severity: str,
     detail: str,
 ) -> None:
-    """Append a machine-readable validation check."""
-
     if severity not in {"error", "warning"}:
         raise ValueError(f"Unsupported severity: {severity}")
     rows.append(
@@ -224,15 +203,13 @@ def add_check(
 
 
 def require_columns(data: pd.DataFrame, required: list[str], label: str) -> None:
-    """Raise a clear error when a frozen input lacks required columns."""
-
     missing = [column for column in required if column not in data.columns]
     if missing:
         raise ValueError(f"{label} is missing required columns: {missing}")
 
 
 def build_strict_appearance_long(matches: pd.DataFrame) -> pd.DataFrame:
-    """Build ordered winner and loser appearance rows from frozen match order."""
+    """Build player appearances in stable chronological game order."""
 
     carry = [
         "fcode",
@@ -273,7 +250,7 @@ def build_strict_appearance_long(matches: pd.DataFrame) -> pd.DataFrame:
 def build_strict_player_classification(
     appearance_long: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Identify first recorded appearances by minimum frozen match_sequence."""
+    """Classify players by first recorded appearance and burn-in boundary."""
 
     first_indices = appearance_long.groupby("player_id", sort=False)[
         "match_sequence"
@@ -334,8 +311,6 @@ def build_strict_player_classification(
 
 
 def compare_with_step41(strict: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
-    """Compare strict processing-order classification with existing Step 41."""
-
     mismatch_columns = [
         "player_id",
         "strict_first_recorded_year",
@@ -427,8 +402,6 @@ def compare_with_step41(strict: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, A
 
 
 def distribution_statistics(values: list[float]) -> dict[str, float]:
-    """Return the required prematch scale statistics."""
-
     if not values:
         return {
             "mean": float("nan"),
@@ -451,7 +424,7 @@ def run_frozen_low_inflation_state(
     step24: Any,
     low_variant: dict[str, Any],
 ) -> pd.DataFrame:
-    """Run the frozen model and save only first-appearance diagnostics."""
+    """Rebuild prematch low-inflation Glicko states before each update."""
 
     c_value = float(low_variant["c_value"])
     ratings: dict[int, float] = {}
@@ -715,8 +688,6 @@ def summarise_entry_group(
     group_label: str,
     evidence_status: str,
 ) -> dict[str, Any]:
-    """Summarise probabilities and prematch scales for one year or cohort."""
-
     both_new_matches = group.loc[
         group["both_players_first_recorded"], "match_id"
     ].nunique()
@@ -785,8 +756,6 @@ def summarise_entry_group(
 
 
 def build_entry_year_summary(diagnostics: pd.DataFrame) -> pd.DataFrame:
-    """Summarise strict first appearances by first recorded year."""
-
     rows = []
     for year, group in diagnostics.groupby("first_recorded_year", sort=True):
         year_int = int(year)
@@ -808,8 +777,6 @@ def build_entry_year_summary(diagnostics: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_entry_cohort_summary(diagnostics: pd.DataFrame) -> pd.DataFrame:
-    """Summarise the four primary cohorts and all post-burn-in entries."""
-
     specifications = [
         (
             "system_start_left_censored",
@@ -849,7 +816,7 @@ def build_entry_cohort_summary(diagnostics: pd.DataFrame) -> pd.DataFrame:
 def build_orientation_sensitivity(
     cohort_summary: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Create a compact current-versus-direct cohort sensitivity table."""
+    """Compare the primary convention with direct-probability sensitivity."""
 
     result = cohort_summary[
         [
@@ -886,8 +853,6 @@ def build_orientation_sensitivity(
 
 
 def load_and_audit_step33() -> tuple[pd.DataFrame, dict[str, Any], pd.DataFrame]:
-    """Load Step 33 and create its long 2025 debut table."""
-
     step33 = pd.read_csv(STEP33_PATH, low_memory=False)
     required = [
         "match_id",
@@ -956,8 +921,6 @@ def load_and_audit_step33() -> tuple[pd.DataFrame, dict[str, Any], pd.DataFrame]
 
 
 def load_and_audit_step34() -> tuple[pd.DataFrame, dict[str, Any], pd.DataFrame]:
-    """Load Step 34 and validate its two equivalent first-appearance formulas."""
-
     step34 = pd.read_csv(STEP34_PATH, low_memory=False)
     required = [
         "match_id",
@@ -1019,7 +982,7 @@ def build_crossfile_audit(
     step33_debut: pd.DataFrame,
     step34_debut: pd.DataFrame,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
-    """Reconcile full-history, Step 33, and Step 34 player-match definitions."""
+    """Compare player states across saved outputs."""
 
     full = diagnostics.loc[diagnostics["year"].eq(TEST_YEAR)].copy()
     full = full[
@@ -1151,7 +1114,7 @@ def build_crossfile_audit(
 
 
 def build_burn_in_sensitivity(diagnostics: pd.DataFrame) -> pd.DataFrame:
-    """Audit classification sensitivity without rerunning a rating model."""
+    """Check cohort classification under alternative burn-in lengths."""
 
     rows = []
     for burn_in_years in [1, 3, 5, 10]:
@@ -1181,8 +1144,6 @@ def create_figures(
     year_summary: pd.DataFrame,
     cohort_summary: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Create restrained meeting-ready figures and a manifest."""
-
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     post_years = year_summary.loc[
         year_summary["year"].ge(POST_BURN_IN_START_YEAR)
@@ -1331,8 +1292,6 @@ def build_validation_checks(
     burn_in: pd.DataFrame,
     cohort_summary: pd.DataFrame,
 ) -> list[dict[str, Any]]:
-    """Create the required error-level and warning-level checks."""
-
     rows: list[dict[str, Any]] = []
     cohort_counts = strict["entry_cohort"].value_counts()
     test = diagnostics.loc[diagnostics["first_recorded_year"].eq(TEST_YEAR)]
@@ -1436,8 +1395,6 @@ def write_summary(
     step33_metrics: dict[str, Any],
     checks: pd.DataFrame,
 ) -> None:
-    """Write the requested methodological and result summary."""
-
     test = diagnostics.loc[diagnostics["first_recorded_year"].eq(TEST_YEAR)]
     cohort = cohort_summary.set_index("group")
     post = cohort.loc["post_burn_in_recorded_entry"]
@@ -1571,8 +1528,6 @@ def write_summary(
 
 
 def print_checks(checks: pd.DataFrame) -> None:
-    """Print every validation check with PASS or FAIL."""
-
     print("\nValidation checks")
     for row in checks.itertuples(index=False):
         status = "PASS" if row.passed else "FAIL"
@@ -1589,8 +1544,6 @@ def print_console_report(
     crossfile_metrics: dict[str, Any],
     checks: pd.DataFrame,
 ) -> None:
-    """Print the requested final console report."""
-
     cohort_counts = strict["entry_cohort"].value_counts()
     test = diagnostics.loc[diagnostics["first_recorded_year"].eq(TEST_YEAR)]
     error_checks = checks.loc[checks["severity"].eq("error")]
@@ -1671,7 +1624,7 @@ def print_console_report(
 
 
 def main() -> None:
-    """Run the complete Step 42 supplement."""
+    """Run the entry-scale analysis."""
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
@@ -1802,7 +1755,7 @@ def main() -> None:
 
 
 def run_prematch_entry_audit(output_root: str | Path | None = None) -> None:
-    """Run the Step 42 prematch entry-scale audit."""
+    """Run the prematch entry-state audit."""
 
     if output_root is not None:
         configure_output_root(output_root)
@@ -1810,8 +1763,6 @@ def run_prematch_entry_audit(output_root: str | Path | None = None) -> None:
 
 
 def run_burnin_and_drift(output_root: str | Path | None = None) -> None:
-    """Run the Step 41 burn-in and rating-scale diagnostic."""
-
     from code.analysis import rating_drift
 
     if output_root is not None:
@@ -1820,7 +1771,7 @@ def run_burnin_and_drift(output_root: str | Path | None = None) -> None:
 
 
 def run_all_entry_diagnostics(output_root: str | Path | None = None) -> None:
-    """Run Steps 41 and 42 in their required dependency order."""
+    """Run all entry-scale diagnostics."""
 
     run_burnin_and_drift(output_root)
     run_prematch_entry_audit(output_root)

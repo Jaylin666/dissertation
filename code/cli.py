@@ -1,4 +1,4 @@
-"""Command-line entry points for the canonical dissertation code."""
+"""Command-line interface for the analysis workflows."""
 
 from __future__ import annotations
 
@@ -108,7 +108,7 @@ def _validation_files() -> list[Path]:
 
 
 def validate_compact_outputs() -> bool:
-    """Validate tracked error-level checks without rerunning expensive models."""
+    """Validate tracked outputs without rerunning the historical models."""
 
     failures: list[str] = []
     total_error_checks = 0

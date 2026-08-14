@@ -1,1 +1,1 @@
-"""Reproducible model and comparison pipelines."""
+"""Reproducible analysis pipelines."""

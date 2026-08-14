@@ -1,1 +1,1 @@
-"""Canonical dissertation analyses and diagnostics."""
+"""Analysis workflows."""

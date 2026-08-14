@@ -1,10 +1,4 @@
-"""Build the canonical checked 1985-2025 match dataset.
-
-The implementation preserves the historical annual-file parsing, missing-date
-handling, joins, identifier fields, and chronological ordering from Steps 07
-and 13. Missing parsed dates are retained and sorted after dated events within
-their year.
-"""
+"""Build the checked historical game dataset."""
 
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -29,7 +23,6 @@ END_YEAR = FULL_HISTORY_END_YEAR
 try:
     PROJECT_ROOT = Path(__file__).resolve().parents[2]
 except NameError:
-    # Helps if the whole file is run in Spyder/IPython instead of as a script.
     PROJECT_ROOT = Path.cwd().resolve()
     if PROJECT_ROOT.name == "code":
         PROJECT_ROOT = PROJECT_ROOT.parent
@@ -151,7 +144,6 @@ IMPORTANT_OUTPUT_COLUMNS = [
 
 
 def clean_strings(df: pd.DataFrame) -> pd.DataFrame:
-    """Strip whitespace and treat blank cells as missing values."""
     df = df.copy()
     for col in df.columns:
         df[col] = df[col].astype("string").str.strip()
@@ -162,7 +154,6 @@ def clean_strings(df: pd.DataFrame) -> pd.DataFrame:
 def assign_columns_safely(
     df: pd.DataFrame, columns: List[str], file_label: str
 ) -> pd.DataFrame:
-    """Assign expected columns while preserving unexpected extra columns."""
     df = df.copy()
     actual_count = df.shape[1]
     expected_count = len(columns)
@@ -189,7 +180,6 @@ def assign_columns_safely(
 
 
 def load_csv_no_header(path: Path, columns: List[str], file_label: str) -> pd.DataFrame:
-    """Read a no-header CSV file and assign safe column names."""
     if not path.exists():
         raise FileNotFoundError(f"{file_label}: file not found: {path}")
 
@@ -216,7 +206,6 @@ def load_csv_no_header(path: Path, columns: List[str], file_label: str) -> pd.Da
 
 
 def to_numeric_id(df: pd.DataFrame, columns: List[str], file_label: str = "table") -> pd.DataFrame:
-    """Convert ID columns to numeric values and report newly created missing values."""
     df = df.copy()
     for col in columns:
         if col not in df.columns:
@@ -237,7 +226,6 @@ def to_numeric_id(df: pd.DataFrame, columns: List[str], file_label: str = "table
 
 
 def to_numeric_fields(df: pd.DataFrame, columns: List[str], file_label: str) -> pd.DataFrame:
-    """Convert numeric measurement fields while keeping missing values as NaN."""
     df = df.copy()
     for col in columns:
         if col in df.columns:
@@ -249,7 +237,6 @@ def to_numeric_fields(df: pd.DataFrame, columns: List[str], file_label: str) -> 
 
 
 def make_player_name(row: pd.Series) -> object:
-    """Create a readable player name from firstname, initials and surname."""
     surname = "" if pd.isna(row.get("surname")) else str(row.get("surname")).strip()
     firstname = "" if pd.isna(row.get("firstname")) else str(row.get("firstname")).strip()
     initials = "" if pd.isna(row.get("initials")) else str(row.get("initials")).strip()
@@ -264,7 +251,6 @@ def make_player_name(row: pd.Series) -> object:
 
 
 def load_names() -> pd.DataFrame:
-    """Read names.dat and create a compact player lookup table."""
     names = load_csv_no_header(DATA_RAW / "names.dat", NAME_COLS, "names")
     names = to_numeric_id(names, ["code"], "names")
 
@@ -283,7 +269,6 @@ def load_names() -> pd.DataFrame:
 
 
 def load_country() -> pd.DataFrame:
-    """Read country.csv and return a compact country lookup table."""
     country = load_csv_no_header(DATA_RAW / "country.csv", COUNTRY_COLS, "country")
     country = to_numeric_id(country, ["country_code"], "country")
 
@@ -301,11 +286,10 @@ def load_country() -> pd.DataFrame:
 
 
 def parse_event_dates(event_date_raw: pd.Series) -> pd.Series:
-    """Try to parse event dates without stopping if formats are inconsistent."""
+    """Parse a sortable date from each event date field when possible."""
     raw = event_date_raw.astype("string")
 
-    # Some rows are date ranges such as 27-30.12.24. Extracting a d.m.yy pattern
-    # gives pandas a better chance to parse at least one date for sorting.
+    # Date ranges retain one complete date for ordering; unmatched rows remain.
     extracted = raw.str.extract(r"(\d{1,2}\.\d{1,2}\.\d{2,4})", expand=False)
     parsed_from_extracted = parse_dot_dates(extracted)
     parsed_direct = parse_dot_dates(raw)
@@ -313,7 +297,7 @@ def parse_event_dates(event_date_raw: pd.Series) -> pd.Series:
 
 
 def parse_dot_dates(date_text: pd.Series) -> pd.Series:
-    """Parse dates such as 2.1.25 or 2.1.2025 using explicit formats."""
+    """Parse dates written with dot separators."""
     parsed = pd.Series(pd.NaT, index=date_text.index, dtype="datetime64[ns]")
     for date_format in ("%d.%m.%y", "%d.%m.%Y"):
         parsed = parsed.fillna(pd.to_datetime(date_text, format=date_format, errors="coerce"))
@@ -321,7 +305,6 @@ def parse_dot_dates(date_text: pd.Series) -> pd.Series:
 
 
 def prepare_events_for_merge(events: pd.DataFrame) -> pd.DataFrame:
-    """Rename event columns so they do not conflict with game columns."""
     events = events.rename(
         columns={
             "fcode": "event_fcode",
@@ -336,7 +319,6 @@ def prepare_events_for_merge(events: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare_player_lookup(names: pd.DataFrame, prefix: str) -> pd.DataFrame:
-    """Create winner or loser lookup columns."""
     lookup = names[["code", "player_name", "country"]].copy()
     lookup = lookup.rename(
         columns={
@@ -349,7 +331,6 @@ def prepare_player_lookup(names: pd.DataFrame, prefix: str) -> pd.DataFrame:
 
 
 def count_missing(series: pd.Series) -> int:
-    """Count missing values and blank strings."""
     cleaned = series.fillna("").astype(str).str.strip()
     return int(cleaned.eq("").sum())
 
@@ -361,7 +342,6 @@ def calculate_year_summary(
     hidx: pd.DataFrame,
     matches: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Create one row of data checks for a single year."""
     missing_hidx_rows = int(matches[HIDX_FIELDS].isna().all(axis=1).sum())
     unique_players = pd.concat([matches["winner"], matches["loser"]]).dropna().nunique()
 
@@ -386,7 +366,6 @@ def calculate_year_summary(
 
 
 def ensure_important_columns(matches: pd.DataFrame) -> pd.DataFrame:
-    """Make sure important output columns exist, even if optional fields were absent."""
     matches = matches.copy()
     for col in IMPORTANT_OUTPUT_COLUMNS:
         if col not in matches.columns:
@@ -396,7 +375,6 @@ def ensure_important_columns(matches: pd.DataFrame) -> pd.DataFrame:
 
 
 def order_output_columns(matches: pd.DataFrame) -> pd.DataFrame:
-    """Place the most important columns first and keep all other columns afterwards."""
     matches = ensure_important_columns(matches)
     first_cols = [col for col in IMPORTANT_OUTPUT_COLUMNS if col in matches.columns]
     remaining_cols = [col for col in matches.columns if col not in first_cols]
@@ -408,7 +386,7 @@ def load_one_year(
     names: Optional[pd.DataFrame] = None,
     country: Optional[pd.DataFrame] = None,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Load and merge games, events, hidx, names and country for one year."""
+    """Load and combine one year of source data."""
     if names is None:
         names = load_names()
     if country is None:
@@ -485,7 +463,7 @@ def load_one_year(
 
 
 def build_multiyear_dataset(start_year: int, end_year: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Build a multi-year match table and a yearly check summary."""
+    """Build the chronologically ordered game dataset."""
     names = load_names()
     country = load_country()
     all_matches = []
@@ -530,7 +508,6 @@ def build_multiyear_dataset(start_year: int, end_year: int) -> Tuple[pd.DataFram
 
 
 def create_data_check_summary(matches: pd.DataFrame) -> pd.DataFrame:
-    """Create an overall one-row summary for the multi-year dataset."""
     if matches.empty:
         return pd.DataFrame(
             [
@@ -579,7 +556,6 @@ def save_outputs(
     yearly_summary: pd.DataFrame,
     overall_summary: pd.DataFrame,
 ) -> Dict[str, Path]:
-    """Save the multi-year match data and check summaries."""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     matches.to_csv(MATCHES_OUTPUT_PATH, index=False)
     yearly_summary.to_csv(YEARLY_SUMMARY_PATH, index=False)
@@ -592,8 +568,6 @@ def save_outputs(
 
 
 def configure_output_root(output_root: str | Path) -> Path:
-    """Redirect canonical builder outputs below a temporary output root."""
-
     global OUTPUT_DIR, MATCHES_OUTPUT_PATH, YEARLY_SUMMARY_PATH, OVERALL_SUMMARY_PATH
 
     root = Path(output_root)
@@ -611,7 +585,7 @@ def configure_output_root(output_root: str | Path) -> Path:
 
 
 def validate_canonical_counts(matches: pd.DataFrame) -> Dict[str, bool]:
-    """Validate the frozen full-history, player, and 2025 evaluation counts."""
+    """Validate the frozen dataset counts."""
 
     players = pd.concat([matches["winner"], matches["loser"]]).dropna().nunique()
     test_matches = int((pd.to_numeric(matches["year"], errors="coerce") == TEST_YEAR).sum())
@@ -637,7 +611,6 @@ def print_command_line_summary(
     overall_summary: pd.DataFrame,
     output_paths: Dict[str, Path],
 ) -> None:
-    """Print the key checks after the script finishes."""
     row = overall_summary.iloc[0]
 
     print("\n=== Multi-year Match Dataset Summary ===")

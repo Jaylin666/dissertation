@@ -1,4 +1,4 @@
-"""Reusable rating-model implementations."""
+"""Rating model equations."""
 
 from code.config import EloConfig, GlickoConfig
 from code.models.elo import expected_score as elo_expected_score

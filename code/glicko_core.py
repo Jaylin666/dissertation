@@ -1,8 +1,4 @@
-"""Compatibility imports for historical scripts.
-
-The only Glicko-1 implementation now lives in :mod:`code.models.glicko`.
-New code must import that module directly.
-"""
+"""Compatibility exports for the Glicko-1 model."""
 
 from code.models.glicko import (
     C,

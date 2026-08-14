@@ -1,1 +1,1 @@
-"""Data acquisition and checked-match construction."""
+"""Data preparation tools."""

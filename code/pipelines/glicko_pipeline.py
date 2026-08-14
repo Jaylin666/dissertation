@@ -1,20 +1,4 @@
-"""Meeting 5 Glicko inactivity RD inflation sensitivity.
-
-This script tests whether adding inactivity RD inflation changes or improves
-the behaviour of the already validated Glicko-1 match-by-match baseline for
-croquet data.
-
-The experiment deliberately holds everything else constant:
-- dataset: 1985-2025 full-history checked match-level dataset
-- evaluation set: 2025 games
-- rating period: match-by-match
-- prediction timing: save prediction before updating ratings
-- Glicko formula: the existing validated Glicko-1 core
-- initial rating/RD and RD bounds: the existing Glicko core defaults
-
-Only the inactivity RD inflation setting changes. This is not an Elo-vs-Glicko
-comparison and does not implement adaptive-K Elo.
-"""
+"""Chronological one-game-period Glicko-1 inactivity sensitivity."""
 
 from __future__ import annotations
 
@@ -71,8 +55,6 @@ GAP_BRIER_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_gap_brier.png"
 
 
 def configure_output_root(output_root: str | Path) -> Path:
-    """Redirect generated Step 24 artifacts below a temporary output root."""
-
     global OUTPUT_DIR
     global METRICS_PATH, RD_SUMMARY_PATH, GAP_METRICS_PATH
     global PREDICTIONS_2025_PATH, FINAL_RATINGS_PATH, CALIBRATION_PATH
@@ -109,8 +91,6 @@ BASELINE_EXPECTED = {
 
 
 def find_full_history_dataset() -> Path:
-    """Find the checked full-history match dataset without using an absolute path."""
-
     expected = PROJECT_ROOT / "outputs" / "elo_optimization" / "matches_1985_2025_checked.csv"
     if expected.exists():
         return expected
@@ -125,8 +105,6 @@ def find_full_history_dataset() -> Path:
 
 
 def format_code_value(value: Any) -> str:
-    """Return a stable text representation for IDs in output files."""
-
     if pd.isna(value):
         return "missing"
     try:
@@ -139,14 +117,10 @@ def format_code_value(value: Any) -> str:
 
 
 def player_code(value: Any) -> int:
-    """Convert a dataset player code into an integer key."""
-
     return int(float(value))
 
 
 def update_player_name(player_names: dict[int, str], code: int, possible_name: Any) -> None:
-    """Keep the first non-empty name observed for a player."""
-
     if code in player_names or pd.isna(possible_name):
         return
     name = str(possible_name).strip()
@@ -155,19 +129,18 @@ def update_player_name(player_names: dict[int, str], code: int, possible_name: A
 
 
 def add_event_ordering_columns(matches: pd.DataFrame) -> pd.DataFrame:
-    """Compatibility name for the shared frozen ordering helper."""
-
     return add_shared_event_ordering(matches)
 
 
 def add_inactivity_period_index(matches: pd.DataFrame) -> tuple[pd.DataFrame, str]:
-    """Construct a month-based inactivity period index when possible."""
+    """Add monthly inactivity periods with a yearly fallback."""
 
     matches = matches.copy()
     event_dates = pd.to_datetime(matches["event_order_date"], errors="coerce")
     if event_dates.notna().any():
         period_index = (event_dates.dt.year * 12 + event_dates.dt.month).astype("Float64")
         fallback_mask = event_dates.isna()
+        # Missing dates use December for period ordering only.
         period_index.loc[fallback_mask] = matches.loc[fallback_mask, "year"].astype(int) * 12 + 12
         matches["inactivity_period_index"] = period_index.astype(int)
         matches["inactivity_period_source"] = np.where(
@@ -183,8 +156,6 @@ def add_inactivity_period_index(matches: pd.DataFrame) -> tuple[pd.DataFrame, st
 
 
 def load_matches() -> tuple[pd.DataFrame, str, Path]:
-    """Load, validate, sort, and add inactivity period information."""
-
     dataset_path = find_full_history_dataset()
     matches = pd.read_csv(dataset_path, low_memory=False)
 
@@ -224,7 +195,7 @@ def load_matches() -> tuple[pd.DataFrame, str, Path]:
 
 
 def build_variants(inactivity_unit: str) -> list[dict[str, Any]]:
-    """Create RD inflation variants using target time-to-return-to-max-RD logic."""
+    """Build the frozen Glicko variants."""
 
     if inactivity_unit == "month":
         target_low = 240
@@ -279,7 +250,7 @@ def inflate_rd_for_inactivity(
     min_rd: float = MIN_RD,
     max_rd: float = MAX_RD,
 ) -> float:
-    """Inflate RD after inactivity, bounded by the configured RD range."""
+    """Inflate RD for elapsed inactivity periods."""
 
     if c <= 0.0 or pd.isna(elapsed_periods) or elapsed_periods <= 0:
         return float(rd)
@@ -288,8 +259,6 @@ def inflate_rd_for_inactivity(
 
 
 def percentile(values: np.ndarray, q: float) -> float:
-    """Return a percentile as float, preserving NaN for empty arrays."""
-
     values = np.asarray(values, dtype=float)
     if len(values) == 0:
         return float("nan")
@@ -297,7 +266,7 @@ def percentile(values: np.ndarray, q: float) -> float:
 
 
 def evaluate_winner_predictions(predictions: pd.DataFrame) -> dict[str, float]:
-    """Evaluate 2025 predictions stored from the actual winner's perspective."""
+    """Calculate metrics from stored prematch winner probabilities."""
 
     if predictions.empty:
         return {
@@ -328,8 +297,6 @@ def evaluate_winner_predictions(predictions: pd.DataFrame) -> dict[str, float]:
 
 
 def assign_gap_group(max_gap: Any, inactivity_unit: str) -> str:
-    """Assign a 2025 game to an inactivity-gap subgroup."""
-
     if pd.isna(max_gap):
         return "new_or_missing_gap"
 
@@ -353,7 +320,7 @@ def assign_gap_group(max_gap: Any, inactivity_unit: str) -> str:
 
 
 def run_variant(matches: pd.DataFrame, variant: dict[str, Any], inactivity_unit: str) -> dict[str, Any]:
-    """Run one full-history match-by-match Glicko simulation for one RD inflation variant."""
+    """Run one RD-inflation variant with prediction before each update."""
 
     variant_name = variant["variant"]
     c_value = float(variant["c_value"])
@@ -587,8 +554,6 @@ def run_variant(matches: pd.DataFrame, variant: dict[str, Any], inactivity_unit:
 
 
 def make_rd_summary(final_ratings: pd.DataFrame) -> pd.DataFrame:
-    """Summarise final RD distribution for every variant."""
-
     rows = []
     for variant, group in final_ratings.groupby("variant", sort=False):
         rds = group["rd"].astype(float).to_numpy()
@@ -612,8 +577,6 @@ def make_rd_summary(final_ratings: pd.DataFrame) -> pd.DataFrame:
 
 
 def make_gap_metrics(predictions: pd.DataFrame, inactivity_unit: str) -> pd.DataFrame:
-    """Evaluate 2025 prediction metrics by inactivity-gap group."""
-
     if predictions.empty:
         return pd.DataFrame()
 
@@ -641,8 +604,6 @@ def make_gap_metrics(predictions: pd.DataFrame, inactivity_unit: str) -> pd.Data
 
 
 def make_calibration_table(predictions: pd.DataFrame) -> pd.DataFrame:
-    """Create a compact calibration table from winner-perspective probabilities."""
-
     if predictions.empty:
         return pd.DataFrame()
 
@@ -675,8 +636,6 @@ def make_calibration_table(predictions: pd.DataFrame) -> pd.DataFrame:
 
 
 def save_bar_plot(metrics: pd.DataFrame, metric: str, path: Path, title: str, ylabel: str) -> None:
-    """Save a simple bar plot for one metric by variant."""
-
     fig, ax = plt.subplots(figsize=(8, 4.8))
     plot_data = metrics.sort_values("variant")
     ax.bar(plot_data["variant"], plot_data[metric], color="#4C78A8")
@@ -691,8 +650,6 @@ def save_bar_plot(metrics: pd.DataFrame, metric: str, path: Path, title: str, yl
 
 
 def save_rd_distribution_plot(final_ratings: pd.DataFrame, path: Path) -> None:
-    """Save final RD distribution as a box plot by variant."""
-
     variants = list(final_ratings["variant"].drop_duplicates())
     data = [
         final_ratings.loc[final_ratings["variant"] == variant, "rd"].astype(float).to_numpy()
@@ -711,8 +668,6 @@ def save_rd_distribution_plot(final_ratings: pd.DataFrame, path: Path) -> None:
 
 
 def save_gap_brier_plot(gap_metrics: pd.DataFrame, path: Path) -> None:
-    """Save grouped Brier score plot by inactivity gap group."""
-
     if gap_metrics.empty:
         return
     pivot = gap_metrics.pivot(index="gap_group", columns="variant", values="brier")
@@ -730,8 +685,6 @@ def save_gap_brier_plot(gap_metrics: pd.DataFrame, path: Path) -> None:
 
 
 def format_value(value: Any) -> str:
-    """Format values for markdown tables."""
-
     if pd.isna(value):
         return ""
     if isinstance(value, (float, np.floating)):
@@ -740,8 +693,6 @@ def format_value(value: Any) -> str:
 
 
 def markdown_table(df: pd.DataFrame, columns: list[str]) -> str:
-    """Render a small markdown table without depending on tabulate."""
-
     if df.empty:
         return "_No rows._"
     table = df[columns].copy()
@@ -755,8 +706,6 @@ def markdown_table(df: pd.DataFrame, columns: list[str]) -> str:
 
 
 def choose_recommendation(metrics: pd.DataFrame, gap_metrics: pd.DataFrame) -> tuple[str, str]:
-    """Create a cautious, rule-based tentative recommendation paragraph."""
-
     metrics_sorted = metrics.sort_values(["brier", "log_loss"]).reset_index(drop=True)
     best = metrics_sorted.iloc[0]
     c0 = metrics.loc[metrics["variant"] == "C0_no_inflation"].iloc[0]
@@ -801,8 +750,6 @@ def write_summary(
     dataset_path: Path,
     output_paths: list[Path],
 ) -> None:
-    """Write a meeting-ready markdown summary."""
-
     recommendation_headline, recommendation_reason = choose_recommendation(metrics, gap_metrics)
     c0_row = metrics.loc[metrics["variant"] == "C0_no_inflation"].iloc[0]
     best_brier = metrics.sort_values(["brier", "log_loss"]).iloc[0]
@@ -953,7 +900,7 @@ def write_summary(
 
 
 def main() -> None:
-    """Run the RD inflation sensitivity experiment."""
+    """Run the Glicko pipeline."""
 
     overall_start = time.perf_counter()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

@@ -1,4 +1,4 @@
-"""Download annual source files when the user has authorised data access."""
+"""Download annual source files."""
 
 from pathlib import Path
 import time
@@ -31,7 +31,7 @@ STATIC_FILES = [
 
 
 def download_file(filename, output_dir=DATA_DIR, overwrite=False):
-    """Download one source file, unless a non-empty local copy exists."""
+    """Download one source file when needed."""
 
     output_path = output_dir / filename
 
@@ -85,7 +85,7 @@ def download_all_years(
     overwrite=False,
     sleep_seconds=0.2,
 ):
-    """Download all expected files for the inclusive year range."""
+    """Download expected files for a year range."""
 
     success_files = []
     failed_files = []
@@ -136,7 +136,7 @@ def download_all_years(
 
 
 def check_downloaded_files(start_year=1985, end_year=2025):
-    """Report expected source files that are present or missing locally."""
+    """Report present and missing source files."""
 
     expected_files = []
 
@@ -175,7 +175,6 @@ if __name__ == "__main__":
     START_YEAR = 1985
     END_YEAR = 2025
 
-    # Existing non-empty files are retained when overwrite is false.
     download_all_years(
         start_year=START_YEAR,
         end_year=END_YEAR,

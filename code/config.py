@@ -1,10 +1,4 @@
-"""Frozen scientific configuration for the dissertation analyses.
-
-Every value in this module is taken from the validated historical scripts or
-their tracked compact outputs. Changing a value here changes the scientific
-specification and therefore requires a new analysis, not a maintenance
-refactor.
-"""
+"""Frozen parameters and expected values."""
 
 from __future__ import annotations
 
@@ -49,7 +43,7 @@ STEP_37_RANDOM_SEED = 20260717
 
 @dataclass(frozen=True)
 class EloConfig:
-    """Immutable Elo parameterisation."""
+    """Elo parameters."""
 
     name: str
     initial_rating: float
@@ -90,7 +84,7 @@ ELO_CONFIGURATIONS: Tuple[EloConfig, ...] = (
 
 @dataclass(frozen=True)
 class GlickoConfig:
-    """Immutable Glicko-1 and inactivity-inflation parameterisation."""
+    """Glicko-1 parameters."""
 
     name: str = "Glicko_low_inflation_match_by_match"
     initial_rating: float = 1500.0
@@ -115,7 +109,7 @@ class GlickoConfig:
 
     @property
     def inactivity_c(self) -> float:
-        """Return the frozen Step 24 low-inflation C value."""
+        """Return the frozen inactivity constant."""
 
         numerator = (self.maximum_rd**2) - (self.minimum_rd**2)
         return math.sqrt(numerator / self.inactivity_target_periods)
@@ -126,7 +120,7 @@ GLICKO_LOW_INFLATION = GlickoConfig()
 
 @dataclass(frozen=True)
 class FirstAppearanceGolden:
-    """Frozen 2025 first-recorded-appearance headline values."""
+    """Expected first-appearance values for 2025."""
 
     mean_current_probability: float = 0.743448336412
     empirical_win_rate: float = 0.407894736842

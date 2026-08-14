@@ -1,9 +1,4 @@
-"""Reusable Glicko-1 core functions.
-
-This module intentionally implements classic Glicko-1 only. It does not
-implement Glicko-2 volatility, inactivity RD inflation, or rating-period
-calendar logic.
-"""
+"""Glicko-1 equations."""
 
 from __future__ import annotations
 
@@ -22,7 +17,7 @@ C = 0.0
 
 @dataclass(frozen=True)
 class SingleGameUpdate:
-    """Result from treating one match as a single Glicko rating period."""
+    """Result of one Glicko-1 update."""
 
     player1_rating_before: float
     player1_rd_before: float
@@ -37,20 +32,20 @@ class SingleGameUpdate:
 
 
 def clamp_rd(rd: float) -> float:
-    """Restrict RD to the configured Glicko range."""
+    """Clamp RD to the configured range."""
 
     return min(MAX_RD, max(MIN_RD, float(rd)))
 
 
 def g_function(rd: float) -> float:
-    """Return Glicko's g(RD) scaling function."""
+    """Return the Glicko scaling factor."""
 
     rd = float(rd)
     return 1.0 / math.sqrt(1.0 + (3.0 * (Q**2) * (rd**2)) / (math.pi**2))
 
 
 def expected_score(rating: float, opponent_rating: float, opponent_rd: float) -> float:
-    """Return expected score for a player against one opponent."""
+    """Return expected score using the opponent's RD."""
 
     g_rd = g_function(opponent_rd)
     exponent = -g_rd * (float(rating) - float(opponent_rating)) / 400.0
@@ -68,12 +63,7 @@ def update_player_glicko(
     opponent_rds: Iterable[float],
     scores: Iterable[float],
 ) -> tuple[float, float]:
-    """Update one player's rating and RD over one Glicko-1 rating period.
-
-    The rating period can contain one or more games. Scores use 1 for a win and
-    0 for a loss. Draws are not needed for the current croquet baseline, though
-    the formula would also accept 0.5 if required later.
-    """
+    """Update one player over a Glicko-1 rating period."""
 
     opponent_ratings = _as_float_list(opponent_ratings)
     opponent_rds = _as_float_list(opponent_rds)
@@ -121,10 +111,7 @@ def update_two_players_single_game(
     player2_rd: float,
     score1: float,
 ) -> SingleGameUpdate:
-    """Treat a single match as one Glicko-1 rating period for both players.
-
-    Both players are updated from the same pre-match ratings and RDs.
-    """
+    """Update both players for one game."""
 
     score1 = float(score1)
     score2 = 1.0 - score1

@@ -1,4 +1,4 @@
-"""Canonical chronological Elo pipeline for frozen dissertation configurations."""
+"""Chronological Elo pipeline."""
 
 from __future__ import annotations
 
@@ -47,13 +47,11 @@ EPSILON = 1e-15
 
 
 def player_code(value: Any) -> int:
-    """Return a stable integer player identifier."""
-
     return int(float(value))
 
 
 def load_matches(path: str | Path = FULL_HISTORY_PATH) -> pd.DataFrame:
-    """Load and reproduce the frozen chronological full-history order."""
+    """Load the checked historical games in frozen order."""
 
     matches = read_csv_checked(
         path,
@@ -94,7 +92,7 @@ def run_elo(
     matches: pd.DataFrame,
     config: EloConfig,
 ) -> tuple[pd.DataFrame, pd.DataFrame, float]:
-    """Run one frozen Elo configuration and return 2025 predictions and ratings."""
+    """Run one Elo configuration with prediction before each update."""
 
     started = time.perf_counter()
     ratings: dict[int, float] = {}
@@ -182,7 +180,7 @@ def run_elo(
 
 
 def player_a_accuracy(predictions: pd.DataFrame) -> float:
-    """Apply the frozen convention that a 0.5 probability predicts player A."""
+    """Treat a probability of 0.5 as a Player A prediction."""
 
     probabilities = predictions["pred_a_win"].to_numpy(dtype=float)
     outcomes = predictions["outcome_a"].to_numpy(dtype=int)
@@ -191,7 +189,7 @@ def player_a_accuracy(predictions: pd.DataFrame) -> float:
 
 
 def metric_row(predictions: pd.DataFrame, config: EloConfig, runtime: float) -> dict[str, Any]:
-    """Calculate the historical actual-winner evaluation metrics."""
+    """Calculate one model metric row."""
 
     if len(predictions) != EXPECTED_TEST_MATCHES:
         raise ValueError(
@@ -221,7 +219,7 @@ def run_configurations(
     matches: pd.DataFrame,
     configurations: Iterable[EloConfig] = ELO_CONFIGURATIONS,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Run named Elo configurations without changing their frozen parameters."""
+    """Run the frozen Elo configurations."""
 
     prediction_frames: list[pd.DataFrame] = []
     rating_frames: list[pd.DataFrame] = []
@@ -244,8 +242,6 @@ def write_outputs(
     metrics: pd.DataFrame,
     output_root: str | Path,
 ) -> dict[str, Path]:
-    """Write a protected active-run output set below the requested root."""
-
     root = Path(output_root)
     if not root.is_absolute():
         root = PROJECT_ROOT / root
@@ -264,7 +260,7 @@ def write_outputs(
 def run_pipeline(
     output_root: str | Path = "outputs/refactor_validation",
 ) -> dict[str, Path]:
-    """Run the canonical frozen Elo configurations."""
+    """Run the Elo pipeline and write its outputs."""
 
     matches = load_matches()
     predictions, ratings, metrics = run_configurations(matches)
