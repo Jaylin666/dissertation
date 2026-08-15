@@ -1,5 +1,0 @@
-burn_in_years,burn_in_start_year,burn_in_end_year,post_burn_in_start_year,post_burn_in_first_appearances,test_year_first_appearances_retained,audit_role
-1,1985,1985,1986,4829,76,classification sensitivity only; the rating model is unchanged
-3,1985,1987,1988,4637,76,classification sensitivity only; the rating model is unchanged
-5,1985,1989,1990,4373,76,classification sensitivity only; the rating model is unchanged
-10,1985,1994,1995,3710,76,classification sensitivity only; the rating model is unchanged

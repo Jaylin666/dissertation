@@ -24,7 +24,7 @@ from code.config import (
 
 ROOT = Path(__file__).resolve().parents[1]
 CHAPTER5_EVIDENCE = ROOT / "outputs" / "dissertation_evidence" / "chapter5"
-ARCHIVED_MEETING8 = ROOT / "archive" / "research_outputs" / "meeting8_technical"
+VALIDATION_FIXTURES = ROOT / "tests" / "fixtures" / "validation"
 
 
 class EntryDefinitionTests(unittest.TestCase):
@@ -32,7 +32,7 @@ class EntryDefinitionTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.cohorts = pd.read_csv(CHAPTER5_EVIDENCE / "entry_cohort_definitions_core.csv")
         cls.audit = pd.read_csv(
-            ARCHIVED_MEETING8 / "42_2025_crossfile_entry_audit.csv"
+            VALIDATION_FIXTURES / "first_appearance_crossfile_audit.csv"
         )
 
     def test_cohort_boundaries(self) -> None:

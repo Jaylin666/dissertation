@@ -1,7 +1,0 @@
-﻿candidate_initial_rating,validation_brier,validation_logloss,validation_accuracy,validation_debut_prediction_bias,validation_rank_brier,validation_rank_logloss,selected,selection_reason
-1000,0.19125561114850315,0.5614609708648073,0.7052076356329537,0.3312074775231208,1,1,False,Not selected by validation-only rule.
-1100,0.19125561114850315,0.5614609708648073,0.7052076356329537,0.3312074775231208,1,1,False,Not selected by validation-only rule.
-1200,0.19125561114850315,0.5614609708648073,0.7052076356329537,0.3312074775231208,1,1,False,Not selected by validation-only rule.
-1300,0.19125561114850315,0.5614609708648073,0.7052076356329537,0.33120747752312085,1,1,False,Not selected by validation-only rule.
-1400,0.19125561114850315,0.5614609708648073,0.7052076356329537,0.33120747752312074,1,1,False,Not selected by validation-only rule.
-1500,0.19125561114850315,0.5614609708648073,0.7052076356329537,0.3312074775231208,1,1,True,"All candidates tied within tolerance on validation Brier, log loss, and debut bias; retained current 1500."

@@ -29,7 +29,7 @@ from code.validation_utils import robust_bool
 
 DEFAULT_VALIDATION_ROOT = "outputs/refactor_validation"
 EVIDENCE_ROOT = PROJECT_ROOT / "outputs" / "dissertation_evidence"
-ARCHIVED_OUTPUT_ROOT = PROJECT_ROOT / "archive" / "research_outputs"
+VALIDATION_FIXTURE_ROOT = PROJECT_ROOT / "tests" / "fixtures" / "validation"
 
 
 def _add_run_options(parser: argparse.ArgumentParser) -> None:
@@ -95,15 +95,15 @@ def _print_run_header(
 
 def _validation_files() -> list[Path]:
     return [
-        ARCHIVED_OUTPUT_ROOT / "meeting6" / "33_canonical_player_orientation_checks.csv",
-        ARCHIVED_OUTPUT_ROOT / "meeting6" / "33_final_validation_checks.csv",
-        ARCHIVED_OUTPUT_ROOT / "meeting7" / "34_input_validation_checks.csv",
-        ARCHIVED_OUTPUT_ROOT / "meeting7" / "34_metric_validation_checks.csv",
-        ARCHIVED_OUTPUT_ROOT / "meeting7" / "34_bootstrap_figure_validation_checks.csv",
-        ARCHIVED_OUTPUT_ROOT / "meeting7" / "34_bootstrap_method_audit_checks.csv",
-        ARCHIVED_OUTPUT_ROOT / "meeting7" / "34_bootstrap_robustness_validation_checks.csv",
-        ARCHIVED_OUTPUT_ROOT / "meeting8_technical" / "41_validation_checks.csv",
-        ARCHIVED_OUTPUT_ROOT / "meeting8_technical" / "42_validation_checks.csv",
+        VALIDATION_FIXTURE_ROOT / "player_orientation_checks.csv",
+        VALIDATION_FIXTURE_ROOT / "model_comparison_checks.csv",
+        VALIDATION_FIXTURE_ROOT / "early_game_input_checks.csv",
+        VALIDATION_FIXTURE_ROOT / "early_game_metric_checks.csv",
+        VALIDATION_FIXTURE_ROOT / "early_game_bootstrap_figure_checks.csv",
+        VALIDATION_FIXTURE_ROOT / "early_game_bootstrap_method_checks.csv",
+        VALIDATION_FIXTURE_ROOT / "early_game_bootstrap_robustness_checks.csv",
+        VALIDATION_FIXTURE_ROOT / "entry_classification_checks.csv",
+        VALIDATION_FIXTURE_ROOT / "entry_evidence_checks.csv",
     ]
 
 

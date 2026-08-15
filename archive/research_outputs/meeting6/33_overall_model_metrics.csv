@@ -1,7 +1,0 @@
-model,display_name,source_model,model_family,evaluation_games,events,brier,log_loss,accuracy,mean_favourite_probability,favourite_win_rate,corrected_favourite_calibration_error,accuracy_tie_rule
-Glicko_low_fixed,Glicko low inflation,Step32 fixed direct player-A probability from Glicko_low_inflation_match_by_match,Glicko,11379,629,0.187603868924,0.5517787243,0.711486070832,0.721561235362,0.711486070832,0.0114411085144,p_a >= 0.5 predicts player A
-Validation_best_Elo,Validation-best Elo,Step29 player-A probability from Validation_best_Elo,Elo,11379,629,0.19007264006,0.556534255949,0.704455576061,0.711184298612,0.704455576061,0.00686998061731,p_a >= 0.5 predicts player A
-best_AdaptiveK,Best adaptive-K Elo,Step29 player-A probability from AdaptiveK_PreviousYearGames_Elo_scale300,Elo,11379,629,0.190781422536,0.559184791547,0.706213199754,0.688139056759,0.706213199754,0.0181000227617,p_a >= 0.5 predicts player A
-Default_Elo,Default Elo,Step29 player-A probability from Default_Elo,Elo,11379,629,0.194155553153,0.567632617282,0.701116091045,0.673838647377,0.701116091045,0.0272774436683,p_a >= 0.5 predicts player A
-Glicko_C0_fixed,Glicko C0,Step32 fixed direct player-A probability from Glicko_C0_match_by_match,Glicko,11379,629,0.195707693341,0.571957573912,0.693734071535,0.693822184926,0.693734071535,0.00534470810054,p_a >= 0.5 predicts player A
-Conservative_Elo,Conservative Elo,Step29 player-A probability from Conservative_Elo,Elo,11379,629,0.201418477877,0.585927563619,0.686527814395,0.646043237244,0.686527814395,0.0404845771506,p_a >= 0.5 predicts player A
