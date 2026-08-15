@@ -258,10 +258,11 @@ def write_outputs(
 
 
 def run_pipeline(
-    output_root: str | Path = "outputs/refactor_validation",
+    matches_path: str | Path = FULL_HISTORY_PATH,
+    output_root: str | Path = "outputs/reproduction",
 ) -> dict[str, Path]:
     """Run the Elo pipeline and write its outputs."""
 
-    matches = load_matches()
+    matches = load_matches(matches_path)
     predictions, ratings, metrics = run_configurations(matches)
     return write_outputs(predictions, ratings, metrics, output_root)

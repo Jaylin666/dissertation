@@ -7,8 +7,9 @@ from pathlib import Path
 from typing import Any, Iterable
 
 import pandas as pd
+import numpy as np
 
-from code.io_utils import write_csv
+from code.io_utils import PROJECT_ROOT, write_csv
 
 
 VALID_SEVERITIES = {"error", "warning"}
@@ -109,3 +110,115 @@ def robust_bool(value: Any) -> bool:
         if normalised in {"false", "0"}:
             return False
     raise ValueError(f"Unsupported boolean value: {value!r}")
+
+
+REPRODUCTION_EVIDENCE_TABLES = (
+    ("elo_validation/elo_validation_grid.csv", "chapter4/elo_validation_grid.csv", ()),
+    ("elo_validation/elo_validation_selected_model.csv", "chapter4/elo_validation_selected_model.csv", ()),
+    ("glicko_inflation/glicko_inflation_metrics_2025.csv", "chapter4/glicko_inflation_sensitivity.csv", ("runtime_seconds",)),
+    ("glicko_rating_period/glicko_rating_period_metrics.csv", "chapter4/glicko_rating_period_metrics.csv", ()),
+    ("comparison/overall_model_metrics.csv", "chapter4/overall_model_metrics.csv", ()),
+    ("comparison/overall_pairwise_comparisons.csv", "chapter4/overall_pairwise_comparisons.csv", ()),
+    ("comparison/overall_bootstrap_confidence_intervals.csv", "chapter4/overall_bootstrap_confidence_intervals.csv", ()),
+    ("comparison/calibration_bins.csv", "chapter4/calibration_bins.csv", ()),
+    ("comparison/calibration_summary.csv", "chapter4/calibration_summary.csv", ()),
+    ("comparison/adaptive_k_recovery.csv", "chapter4/adaptive_k_recovery.csv", ()),
+    ("early_game/early_game_cumulative_core.csv", "chapter5/early_game_cumulative_core.csv", ()),
+    ("early_game/early_game_stage_core.csv", "chapter5/early_game_stage_core.csv", ()),
+    ("early_game/early_game_event_cluster_ci_core.csv", "chapter5/early_game_event_cluster_ci_core.csv", ()),
+    ("early_game/first_appearance_mechanism_core.csv", "chapter5/first_appearance_mechanism_core.csv", ()),
+    ("initial_rating_sensitivity/initial_rating_invariance_core.csv", "chapter5/initial_rating_invariance_core.csv", ()),
+    ("entry_diagnostics/entry_cohort_definitions_core.csv", "chapter5/entry_cohort_definitions_core.csv", ()),
+    ("entry_diagnostics/burnin_sensitivity_core.csv", "chapter5/burnin_sensitivity_core.csv", ()),
+    ("entry_diagnostics/prematch_scale_alignment_2025_core.csv", "chapter5/prematch_scale_alignment_2025_core.csv", ()),
+    ("entry_diagnostics/orientation_sensitivity_2025_core.csv", "chapter5/orientation_sensitivity_2025_core.csv", ()),
+)
+
+
+def compare_csv_tables(
+    reproduced: pd.DataFrame,
+    reference: pd.DataFrame,
+    excluded_columns: Iterable[str] = (),
+    tolerance: float = 1e-9,
+) -> list[str]:
+    """Return scientific differences without changing row order."""
+
+    differences: list[str] = []
+    excluded = set(excluded_columns)
+    if len(reproduced) != len(reference):
+        return [f"row count {len(reproduced)} != {len(reference)}"]
+    columns = [column for column in reference.columns if column not in excluded]
+    missing = [column for column in columns if column not in reproduced.columns]
+    if missing:
+        return [f"missing columns: {missing}"]
+    for column in columns:
+        left = reproduced[column]
+        right = reference[column]
+        numeric = (
+            pd.api.types.is_numeric_dtype(left)
+            and pd.api.types.is_numeric_dtype(right)
+            and not pd.api.types.is_bool_dtype(left)
+            and not pd.api.types.is_bool_dtype(right)
+        )
+        if numeric:
+            left_values = left.to_numpy(dtype=float)
+            right_values = right.to_numpy(dtype=float)
+            if not np.allclose(
+                left_values,
+                right_values,
+                rtol=0.0,
+                atol=tolerance,
+                equal_nan=True,
+            ):
+                maximum = float(np.nanmax(np.abs(left_values - right_values)))
+                differences.append(f"{column}: max absolute difference {maximum}")
+        else:
+            left_text = left.fillna("<NA>").astype(str).reset_index(drop=True)
+            right_text = right.fillna("<NA>").astype(str).reset_index(drop=True)
+            if not left_text.equals(right_text):
+                differences.append(f"{column}: row values or order differ")
+    return differences
+
+
+def compare_reproduction_to_evidence(
+    output_root: str | Path,
+    evidence_root: str | Path | None = None,
+) -> pd.DataFrame:
+    """Compare generated compact tables with tracked direct evidence."""
+
+    generated_root = Path(output_root)
+    if not generated_root.is_absolute():
+        generated_root = PROJECT_ROOT / generated_root
+    tracked_root = (
+        Path(evidence_root)
+        if evidence_root is not None
+        else PROJECT_ROOT / "outputs" / "dissertation_evidence"
+    )
+    rows: list[dict[str, Any]] = []
+    for generated_name, tracked_name, exclusions in REPRODUCTION_EVIDENCE_TABLES:
+        generated_path = generated_root / generated_name
+        tracked_path = tracked_root / tracked_name
+        if not generated_path.exists() or not tracked_path.exists():
+            differences = [
+                "missing "
+                + ", ".join(
+                    str(path)
+                    for path in (generated_path, tracked_path)
+                    if not path.exists()
+                )
+            ]
+        else:
+            differences = compare_csv_tables(
+                pd.read_csv(generated_path, low_memory=False),
+                pd.read_csv(tracked_path, low_memory=False),
+                exclusions,
+            )
+        rows.append(
+            {
+                "generated_table": generated_name,
+                "tracked_table": tracked_name,
+                "passed": not differences,
+                "detail": "; ".join(differences),
+            }
+        )
+    return pd.DataFrame(rows)

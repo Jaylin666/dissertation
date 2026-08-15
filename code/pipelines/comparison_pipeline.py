@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from code.io_utils import ensure_directory
+
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -1341,6 +1343,111 @@ def create_player_a_calibration_gap_figure(
     fig.savefig(path, dpi=200)
     plt.close(fig)
     return path
+
+
+def create_overall_brier_figure(overall_metrics: pd.DataFrame, path: Path) -> Path:
+    """Create the reported overall Brier-score figure."""
+
+    models = [
+        "Glicko_low_fixed",
+        "Validation_best_Elo",
+        "best_AdaptiveK",
+        "Default_Elo",
+        "Glicko_C0_fixed",
+    ]
+    selected = overall_metrics.loc[overall_metrics["model"].isin(models)].copy()
+    selected["order"] = selected["model"].map({model: index for index, model in enumerate(models)})
+    selected = selected.sort_values("order")
+    if selected["model"].tolist() != models:
+        raise ValueError("Overall Brier figure is missing a required model")
+    labels = selected["display_name"].replace({"Best adaptive-K Elo": "Adaptive-K Elo"})
+    fig, ax = plt.subplots(figsize=(8.8, 4.8))
+    ax.bar(labels, selected["brier"], color=["#1f6f8b", "#b8614b", "#6b8e4e", "#8b7bb0", "#c49a42"])
+    ax.set_ylim(max(0.0, selected["brier"].min() - 0.003), selected["brier"].max() + 0.003)
+    ax.set_ylabel("Brier score")
+    ax.tick_params(axis="x", rotation=20)
+    ax.grid(axis="y", alpha=0.25)
+    fig.text(0.01, 0.01, "Vertical axis truncated to show small differences.", fontsize=8)
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+    return path
+
+
+def run_pipeline(
+    comparison_input_path: str | Path,
+    output_root: str | Path = "outputs/reproduction",
+) -> dict[str, Path]:
+    """Run the reported comparison from a unified game-level input."""
+
+    source = Path(comparison_input_path)
+    if not source.is_absolute():
+        source = PROJECT_ROOT / source
+    if not source.exists():
+        raise FileNotFoundError(f"Required input not found: {source}")
+    scores = pd.read_csv(source, low_memory=False)
+    required = [
+        "match_id",
+        "match_sequence",
+        "event_key",
+        "player_a_id",
+        "player_b_id",
+        "winner_id",
+        "outcome_a",
+        "p_a_Glicko_low_fixed",
+        "p_a_Glicko_C0_fixed",
+        "p_a_Validation_best_Elo",
+        "p_a_best_AdaptiveK",
+        "p_a_Default_Elo",
+        "p_a_Conservative_Elo",
+        "either_player_debut",
+        "min_total_games_before",
+        "min_games_last_365_days",
+        "either_player_inactive_365d",
+        "both_players_active_last_365d",
+        "max_prematch_rd",
+    ]
+    require_columns(scores, required, source.name)
+    if len(scores) != EXPECTED_GAMES or scores["match_id"].duplicated().any():
+        raise ValueError("Unified comparison input must contain 11,379 unique games")
+    if not (scores["player_a_id"] < scores["player_b_id"]).all():
+        raise ValueError("Player A orientation must depend only on database player ID")
+    expected_outcome = scores["player_a_id"].eq(scores["winner_id"]).astype(int)
+    if not scores["outcome_a"].astype(int).equals(expected_outcome):
+        raise ValueError("Player A outcomes do not match the canonical orientation")
+
+    scored = calculate_per_match_scores(scores)
+    overall = calculate_overall_model_metrics(scored)
+    pairwise, intervals = overall_pairwise_and_ci(scored)
+    calibration_summary, calibration_bins = standard_calibration(scored)
+    recovery = calculate_adaptive_k_recovery(scored)
+
+    root = Path(output_root)
+    if not root.is_absolute():
+        root = PROJECT_ROOT / root
+    destination = ensure_directory(root.resolve() / "comparison")
+    figure_dir = ensure_directory(destination / "figures")
+    paths = {
+        "scores": destination / "per_match_model_scores_2025.csv",
+        "overall": destination / "overall_model_metrics.csv",
+        "pairwise": destination / "overall_pairwise_comparisons.csv",
+        "intervals": destination / "overall_bootstrap_confidence_intervals.csv",
+        "calibration_bins": destination / "calibration_bins.csv",
+        "calibration_summary": destination / "calibration_summary.csv",
+        "recovery": destination / "adaptive_k_recovery.csv",
+        "overall_figure": figure_dir / "overall_brier_zoomed.png",
+        "calibration_figure": figure_dir / "calibration_player_a.png",
+    }
+    scored.to_csv(paths["scores"], index=False)
+    overall.to_csv(paths["overall"], index=False)
+    pairwise.to_csv(paths["pairwise"], index=False)
+    intervals.to_csv(paths["intervals"], index=False)
+    calibration_bins.to_csv(paths["calibration_bins"], index=False)
+    calibration_summary.to_csv(paths["calibration_summary"], index=False)
+    recovery.to_csv(paths["recovery"], index=False)
+    create_overall_brier_figure(overall, paths["overall_figure"])
+    create_player_a_calibration_gap_figure(calibration_bins, paths["calibration_figure"])
+    return paths
 
 
 def create_figures(

@@ -17,7 +17,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from code.io_utils import add_event_ordering_columns as add_shared_event_ordering
+from code.io_utils import (
+    add_event_ordering_columns as add_shared_event_ordering,
+    ensure_directory,
+)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -155,8 +158,13 @@ def add_inactivity_period_index(matches: pd.DataFrame) -> tuple[pd.DataFrame, st
     return matches, "year"
 
 
-def load_matches() -> tuple[pd.DataFrame, str, Path]:
-    dataset_path = find_full_history_dataset()
+def load_matches(path: str | Path | None = None) -> tuple[pd.DataFrame, str, Path]:
+    dataset_path = Path(path) if path is not None else find_full_history_dataset()
+    if not dataset_path.is_absolute():
+        dataset_path = PROJECT_ROOT / dataset_path
+    dataset_path = dataset_path.resolve()
+    if not dataset_path.exists():
+        raise FileNotFoundError(f"Required input not found: {dataset_path}")
     matches = pd.read_csv(dataset_path, low_memory=False)
 
     missing_required = [col for col in REQUIRED_COLUMNS if col not in matches.columns]
@@ -192,6 +200,39 @@ def load_matches() -> tuple[pd.DataFrame, str, Path]:
     print(f"Players: {players:,}")
     print(f"Inactivity period unit: {inactivity_unit}")
     return matches, inactivity_unit, dataset_path
+
+
+def run_pipeline(
+    matches_path: str | Path | None = None,
+    output_root: str | Path = "outputs/reproduction",
+) -> dict[str, Path]:
+    """Run the frozen inactivity variants into a reproduction directory."""
+
+    matches, inactivity_unit, _ = load_matches(matches_path)
+    variants = build_variants(inactivity_unit)
+    results = [run_variant(matches, variant, inactivity_unit) for variant in variants]
+    metrics = pd.DataFrame([result["metrics"] for result in results])
+    predictions = pd.concat(
+        [result["predictions_2025"] for result in results],
+        ignore_index=True,
+    )
+    ratings = pd.concat(
+        [result["final_ratings"] for result in results],
+        ignore_index=True,
+    )
+    destination = Path(output_root)
+    if not destination.is_absolute():
+        destination = PROJECT_ROOT / destination
+    destination = ensure_directory(destination.resolve() / "glicko_inflation")
+    paths = {
+        "metrics": destination / "glicko_inflation_metrics_2025.csv",
+        "predictions": destination / "glicko_inflation_predictions_2025.csv",
+        "ratings": destination / "glicko_inflation_final_ratings.csv",
+    }
+    metrics.to_csv(paths["metrics"], index=False)
+    predictions.to_csv(paths["predictions"], index=False)
+    ratings.to_csv(paths["ratings"], index=False)
+    return paths
 
 
 def build_variants(inactivity_unit: str) -> list[dict[str, Any]]:

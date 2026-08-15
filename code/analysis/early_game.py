@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from code.io_utils import ensure_directory
+
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -1811,6 +1813,268 @@ def calculate_match_level_bootstrap_confidence_intervals(match_scores: pd.DataFr
     out = pd.DataFrame(rows)
     out.to_csv(MATCH_LEVEL_BOOTSTRAP_CI_PATH, index=False, encoding="utf-8-sig", float_format="%.12g")
     return out
+
+
+def build_match_level_intervals(match_scores: pd.DataFrame, event_col: str) -> pd.DataFrame:
+    """Build unique-game event-cluster intervals without file side effects."""
+
+    specifications = [
+        ("delta_brier", "match_delta_brier_elo_minus_glicko", "Elo Brier - Glicko Brier"),
+        ("delta_log_loss", "match_delta_log_loss_elo_minus_glicko", "Elo log loss - Glicko log loss"),
+        ("delta_accuracy", "match_delta_accuracy_glicko_minus_elo", "Glicko accuracy - Elo accuracy"),
+    ]
+    rows: list[dict[str, Any]] = []
+    for index, threshold in enumerate(CUMULATIVE_THRESHOLDS, start=1):
+        group_name = f"first_{threshold}"
+        sample = match_scores.loc[match_scores[f"either_player_first_{threshold}"]].copy()
+        columns = [column for _, column, _ in specifications]
+        intervals, unit, clusters = cluster_bootstrap_means(
+            sample,
+            columns,
+            event_col,
+            seed=RANDOM_SEED + 10_000 + index,
+            reps=BOOTSTRAP_REPS,
+        )
+        for metric, column, definition in specifications:
+            lower, upper = intervals[column]
+            rows.append(
+                {
+                    "group": group_name,
+                    "threshold": threshold,
+                    "metric": metric,
+                    "metric_definition": definition,
+                    "unique_games": int(sample["match_id"].nunique()),
+                    "unique_events": int(sample[event_col].nunique()),
+                    "bootstrap_unit": unit,
+                    "bootstrap_repetitions": BOOTSTRAP_REPS,
+                    "point_estimate": float(sample[column].mean()),
+                    "ci_lower": lower,
+                    "ci_upper": upper,
+                    "ci_excludes_zero": bool(lower > 0.0 or upper < 0.0),
+                    "clusters": clusters,
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def compact_cumulative(cumulative: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, Any]] = []
+    for threshold in (1, 5, 10, 20):
+        group = cumulative.loc[cumulative["threshold"].eq(threshold)].set_index("model")
+        elo = group.loc["Validation_best_Elo"]
+        glicko = group.loc["Glicko_low_fixed"]
+        rows.append(
+            {
+                "range": f"first_{threshold}",
+                "appearances": int(elo["appearances"]),
+                "players": int(elo["players"]),
+                "unique_games": int(elo["matches"]),
+                "elo_brier": float(elo["brier"]),
+                "glicko_low_brier": float(glicko["brier"]),
+                "elo_log_loss": float(elo["log_loss"]),
+                "glicko_low_log_loss": float(glicko["log_loss"]),
+                "appearance_level_delta_brier_elo_minus_glicko": float(
+                    elo["brier"] - glicko["brier"]
+                ),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def compact_stage(stage: pd.DataFrame) -> pd.DataFrame:
+    rows: list[dict[str, Any]] = []
+    for label in STAGE_LABELS:
+        group = stage.loc[stage["group"].eq(label)].set_index("model")
+        elo = group.loc["Validation_best_Elo"]
+        glicko = group.loc["Glicko_low_fixed"]
+        rows.append(
+            {
+                "appearance_stage": label,
+                "appearances": int(elo["appearances"]),
+                "players": int(elo["players"]),
+                "unique_games": int(elo["matches"]),
+                "elo_brier": float(elo["brier"]),
+                "glicko_low_brier": float(glicko["brier"]),
+                "elo_mean_predicted_probability": float(elo["mean_predicted_probability"]),
+                "glicko_low_mean_predicted_probability": float(glicko["mean_predicted_probability"]),
+                "empirical_win_rate": float(elo["empirical_win_rate"]),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def compact_first_appearance(stage: pd.DataFrame) -> pd.DataFrame:
+    names = {
+        "Validation_best_Elo": "Validation-best Elo",
+        "Glicko_low_fixed": "Glicko low inflation",
+    }
+    rows: list[dict[str, Any]] = []
+    for model, display in names.items():
+        row = stage.loc[stage["group"].eq("1") & stage["model"].eq(model)].iloc[0]
+        rows.append(
+            {
+                "model": display,
+                "appearances": int(row["appearances"]),
+                "players": int(row["players"]),
+                "unique_games": int(row["matches"]),
+                "mean_predicted_win_probability": float(row["mean_predicted_probability"]),
+                "empirical_win_rate": float(row["empirical_win_rate"]),
+                "prediction_bias": float(row["mean_predicted_probability"] - row["empirical_win_rate"]),
+                "brier": float(row["brier"]),
+                "log_loss": float(row["log_loss"]),
+                "accuracy": float(row["accuracy"]),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def compact_event_intervals(intervals: pd.DataFrame) -> pd.DataFrame:
+    keep = (
+        intervals["group"].eq("first_1")
+        | (
+            intervals["group"].isin(["first_5", "first_10", "first_20"])
+            & intervals["metric"].eq("delta_brier")
+        )
+    )
+    return intervals.loc[
+        keep,
+        [
+            "group",
+            "threshold",
+            "metric",
+            "metric_definition",
+            "unique_games",
+            "unique_events",
+            "bootstrap_unit",
+            "bootstrap_repetitions",
+            "point_estimate",
+            "ci_lower",
+            "ci_upper",
+            "ci_excludes_zero",
+        ],
+    ].reset_index(drop=True)
+
+
+def create_stage_brier_replot(stage_core: pd.DataFrame, path: Path) -> Path:
+    """Create Figure 5.1 from its compact stage table."""
+
+    labels = stage_core["appearance_stage"].astype(str).tolist()
+    if labels != STAGE_LABELS:
+        raise ValueError("Unexpected early-game stage order")
+    x = np.arange(len(labels))
+    fig, ax = plt.subplots(figsize=(8.4, 4.4))
+    ax.plot(x, stage_core["elo_brier"], marker="o", label="Validation-best Elo")
+    ax.plot(x, stage_core["glicko_low_brier"], marker="o", label="Glicko low inflation")
+    ax.set_xlabel("Appearance stage")
+    ax.set_ylabel("Brier score")
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend(frameon=False)
+    ax.grid(axis="y", alpha=0.25)
+    fig.tight_layout()
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+    return path
+
+
+def create_predicted_vs_empirical_replot(stage_core: pd.DataFrame, path: Path) -> Path:
+    """Create Figure 5.2 from its compact stage table."""
+
+    labels = stage_core["appearance_stage"].astype(str).tolist()
+    if labels != STAGE_LABELS:
+        raise ValueError("Unexpected early-game stage order")
+    x = np.arange(len(labels))
+    fig, ax = plt.subplots(figsize=(8.4, 4.6))
+    ax.plot(x, stage_core["empirical_win_rate"], marker="o", linewidth=2.2, label="Empirical win rate")
+    ax.plot(x, stage_core["elo_mean_predicted_probability"], marker="o", linestyle="--", label="Validation-best Elo")
+    ax.plot(x, stage_core["glicko_low_mean_predicted_probability"], marker="o", linestyle="--", label="Glicko low inflation")
+    ax.set_xlabel("Appearance stage")
+    ax.set_ylabel("Focal player win probability")
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.set_ylim(0.0, 1.0)
+    ax.legend(frameon=False)
+    ax.grid(axis="y", alpha=0.25)
+    fig.tight_layout()
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+    return path
+
+
+def run_pipeline(
+    comparison_input_path: str | Path,
+    output_root: str | Path = "outputs/reproduction",
+) -> dict[str, Path]:
+    """Run appearance summaries and unique-game robustness checks."""
+
+    source = Path(comparison_input_path)
+    if not source.is_absolute():
+        source = PROJECT_ROOT / source
+    if not source.exists():
+        raise FileNotFoundError(f"Required input not found: {source}")
+    scores = pd.read_csv(source, low_memory=False)
+    checks: list[dict[str, Any]] = []
+    if not validate_input_scores(scores, checks):
+        raise ValueError("Comparison input is missing early-game fields")
+    appearances = build_appearance_dataset(scores)
+    exact_counts = build_exact_appearance_counts(appearances)
+    validate_appearance_dataset(scores, appearances, exact_counts, checks)
+    models = available_performance_models(appearances)
+    cumulative = calculate_cumulative_threshold_performance(appearances, models)
+    stage = calculate_stage_bin_performance(appearances, models)
+
+    from code.pipelines.comparison_pipeline import calculate_per_match_scores
+
+    scored = calculate_per_match_scores(scores)
+    match_scores, event_column = prepare_match_level_scores(scored)
+    intervals = build_match_level_intervals(match_scores, event_column)
+    cumulative_core = compact_cumulative(cumulative)
+    stage_core = compact_stage(stage)
+    first_core = compact_first_appearance(stage)
+    interval_core = compact_event_intervals(intervals)
+
+    debut = appearances.loc[appearances["appearance_number"].eq(1)]
+    debut_games = scores.loc[scores["either_player_debut"].astype(bool)]
+    exactly_one = scores["a_is_debut"].astype(bool) ^ scores["b_is_debut"].astype(bool)
+    both = scores["a_is_debut"].astype(bool) & scores["b_is_debut"].astype(bool)
+    observed = (
+        len(debut),
+        debut["player_id"].nunique(),
+        debut_games["match_id"].nunique(),
+        int(exactly_one.sum()),
+        int(both.sum()),
+    )
+    if observed != (76, 76, 74, 72, 2):
+        raise ValueError(f"Unexpected first-appearance counts: {observed}")
+
+    root = Path(output_root)
+    if not root.is_absolute():
+        root = PROJECT_ROOT / root
+    destination = ensure_directory(root.resolve() / "early_game")
+    figure_dir = ensure_directory(destination / "figures")
+    paths = {
+        "appearances": destination / "early_game_appearances_2025.csv",
+        "cumulative": destination / "early_game_cumulative.csv",
+        "stage": destination / "early_game_stage.csv",
+        "event_intervals": destination / "early_game_event_cluster_intervals.csv",
+        "cumulative_core": destination / "early_game_cumulative_core.csv",
+        "stage_core": destination / "early_game_stage_core.csv",
+        "event_core": destination / "early_game_event_cluster_ci_core.csv",
+        "first_core": destination / "first_appearance_mechanism_core.csv",
+        "stage_figure": figure_dir / "stage_brier_replot.png",
+        "calibration_figure": figure_dir / "predicted_vs_empirical_replot.png",
+    }
+    appearances.to_csv(paths["appearances"], index=False)
+    cumulative.to_csv(paths["cumulative"], index=False)
+    stage.to_csv(paths["stage"], index=False)
+    intervals.to_csv(paths["event_intervals"], index=False)
+    cumulative_core.to_csv(paths["cumulative_core"], index=False)
+    stage_core.to_csv(paths["stage_core"], index=False)
+    interval_core.to_csv(paths["event_core"], index=False)
+    first_core.to_csv(paths["first_core"], index=False)
+    create_stage_brier_replot(stage_core, paths["stage_figure"])
+    create_predicted_vs_empirical_replot(stage_core, paths["calibration_figure"])
+    return paths
 
 
 def ci_direction(lower: float, upper: float) -> str:
