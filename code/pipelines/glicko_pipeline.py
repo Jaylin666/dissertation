@@ -46,7 +46,6 @@ GAP_METRICS_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_gap_metrics.csv"
 PREDICTIONS_2025_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_predictions_2025.csv"
 FINAL_RATINGS_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_final_ratings.csv"
 CALIBRATION_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_calibration_2025.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_summary.md"
 
 BRIER_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_brier_bar.png"
 LOGLOSS_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_logloss_bar.png"
@@ -58,7 +57,7 @@ def configure_output_root(output_root: str | Path) -> Path:
     global OUTPUT_DIR
     global METRICS_PATH, RD_SUMMARY_PATH, GAP_METRICS_PATH
     global PREDICTIONS_2025_PATH, FINAL_RATINGS_PATH, CALIBRATION_PATH
-    global SUMMARY_MD_PATH, BRIER_PLOT_PATH, LOGLOSS_PLOT_PATH
+    global BRIER_PLOT_PATH, LOGLOSS_PLOT_PATH
     global RD_DIST_PLOT_PATH, GAP_BRIER_PLOT_PATH
 
     root = Path(output_root)
@@ -71,7 +70,6 @@ def configure_output_root(output_root: str | Path) -> Path:
     PREDICTIONS_2025_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_predictions_2025.csv"
     FINAL_RATINGS_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_final_ratings.csv"
     CALIBRATION_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_calibration_2025.csv"
-    SUMMARY_MD_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_summary.md"
     BRIER_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_brier_bar.png"
     LOGLOSS_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rd_inflation_logloss_bar.png"
     RD_DIST_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rd_distribution_by_variant.png"
@@ -692,17 +690,6 @@ def format_value(value: Any) -> str:
     return str(value)
 
 
-def markdown_table(df: pd.DataFrame, columns: list[str]) -> str:
-    if df.empty:
-        return "_No rows._"
-    table = df[columns].copy()
-    lines = [
-        "| " + " | ".join(columns) + " |",
-        "| " + " | ".join(["---"] * len(columns)) + " |",
-    ]
-    for _, row in table.iterrows():
-        lines.append("| " + " | ".join(format_value(row[col]) for col in columns) + " |")
-    return "\n".join(lines)
 
 
 def choose_recommendation(metrics: pd.DataFrame, gap_metrics: pd.DataFrame) -> tuple[str, str]:
@@ -741,162 +728,6 @@ def choose_recommendation(metrics: pd.DataFrame, gap_metrics: pd.DataFrame) -> t
     return headline, reason
 
 
-def write_summary(
-    metrics: pd.DataFrame,
-    rd_summary: pd.DataFrame,
-    gap_metrics: pd.DataFrame,
-    variants: list[dict[str, Any]],
-    inactivity_unit: str,
-    dataset_path: Path,
-    output_paths: list[Path],
-) -> None:
-    recommendation_headline, recommendation_reason = choose_recommendation(metrics, gap_metrics)
-    c0_row = metrics.loc[metrics["variant"] == "C0_no_inflation"].iloc[0]
-    best_brier = metrics.sort_values(["brier", "log_loss"]).iloc[0]
-    high_gap_label = "gap_36plus_months" if inactivity_unit == "month" else "gap_4plus_years"
-    high_gap = gap_metrics.loc[gap_metrics["gap_group"] == high_gap_label].copy()
-
-    if not high_gap.empty:
-        high_gap_text = markdown_table(
-            high_gap.sort_values("variant"),
-            ["variant", "games", "log_loss", "brier", "accuracy", "mean_prediction"],
-        )
-    else:
-        high_gap_text = f"_No 2025 games were assigned to `{high_gap_label}`._"
-
-    variants_table = pd.DataFrame(
-        [
-            {
-                "variant": item["variant"],
-                "c_value": item["c_value"],
-                "target_periods": item["target_periods"],
-                "target_label": item["target_label"],
-            }
-            for item in variants
-        ]
-    )
-
-    lines = [
-        "# Meeting 5 Glicko Inactivity RD Inflation Sensitivity",
-        "",
-        "## Purpose",
-        "",
-        (
-            "This experiment asks whether adding inactivity RD inflation improves or changes "
-            "the behaviour of Glicko-1 for croquet data. It isolates one factor only: the "
-            "RD inflation setting."
-        ),
-        "",
-        "## Experimental Design",
-        "",
-        f"- Dataset: `{dataset_path.name}`.",
-        f"- Period covered: {START_YEAR}-{END_YEAR}.",
-        "- Rating period: match-by-match.",
-        "- Evaluation set: 2025 games only.",
-        "- Glicko formula: existing validated Glicko-1 core.",
-        "- Initial rating/RD: 1500 / 350.",
-        f"- RD bounds: MIN_RD={MIN_RD:.0f}, MAX_RD={MAX_RD:.0f}.",
-        "- No Elo-vs-Glicko final comparison is made here.",
-        "- No adaptive-K Elo is implemented here.",
-        "",
-        "## Inactivity Period Definition",
-        "",
-        (
-            f"This run used `{inactivity_unit}`-based inactivity periods. "
-            "When event dates could be parsed or month-year dates could be imputed, "
-            "the period index was based on calendar month. Rows without a usable event "
-            "date used a same-year fallback period so that matches were retained."
-            if inactivity_unit == "month"
-            else "This run fell back to year-based inactivity periods because month-level dates were not usable."
-        ),
-        "",
-        "## Variants Tested",
-        "",
-        markdown_table(variants_table, ["variant", "c_value", "target_periods", "target_label"]),
-        "",
-        "## Main 2025 Prediction Results",
-        "",
-        markdown_table(
-            metrics.sort_values("variant"),
-            [
-                "variant",
-                "evaluation_games_2025",
-                "log_loss",
-                "brier",
-                "accuracy",
-                "baseline_accuracy",
-                "runtime_seconds",
-            ],
-        ),
-        "",
-        (
-            f"The best aggregate Brier score in this run is `{best_brier['variant']}` "
-            f"(Brier={best_brier['brier']:.6f}, log loss={best_brier['log_loss']:.6f})."
-        ),
-        (
-            "The C0 run is used as a check against the previous match-by-match Glicko baseline: "
-            f"log loss={c0_row['log_loss']:.6f}, Brier={c0_row['brier']:.6f}, "
-            f"accuracy={c0_row['accuracy']:.6f}."
-        ),
-        "",
-        "## RD Behaviour",
-        "",
-        markdown_table(
-            rd_summary.sort_values("variant"),
-            [
-                "variant",
-                "mean_rd",
-                "median_rd",
-                "q10_rd",
-                "q90_rd",
-                "max_rd",
-                "players_at_min_rd",
-                "players_near_max_rd",
-            ],
-        ),
-        "",
-        (
-            "RD inflation is expected to raise uncertainty for returning inactive players. "
-            "The important checks are whether RD is bounded by MAX_RD and whether all players "
-            "collapse to MIN_RD. The latter would reduce Glicko's uncertainty advantage."
-        ),
-        "",
-        "## Gap-Based Subgroup Results",
-        "",
-        f"High-gap subgroup inspected: `{high_gap_label}`.",
-        "",
-        high_gap_text,
-        "",
-        "## Interpretation For Supervisor",
-        "",
-        (
-            "This experiment directly addresses whether inactivity RD inflation matters for "
-            "croquet Glicko. If aggregate metrics barely change but high-gap subgroup metrics "
-            "move, that would still be useful: it would suggest RD inflation is more relevant "
-            "for returning players than for the whole 2025 test set."
-        ),
-        "",
-        "## Recommended Main Glicko Variant",
-        "",
-        f"**{recommendation_headline}**",
-        "",
-        recommendation_reason,
-        "",
-        "Use cautious wording: this is a candidate main Glicko variant or sensitivity result, not a final proof of a universally best model.",
-        "",
-        "## Remaining Limitations",
-        "",
-        "- This script keeps the rating period fixed at match-by-match.",
-        "- It does not compare against Elo.",
-        "- It does not run adaptive-K Elo.",
-        "- It does not tune Glicko-2 or add a volatility parameter.",
-        "- The inactivity period is approximated from available event dates, with fallback handling for rows without usable dates.",
-        "",
-        "## Output Files",
-        "",
-    ]
-    lines.extend([f"- `{path}`" for path in output_paths])
-    SUMMARY_MD_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -981,21 +812,11 @@ def main() -> None:
         PREDICTIONS_2025_PATH,
         FINAL_RATINGS_PATH,
         CALIBRATION_PATH,
-        SUMMARY_MD_PATH,
         BRIER_PLOT_PATH,
         LOGLOSS_PLOT_PATH,
         RD_DIST_PLOT_PATH,
         GAP_BRIER_PLOT_PATH,
     ]
-    write_summary(
-        metrics_df,
-        rd_summary_df,
-        gap_metrics_df,
-        variants,
-        inactivity_unit,
-        dataset_path,
-        output_paths,
-    )
 
     print("\nOutput files:")
     for path in output_paths:

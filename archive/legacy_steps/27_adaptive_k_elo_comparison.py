@@ -1,15 +1,4 @@
-"""Meeting 5 adaptive-K Elo comparison.
-
-This script tests whether a simple adaptive-K Elo rule can capture much of the
-predictive benefit of the candidate Glicko model.
-
-It compares fixed adaptive-K Elo rules against existing fixed Elo baselines and
-the existing Glicko low-inflation reference under the same full-history match
-data, chronological ordering, 2025 evaluation games, and metrics.
-
-It does not rerun Glicko, does not implement Glicko-2, and does not overwrite
-existing outputs from earlier steps.
-"""
+"""Compare the retained Adaptive-K Elo candidates."""
 
 from __future__ import annotations
 
@@ -47,7 +36,6 @@ RATING_SIMILARITY_PATH = OUTPUT_DIR / "meeting5_adaptive_k_elo_rating_similarity
 FINAL_RATINGS_PATH = OUTPUT_DIR / "meeting5_adaptive_k_elo_final_ratings.csv"
 K_DIAGNOSTICS_PATH = OUTPUT_DIR / "meeting5_adaptive_k_elo_k_diagnostics.csv"
 ISSUES_PATH = OUTPUT_DIR / "meeting5_adaptive_k_elo_issues.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "meeting5_adaptive_k_elo_summary.md"
 
 BRIER_PLOT_PATH = OUTPUT_DIR / "meeting5_adaptive_k_elo_brier_bar.png"
 LOGLOSS_PLOT_PATH = OUTPUT_DIR / "meeting5_adaptive_k_elo_logloss_bar.png"
@@ -966,232 +954,8 @@ def save_rating_scatter(final_ratings: pd.DataFrame, active_counts: dict[int, in
     plt.close(fig)
 
 
-def markdown_table(df: pd.DataFrame, columns: list[str]) -> str:
-    if df.empty:
-        return "_No rows._"
-    lines = [
-        "| " + " | ".join(columns) + " |",
-        "| " + " | ".join(["---"] * len(columns)) + " |",
-    ]
-    for _, row in df[columns].iterrows():
-        values = []
-        for col in columns:
-            value = row[col]
-            if pd.isna(value):
-                values.append("")
-            elif isinstance(value, (float, np.floating)):
-                values.append(f"{float(value):.6f}")
-            else:
-                values.append(str(value))
-        lines.append("| " + " | ".join(values) + " |")
-    return "\n".join(lines)
 
 
-def write_summary(
-    metrics: pd.DataFrame,
-    evaluation_check: pd.DataFrame,
-    calibration_summary: pd.DataFrame,
-    activity_subgroups: pd.DataFrame,
-    rating_similarity: pd.DataFrame,
-    issues: pd.DataFrame,
-    dataset_path: Path,
-) -> None:
-    """Write meeting-ready markdown summary."""
-
-    ordered = metrics.sort_values(["brier", "log_loss"]).copy()
-    glicko = metrics.loc[metrics["model"] == "Glicko_low_inflation_match_by_match"].iloc[0]
-    val_elo = metrics.loc[metrics["model"] == "Validation_best_Elo"].iloc[0]
-    default_elo = metrics.loc[metrics["model"] == "Default_Elo"].iloc[0]
-    main_adaptive = metrics.loc[
-        metrics["model"].isin(["AdaptiveK_TotalGames_Elo", "AdaptiveK_PreviousYearGames_Elo"])
-    ].sort_values(["brier", "log_loss"])
-    best_adaptive = main_adaptive.iloc[0]
-
-    if best_adaptive["brier"] < default_elo["brier"] and best_adaptive["brier"] >= val_elo["brier"]:
-        interpretation = (
-            "Adaptive-K helps relative to Default Elo, but tuned fixed-K Elo remains stronger."
-        )
-    elif best_adaptive["brier"] < val_elo["brier"] and best_adaptive["brier"] >= glicko["brier"]:
-        interpretation = (
-            "Adaptive-K captures part, but not all, of Glicko's predictive benefit."
-        )
-    elif best_adaptive["brier"] < glicko["brier"]:
-        interpretation = (
-            "A simple adaptive-K Elo is very competitive here and captures much of the candidate Glicko benefit, although it lacks explicit uncertainty interpretation."
-        )
-    else:
-        interpretation = (
-            "This simple adaptive-K rule is not sufficient to replace Glicko in this fixed comparison."
-        )
-
-    if glicko["brier"] <= ordered["brier"].min() + 1e-12:
-        glicko_text = (
-            "Glicko low_inflation remains the current candidate best predictive model in this fixed comparison, but at the cost of greater complexity."
-        )
-    else:
-        glicko_text = (
-            "Glicko low_inflation remains a candidate model, but it is not the lowest-Brier model in this adaptive-K sensitivity run."
-        )
-
-    active_similarity = rating_similarity.loc[
-        rating_similarity["group"] == "active_2025_games_ge5_and_total_games_ge100"
-    ].copy()
-    subgroup_focus = activity_subgroups.loc[
-        (activity_subgroups["subgroup_type"] == "previous_year_games")
-        & (activity_subgroups["subgroup"] == "min_prev_year_games_0_to_5")
-    ].sort_values(["brier", "log_loss"])
-    issue_lines = ["- None"] if issues.empty else [
-        f"- {row.issue_type}: {row.model} - {row.detail}" for row in issues.itertuples(index=False)
-    ]
-
-    lines = [
-        "# Meeting 5 Adaptive-K Elo Comparison",
-        "",
-        "## Purpose",
-        "",
-        (
-            "This experiment tests whether a simpler adaptive-K Elo can capture much of the "
-            "benefit of the candidate Glicko model. It is not another round of Glicko tuning."
-        ),
-        "",
-        "## Experimental Design",
-        "",
-        f"- Dataset: `{dataset_path.name}` covering {START_YEAR}-{END_YEAR}.",
-        "- Evaluation set: 2025 games.",
-        "- Prediction perspective: probability assigned to the actual winner before update.",
-        "- Corrected calibration uses predicted-favourite perspective, not actual-winner perspective.",
-        "- No Glicko rerun, no Glicko-2, and no overwrite of previous outputs.",
-        "",
-        "## Models Compared",
-        "",
-        "- Default_Elo.",
-        "- Validation_best_Elo.",
-        "- Glicko_low_inflation_match_by_match.",
-        "- AdaptiveK_TotalGames_Elo.",
-        "- AdaptiveK_PreviousYearGames_Elo.",
-        "- Optional sensitivity variants with scale=300 are included and marked as sensitivity variants.",
-        "",
-        "## Adaptive-K Rules",
-        "",
-        "- Total previous games: K=30 for <20 prior games, K=20 for 20-99, K=10 for 100+.",
-        "- Previous-year activity: K=30 for 0-5 games in the previous year, K=20 for 6-30, K=10 for >30.",
-        "- Winner and loser can have different K values, decided from pre-match information only.",
-        "",
-        "## Evaluation Set Check",
-        "",
-        markdown_table(
-            evaluation_check,
-            [
-                "model",
-                "evaluation_games",
-                "unique_game_ids",
-                "missing_game_ids_vs_union",
-                "extra_game_ids_vs_reference",
-                "probability_min",
-                "probability_max",
-                "status",
-            ],
-        ),
-        "",
-        "## Main 2025 Prediction Results",
-        "",
-        markdown_table(
-            ordered,
-            [
-                "model",
-                "model_family",
-                "evaluation_games",
-                "log_loss",
-                "brier",
-                "accuracy",
-                "weighted_mean_abs_calibration_error_corrected",
-            ],
-        ),
-        "",
-        "## Corrected Calibration Results",
-        "",
-        markdown_table(
-            calibration_summary.sort_values("model"),
-            [
-                "model",
-                "weighted_mean_abs_calibration_error_corrected",
-                "max_abs_calibration_error",
-                "bins_used",
-            ],
-        ),
-        "",
-        "## Activity Subgroup Results",
-        "",
-        "Low previous-year activity subgroup (`min_prev_year_games_0_to_5`):",
-        "",
-        markdown_table(
-            subgroup_focus,
-            ["model", "games", "log_loss", "brier", "accuracy", "mean_pred_actual_winner_win"],
-        ),
-        "",
-        "## Rating-List Similarity",
-        "",
-        markdown_table(
-            active_similarity,
-            [
-                "comparison",
-                "players",
-                "spearman",
-                "pearson",
-                "top50_overlap",
-                "top100_overlap",
-                "mean_abs_rank_diff",
-                "mean_abs_centered_rating_diff",
-            ],
-        ),
-        "",
-        "## Interpretation For Supervisor",
-        "",
-        interpretation,
-        "",
-        glicko_text,
-        "",
-        (
-            "Adaptive-K Elo is more transparent than Glicko because it remains an Elo update with "
-            "a simple K rule. However, it does not provide an explicit uncertainty/RD interpretation."
-        ),
-        "",
-        "## Does Adaptive-K Elo Capture Glicko's Benefit?",
-        "",
-        (
-            f"The strongest main adaptive-K model here is `{best_adaptive['model']}`. "
-            f"Its Brier score is {best_adaptive['brier']:.6f}, compared with "
-            f"{val_elo['brier']:.6f} for validation-best Elo and {glicko['brier']:.6f} for "
-            "Glicko low_inflation."
-        ),
-        "",
-        "Use cautious wording: this is a current fixed-test result, not proof of a final best model.",
-        "",
-        "## Remaining Limitations",
-        "",
-        "- The adaptive-K rules are deliberately simple and not exhaustively tuned.",
-        "- Scale=300 adaptive variants are sensitivity checks because scale changes effective update size.",
-        "- Glicko keeps a more explicit uncertainty interpretation via RD.",
-        "- The comparison uses the fixed 2025 test set after prior model-development decisions.",
-        "",
-        "## Issues / Warnings",
-        "",
-        *issue_lines,
-        "",
-        "## Output Files",
-        "",
-        f"- `{METRICS_PATH}`",
-        f"- `{EVALUATION_CHECK_PATH}`",
-        f"- `{PREDICTIONS_PATH}`",
-        f"- `{CALIBRATION_PATH}`",
-        f"- `{CONFIDENCE_PATH}`",
-        f"- `{ACTIVITY_SUBGROUPS_PATH}`",
-        f"- `{RATING_SIMILARITY_PATH}`",
-        f"- `{FINAL_RATINGS_PATH}`",
-        f"- `{K_DIAGNOSTICS_PATH}`",
-        f"- `{ISSUES_PATH}`",
-    ]
-    SUMMARY_MD_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -1297,15 +1061,6 @@ def main() -> None:
     ].sort_values(["brier", "log_loss"]).iloc[0]["model"]
     save_rating_scatter(final_ratings_df, active_2025_counts, total_game_counts, best_main_adaptive)
 
-    write_summary(
-        metrics_df,
-        evaluation_check_df,
-        calibration_summary_df,
-        activity_subgroups_df,
-        rating_similarity_df,
-        issues_df,
-        dataset_path,
-    )
 
     print("\nMain metrics:")
     print(
@@ -1344,7 +1099,6 @@ def main() -> None:
         FINAL_RATINGS_PATH,
         K_DIAGNOSTICS_PATH,
         ISSUES_PATH,
-        SUMMARY_MD_PATH,
         BRIER_PLOT_PATH,
         LOGLOSS_PLOT_PATH,
         ACCURACY_PLOT_PATH,

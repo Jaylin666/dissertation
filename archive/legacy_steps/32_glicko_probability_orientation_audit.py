@@ -1,13 +1,4 @@
-"""Audit Glicko probability orientation from Meeting 5 through Step 31.
-
-The audit checks whether saved Glicko probabilities are outcome-dependent
-because the Meeting 5 prediction files store actual-winner probabilities while
-Glicko expected scores are not complementary when player RDs differ.
-
-This script does not rerun rating updates or modify prior outputs. It only
-reconstructs probabilities from saved pre-match ratings/RDs and writes new
-diagnostic outputs under outputs/meeting6/.
-"""
+"""Audit Glicko probability orientation against canonical Player A."""
 
 from __future__ import annotations
 
@@ -32,7 +23,6 @@ DIRECT_COMPARISON_PATH = OUTPUT_DIR / "32_glicko_direct_probability_comparison.c
 GAP_SUMMARY_PATH = OUTPUT_DIR / "32_glicko_complement_gap_summary.csv"
 SUBGROUP_PATH = OUTPUT_DIR / "32_probability_orientation_by_subgroup.csv"
 IMPACT_PATH = OUTPUT_DIR / "32_orientation_impact_on_metrics.csv"
-SUMMARY_PATH = OUTPUT_DIR / "32_glicko_probability_orientation_audit_summary.md"
 
 EXPECTED_GAMES = 11_379
 BOOTSTRAP_REPS = 2_000
@@ -440,91 +430,6 @@ def validate_audit(scores: pd.DataFrame, comp: pd.DataFrame, elo: pd.DataFrame, 
     return pd.DataFrame(rows)
 
 
-def write_summary(checks: pd.DataFrame, gap_summary: pd.DataFrame, subgroup_summary: pd.DataFrame, impact: pd.DataFrame) -> str:
-    """Write a concise Markdown audit summary."""
-
-    def f(value: Any, digits: int = 6) -> str:
-        return "NA" if pd.isna(value) else f"{float(value):.{digits}f}"
-
-    low_gap = gap_summary.loc[(gap_summary["model"] == "Glicko_low") & (gap_summary["variable"] == "abs_complement_gap")].iloc[0]
-    c0_gap = gap_summary.loc[(gap_summary["model"] == "Glicko_C0") & (gap_summary["variable"] == "abs_complement_gap")].iloc[0]
-
-    def row(model: str, orientation: str, subgroup: str = "Overall") -> pd.Series:
-        return impact.loc[
-            (impact["model"] == model)
-            & (impact["orientation"] == orientation)
-            & (impact["subgroup"] == subgroup)
-        ].iloc[0]
-
-    low_existing = row("Glicko_low", "existing_saved_orientation")
-    low_direct = row("Glicko_low", "fixed_player_a_direct")
-    low_sym = row("Glicko_low", "symmetric_diagnostic")
-    debut_direct = row("Glicko_low", "fixed_player_a_direct", "Exactly one debut")
-    returner_direct = row("Glicko_low", "fixed_player_a_direct", "Returning >=365 days, no debut")
-    c0_direct = row("Glicko_C0", "fixed_player_a_direct")
-
-    lines = [
-        "# Glicko Probability Orientation Audit",
-        "",
-        "## Conclusion",
-        "",
-        "The audit confirms case C: this is an evaluation problem for Glicko probabilities, not only a field-naming issue.",
-        "Meeting 5 stores actual-winner probabilities. Because Glicko expected scores are not complementary when RDs differ, Step 29's conversion to player-A probability is outcome-dependent for Glicko.",
-        "",
-        "## Code-Level Findings",
-        "",
-        "- `glicko_core.expected_score(rating, opponent_rating, opponent_rd)` uses the opponent RD.",
-        "- `24_glicko_rd_inflation_sensitivity.py` computes `pred_winner_win = expected_score(winner_rating_before, loser_rating_before, loser_rd_before)`.",
-        "- `29_where_glicko_helps.py` converts winner probability to player-A probability as `p_a = p_winner` if player A won, else `1 - p_winner`.",
-        "- For Elo this conversion is harmless because direct probabilities are complementary. For Glicko it is not harmless.",
-        "",
-        "## Complement Gap",
-        "",
-        f"- Glicko low mean absolute complement gap: {f(low_gap['mean'])}; max: {f(low_gap['max'])}.",
-        f"- Glicko C0 mean absolute complement gap: {f(c0_gap['mean'])}; max: {f(c0_gap['max'])}.",
-        "- Current `p_a_Glicko_*` matches `p_A_direct` when player A won and `1 - p_B_direct` when player A lost.",
-        "",
-        "## Metric Impact",
-        "",
-        f"- Existing Glicko low overall Brier: {f(low_existing['brier'])}; delta vs Elo: {f(low_existing['delta_brier_vs_elo'])}.",
-        f"- Fixed player-A direct Glicko low overall Brier: {f(low_direct['brier'])}; delta vs Elo: {f(low_direct['delta_brier_vs_elo'])}, CI [{f(low_direct['delta_brier_vs_elo_ci_lower'])}, {f(low_direct['delta_brier_vs_elo_ci_upper'])}].",
-        f"- Symmetric diagnostic Glicko low overall Brier: {f(low_sym['brier'])}; delta vs Elo: {f(low_sym['delta_brier_vs_elo'])}.",
-        f"- Fixed player-A direct Glicko C0 overall Brier: {f(c0_direct['brier'])}; delta vs Elo: {f(c0_direct['delta_brier_vs_elo'])}.",
-        "",
-        "## Key Subgroups After Fixed Player-A Direct Correction",
-        "",
-        f"- Exactly one debut: delta Brier vs Elo = {f(debut_direct['delta_brier_vs_elo'])}, CI [{f(debut_direct['delta_brier_vs_elo_ci_lower'])}, {f(debut_direct['delta_brier_vs_elo_ci_upper'])}].",
-        f"- Returning >=365 days, no debut: delta Brier vs Elo = {f(returner_direct['delta_brier_vs_elo'])}, CI [{f(returner_direct['delta_brier_vs_elo_ci_lower'])}, {f(returner_direct['delta_brier_vs_elo_ci_upper'])}].",
-        "",
-        "## What Must Be Recomputed",
-        "",
-        "- Glicko low and Glicko C0 Brier, log loss, accuracy, calibration, Murphy decomposition, subgroup comparisons and bootstrap intervals.",
-        "- Any Glicko-vs-Elo and Glicko-vs-adaptive-K comparison using Step 29/31 Glicko probabilities.",
-        "- Meeting figures based on those Glicko probabilities.",
-        "",
-        "## What Can Be Retained",
-        "",
-        "- Step 28 pre-match feature construction.",
-        "- Rating lists, RD distributions, runtime and rating-period/update-operation conclusions.",
-        "- Unique-player rating snapshot and debut-opponent rating distribution.",
-        "- Rating-level evidence for the debut initialisation mismatch.",
-        "",
-        "## Validation",
-        "",
-        f"- Audit checks passed: {int(checks['passed'].sum())} / {len(checks)}.",
-        "",
-        "## Files Written",
-        "",
-        f"- `{CHECKS_PATH.relative_to(PROJECT_ROOT)}`",
-        f"- `{DIRECT_COMPARISON_PATH.relative_to(PROJECT_ROOT)}`",
-        f"- `{GAP_SUMMARY_PATH.relative_to(PROJECT_ROOT)}`",
-        f"- `{SUBGROUP_PATH.relative_to(PROJECT_ROOT)}`",
-        f"- `{IMPACT_PATH.relative_to(PROJECT_ROOT)}`",
-        f"- `{SUMMARY_PATH.relative_to(PROJECT_ROOT)}`",
-    ]
-    markdown = "\n".join(lines)
-    SUMMARY_PATH.write_text(markdown, encoding="utf-8")
-    return markdown
 
 
 def main() -> None:
@@ -543,7 +448,6 @@ def main() -> None:
         GAP_SUMMARY_PATH,
         SUBGROUP_PATH,
         IMPACT_PATH,
-        SUMMARY_PATH,
     ]
     # Write data outputs before final validation so existence checks are real.
     comp.to_csv(DIRECT_COMPARISON_PATH, index=False, encoding="utf-8-sig", float_format="%.12g")
@@ -552,10 +456,8 @@ def main() -> None:
     impact.to_csv(IMPACT_PATH, index=False, encoding="utf-8-sig", float_format="%.12g")
     checks = validate_audit(scores, comp, elo, impact, output_paths)
     checks.to_csv(CHECKS_PATH, index=False, encoding="utf-8-sig")
-    write_summary(checks, gap_summary, subgroup_summary, impact)
     checks = validate_audit(scores, comp, elo, impact, output_paths)
     checks.to_csv(CHECKS_PATH, index=False, encoding="utf-8-sig")
-    write_summary(checks, gap_summary, subgroup_summary, impact)
 
     low_existing = impact.loc[
         (impact["model"] == "Glicko_low")

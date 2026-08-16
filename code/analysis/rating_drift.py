@@ -42,7 +42,6 @@ BURN_IN_SENSITIVITY_PATH = OUTPUT_DIR / "41_burnin_definition_sensitivity.csv"
 TEST_YEAR_VALIDATION_PATH = OUTPUT_DIR / "41_2025_first_appearance_validation.csv"
 VALIDATION_CHECKS_PATH = OUTPUT_DIR / "41_validation_checks.csv"
 FIGURE_MANIFEST_PATH = OUTPUT_DIR / "41_figure_manifest.csv"
-SUMMARY_PATH = OUTPUT_DIR / "41_meeting8_technical_summary.md"
 
 RATING_SCALE_FIGURE_PATH = FIGURE_DIR / "41_fig01_glicko_rating_scale_by_year.png"
 DEBUT_ANCHOR_FIGURE_PATH = FIGURE_DIR / "41_fig02_debut_anchor_by_year.png"
@@ -61,7 +60,7 @@ def configure_output_root(output_root: str | Path) -> Path:
     global PLAYER_ENTRY_PATH, DEBUT_DETAIL_PATH, DEBUT_COHORT_PATH
     global YEARLY_SCALE_PATH, YEARLY_DEBUT_PATH, BURN_IN_SENSITIVITY_PATH
     global TEST_YEAR_VALIDATION_PATH, VALIDATION_CHECKS_PATH
-    global FIGURE_MANIFEST_PATH, SUMMARY_PATH
+    global FIGURE_MANIFEST_PATH
     global RATING_SCALE_FIGURE_PATH, DEBUT_ANCHOR_FIGURE_PATH
     global COHORT_BIAS_FIGURE_PATH
 
@@ -79,7 +78,6 @@ def configure_output_root(output_root: str | Path) -> Path:
     TEST_YEAR_VALIDATION_PATH = OUTPUT_DIR / "41_2025_first_appearance_validation.csv"
     VALIDATION_CHECKS_PATH = OUTPUT_DIR / "41_validation_checks.csv"
     FIGURE_MANIFEST_PATH = OUTPUT_DIR / "41_figure_manifest.csv"
-    SUMMARY_PATH = OUTPUT_DIR / "41_meeting8_technical_summary.md"
     RATING_SCALE_FIGURE_PATH = FIGURE_DIR / "41_fig01_glicko_rating_scale_by_year.png"
     DEBUT_ANCHOR_FIGURE_PATH = FIGURE_DIR / "41_fig02_debut_anchor_by_year.png"
     COHORT_BIAS_FIGURE_PATH = FIGURE_DIR / "41_fig03_debut_prediction_by_cohort.png"
@@ -994,116 +992,6 @@ def create_figures(
     return pd.DataFrame(manifest)
 
 
-def write_summary(
-    dataset_path: Path,
-    inactivity_unit: str,
-    low_variant: dict[str, Any],
-    player_entries: pd.DataFrame,
-    cohort_summary: pd.DataFrame,
-    yearly: pd.DataFrame,
-    yearly_debut: pd.DataFrame,
-    aggregates: dict[str, float],
-    checks: pd.DataFrame,
-) -> None:
-    cohort = cohort_summary.set_index("group")
-    start = cohort.loc["system_start_left_censored"]
-    within = cohort.loc["within_5y_burn_in_recorded_entry"]
-    post = cohort.loc["post_burn_in_recorded_entry"]
-    test = cohort.loc["test_year_recorded_entry"]
-    first_defined_established_row = yearly.loc[
-        yearly["n_established_active_players"].gt(0)
-    ].iloc[0]
-    final_year_row = yearly.iloc[-1]
-    post_yearly = yearly_debut.loc[
-        yearly_debut["year"].ge(POST_BURN_IN_START_YEAR)
-    ]
-    max_anchor_gap = post_yearly.loc[
-        post_yearly["mean_focal_minus_opponent_rating"].idxmax()
-    ]
-    failed = checks.loc[~checks["passed"].astype(bool)]
-
-    lines = [
-        "# Meeting 8 Technical Diagnostic: Burn-in, Recorded Entry, and Rating-Scale Drift",
-        "",
-        "## Scope",
-        "",
-        "This is a targeted diagnostic, not a new model search. It reuses the frozen low-inflation Glicko configuration and adds the two checks requested after Meeting 7: a defensible recorded-entry definition and an audit of the evolving rating scale.",
-        "",
-        "## Reused model and data",
-        "",
-        f"- Full-history data: `{dataset_path.relative_to(PROJECT_ROOT)}`",
-        f"- Years: {MODEL_START_YEAR}-{MODEL_END_YEAR}",
-        f"- Low-inflation variant: `{low_variant['variant']}`",
-        f"- Inactivity unit: {inactivity_unit}",
-        f"- C value: {float(low_variant['c_value']):.12f}",
-        f"- Fixed new-player state: rating {INITIAL_RATING:.0f}, RD {INITIAL_RD:.0f}",
-        "- Probability convention: canonical Player A probability, complemented for Player B, matching the frozen Meeting 7 reporting convention.",
-        "",
-        "## Operational definitions",
-        "",
-        f"- **System-start / left-censored player:** first observed in {MODEL_START_YEAR}. The data cannot establish that this was the player's true career debut.",
-        f"- **Within-burn-in recorded entry:** first observed during {MODEL_START_YEAR + 1}-{POST_BURN_IN_START_YEAR - 1}. These rows are excluded from the primary post-burn-in definition.",
-        f"- **Post-burn-in recorded entry:** first observed from {POST_BURN_IN_START_YEAR} onward after a five-calendar-year burn-in.",
-        f"- **2025 test-year recorded entry:** first observed in {TEST_YEAR}. This is a subset of post-burn-in recorded entries and is the source of the frozen first_1 test result.",
-        "- The phrase *recorded entry* is deliberate: the available data do not prove true career debut status.",
-        "",
-        "## Cohort sizes",
-        "",
-        f"- System-start players: {int(start['n_unique_players']):,}",
-        f"- Within five-year burn-in entries: {int(within['n_unique_players']):,}",
-        f"- Post-burn-in entries before the test year: {int(post['n_unique_players']):,}",
-        f"- 2025 test-year entries: {int(test['n_unique_players']):,}",
-        f"- Total classified players: {len(player_entries):,}",
-        "",
-        "## 2025 first-appearance regression",
-        "",
-        f"- First appearances: {int(aggregates['rerun_rows'])}",
-        f"- Unique matches: {int(aggregates['rerun_unique_matches'])}",
-        f"- Mean predicted win probability: {aggregates['rerun_mean_p']:.6f}",
-        f"- Empirical win rate: {aggregates['rerun_win_rate']:.6f}",
-        f"- Brier score: {aggregates['rerun_brier']:.6f}",
-        f"- Mean opponent rating: {aggregates['rerun_mean_opponent_rating']:.3f}",
-        f"- Maximum absolute probability difference from Step 34: {aggregates['max_abs_probability_difference']:.3e}",
-        "",
-        "All 2025 first appearances occur after the five-year burn-in. Therefore, the 2025 first_1 weakness is not an artefact of treating the 1985 model-start population as genuinely new. It remains a limitation for players newly entering the recorded system in the held-out test year.",
-        "",
-        "## Rating-scale audit",
-        "",
-        f"- Established-player scale is undefined in {MODEL_START_YEAR}, because every observed player is in the system-start cohort.",
-        f"- First defined established-active median ({int(first_defined_established_row['year'])}): {first_defined_established_row['median_rating_established_active']:.3f}",
-        f"- Established active median rating in {MODEL_END_YEAR}: {final_year_row['median_rating_established_active']:.3f}",
-        f"- Fixed anchor minus established-active median in {MODEL_END_YEAR}: {final_year_row['initial_minus_established_active_median']:.3f}",
-        f"- Mean rating across all {int(final_year_row['n_known_players_end_year']):,} known players in {MODEL_END_YEAR}: {final_year_row['mean_rating_all_known']:.3f}",
-        f"- Largest annual mean anchor-minus-debut-opponent gap after burn-in: {max_anchor_gap['mean_focal_minus_opponent_rating']:.3f} in {int(max_anchor_gap['year'])}",
-        f"- Cumulative net two-player Glicko update change by {MODEL_END_YEAR}: {final_year_row['cumulative_net_glicko_rating_update_change']:.3f}",
-        "",
-        "The absolute rating level has no standalone substantive meaning because predictions depend on relative ratings. These scale summaries are therefore diagnostic: they show whether the fixed 1500 entry anchor stays aligned with the contemporaneous established-player scale. The direct quantity for the new-player mechanism is the focal-minus-opponent prematch rating gap.",
-        "",
-        "## What should go into the dissertation",
-        "",
-        "1. State the four operational definitions above in the methodology or limitations section.",
-        "2. Report that the held-out 2025 first_1 sample consists entirely of post-burn-in recorded entrants.",
-        "3. Use the annual scale figure only to explain the mechanism; do not interpret 1500 as an absolute skill level.",
-        "4. Present the adaptive-K work separately as a short negative result. No additional adaptive-K experiment is required here.",
-        "",
-        "## Validation",
-        "",
-        f"- Checks passed: {int(checks['passed'].sum())}/{len(checks)}",
-        f"- Failed checks: {len(failed)}",
-    ]
-    if len(failed):
-        lines.extend(
-            [
-                "",
-                "### Failed checks",
-                "",
-                *[
-                    f"- {row.check}: actual={row.actual}, expected={row.expected}"
-                    for row in failed.itertuples(index=False)
-                ],
-            ]
-        )
-    SUMMARY_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -1141,17 +1029,6 @@ def main() -> None:
         low_variant,
     )
     figure_manifest = create_figures(yearly, yearly_debut, cohort_summary)
-    write_summary(
-        dataset_path,
-        inactivity_unit,
-        low_variant,
-        player_entries,
-        cohort_summary,
-        yearly,
-        yearly_debut,
-        aggregates,
-        checks,
-    )
 
     player_entries.to_csv(PLAYER_ENTRY_PATH, index=False, encoding="utf-8-sig")
     debut.to_csv(DEBUT_DETAIL_PATH, index=False, encoding="utf-8-sig")
@@ -1172,7 +1049,6 @@ def main() -> None:
     print("\nMeeting 8 Step 41 validation")
     print(checks[["check", "passed", "actual", "expected"]].to_string(index=False))
     print(f"\nChecks passed: {int(checks['passed'].sum())}/{len(checks)}")
-    print(f"Summary: {SUMMARY_PATH}")
 
     if not bool(checks["passed"].all()):
         failed = checks.loc[~checks["passed"], "check"].tolist()

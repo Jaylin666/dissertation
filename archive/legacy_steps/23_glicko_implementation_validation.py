@@ -1,12 +1,4 @@
-"""Meeting 5 Glicko implementation validation.
-
-This script answers the supervisor's question: how am I gaining confidence in
-the implementation of Glicko?
-
-It validates behaviour using toy formula checks and existing full-data outputs.
-It does not rerun the full 1985-2025 Glicko model, tune parameters, add
-inactivity RD inflation, or perform the final Elo-vs-Glicko comparison.
-"""
+"""Validate the Glicko-1 implementation against retained outputs."""
 
 from __future__ import annotations
 
@@ -40,7 +32,6 @@ from glicko_core import (  # noqa: E402
 VALIDATION_CHECKS_PATH = OUTPUT_DIR / "meeting5_glicko_validation_checks.csv"
 ACTIVE_SIMILARITY_PATH = OUTPUT_DIR / "meeting5_glicko_active_player_similarity.csv"
 VALIDATION_ISSUES_PATH = OUTPUT_DIR / "meeting5_glicko_validation_issues.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "meeting5_glicko_validation_summary.md"
 SCATTER_PATH = OUTPUT_DIR / "meeting5_elo_vs_glicko_active_players_scatter.png"
 
 EXPECTED_2025_GAMES = 11_379
@@ -134,10 +125,6 @@ def make_file_inventory() -> dict[str, Path | None]:
         "full_history_matches": choose_file(
             "*matches*1985*2025*.csv",
             ["matches_1985_2025_checked.csv"],
-        ),
-        "elo_baseline_decision": choose_file(
-            "*baseline*decision*.*",
-            ["elo_baseline_decision_summary.md", "elo_candidate_baselines.csv", "elo_baseline_evidence_table.csv"],
         ),
         "glicko_rating_period_metrics": choose_file(
             "*rating_period*metrics*.csv",
@@ -834,140 +821,6 @@ def add_similarity_checks(
     )
 
 
-def write_summary(
-    inventory: dict[str, Path | None],
-    checks: pd.DataFrame,
-    issues: pd.DataFrame,
-    similarity: pd.DataFrame,
-    rd_info: dict[str, Any],
-    pred_info: dict[str, Any],
-    scatter_created: bool,
-) -> None:
-    """Write the Meeting 5 validation summary Markdown."""
-
-    def check_line(check_id: str) -> str:
-        row = checks[checks["check_id"] == check_id]
-        if row.empty:
-            return f"- {check_id}: not available"
-        r = row.iloc[0]
-        status = "PASS" if bool(r["pass"]) else "CHECK"
-        return f"- {check_id}: {status}; {r['observed_value']}"
-
-    used_files = [
-        f"- {key}: `{rel(path)}`" for key, path in inventory.items() if path is not None
-    ]
-    missing_files = [
-        f"- {key}: missing" for key, path in inventory.items() if path is None
-    ]
-
-    issue_lines = ["- None"] if issues.empty else [
-        f"- {row.issue_type} / {row.severity}: {row.item} - {row.details}"
-        for row in issues.itertuples(index=False)
-    ]
-
-    similarity_lines = ["- Similarity table could not be computed."]
-    if not similarity.empty:
-        focus = similarity[
-            (similarity["elo_setting_name"] == "validation_best_k30_scale300")
-            & (
-                similarity["group_id"].isin(
-                    [
-                        "total_games_ge100",
-                        "total_games_ge200",
-                        "active_2025_games_ge5",
-                        "active_2025_games_ge5_total_games_ge100",
-                    ]
-                )
-            )
-        ]
-        if not focus.empty:
-            similarity_lines = [
-                (
-                    f"- {row.group_id}: n={int(row.number_of_overlapping_players)}, "
-                    f"Spearman={row.spearman_rank_correlation:.4f}, "
-                    f"Top50={row.top50_overlap:.3f}, Top100={row.top100_overlap:.3f}"
-                )
-                for row in focus.itertuples(index=False)
-            ]
-
-    all_passed = bool(checks["pass"].all()) if not checks.empty else False
-    pass_count = int(checks["pass"].sum()) if not checks.empty else 0
-    total_checks = len(checks)
-
-    lines = [
-        "# Meeting 5 Glicko Implementation Validation",
-        "",
-        "## Purpose",
-        "",
-        "This validation step answers the supervisor's question: how am I gaining confidence in the implementation of Glicko? The aim is not to tune the model or perform the final Elo-vs-Glicko comparison. The aim is to check that the Glicko implementation behaves in ways that are consistent with the Glicko mechanism.",
-        "",
-        "## Data and Existing Outputs Used",
-        "",
-        *used_files,
-        "",
-        "Missing files:",
-        "",
-        *(missing_files if missing_files else ["- None"]),
-        "",
-        "## Formula Sanity Checks",
-        "",
-        check_line("A1"),
-        check_line("A2"),
-        check_line("A3"),
-        check_line("A4"),
-        check_line("A5"),
-        "",
-        "## Official-Style Example",
-        "",
-        check_line("B1"),
-        "",
-        "## RD Behaviour Checks",
-        "",
-        f"- Constants: DEFAULT_RD={rd_info.get('default_rd')}, MIN_RD={rd_info.get('min_rd')}, MAX_RD={rd_info.get('max_rd')}",
-        f"- Final players checked: {rd_info.get('n_players', 'not available')}",
-        f"- Median final RD: {rd_info.get('median_rd', np.nan):.3f}" if "median_rd" in rd_info else "- Median final RD: not available",
-        f"- Mean final RD: {rd_info.get('mean_rd', np.nan):.3f}" if "mean_rd" in rd_info else "- Mean final RD: not available",
-        f"- Min/max observed final RD: {rd_info.get('min_rd_observed', np.nan):.3f} / {rd_info.get('max_rd_observed', np.nan):.3f}" if "min_rd_observed" in rd_info else "- Min/max observed final RD: not available",
-        f"- Players at MIN_RD: {rd_info.get('number_at_min_rd', 'not available')}",
-        f"- Players near MAX_RD: {rd_info.get('number_near_max_rd', 'not available')}",
-        "",
-        "## Prediction-Before-Update Checks",
-        "",
-        f"- Prediction rows checked: {pred_info.get('prediction_rows', 'not available')}",
-        f"- 2025 evaluation rows: {pred_info.get('eval_rows_2025', 'not available')}",
-        f"- Prediction probability range: {pred_info.get('pred_min', np.nan):.6f} to {pred_info.get('pred_max', np.nan):.6f}" if "pred_min" in pred_info else "- Prediction probability range: not available",
-        f"- Max difference when recomputing pred_a_win from pre-rating/RD columns: {pred_info.get('max_pre_update_prediction_recompute_diff', np.nan):.12g}" if "max_pre_update_prediction_recompute_diff" in pred_info else "- Pre-update recomputation check: not available",
-        "",
-        "## Active-Player Elo-vs-Glicko Rating-List Similarity",
-        "",
-        "For this implementation validation, rank correlation and top-list overlap are more important than raw rating differences because Elo and Glicko ratings are not necessarily on exactly the same scale.",
-        "",
-        *similarity_lines,
-        "",
-        "## Validation Check Summary",
-        "",
-        f"- Checks passed: {pass_count} / {total_checks}",
-        f"- Overall status: {'PASS' if all_passed else 'PASS WITH NOTES' if pass_count >= max(total_checks - 2, 0) else 'REVIEW REQUIRED'}",
-        f"- Scatter plot created: {'yes' if scatter_created else 'no'}",
-        "",
-        "## Interpretation For Supervisor",
-        "",
-        "The validation checks give me more confidence that the Glicko implementation is behaving as intended. The formula sanity checks and official-style update example are consistent with expected Glicko behaviour. The saved predictions are valid probabilities and are evaluated on the same 2025 game set. For high-activity players, the Glicko and Elo rating lists are broadly similar, which suggests that the Glicko implementation is not producing implausible rankings. The next step is therefore to test inactivity RD inflation and then proceed to the fair Elo-vs-Glicko comparison.",
-        "",
-        "## Remaining Limitations",
-        "",
-        "- Passing sanity checks does not prove the implementation is mathematically perfect.",
-        "- Some checks depend on which columns were saved in previous output files.",
-        "- Elo and Glicko ratings are not guaranteed to be directly comparable on the raw rating scale, so rank-based checks are more important.",
-        "- Full confidence also requires sensitivity checks such as RD inflation and rating-period runtime comparison.",
-        "",
-        "## Issues",
-        "",
-        *issue_lines,
-        "",
-    ]
-
-    SUMMARY_MD_PATH.write_text("\n".join(lines), encoding="utf-8")
 
 
 def main() -> None:
@@ -989,13 +842,13 @@ def main() -> None:
 
     run_formula_checks(checks)
     run_official_style_check(checks)
-    rd_info = run_rd_checks(
+    run_rd_checks(
         checks,
         issues,
         inventory["glicko_final_ratings"],
         inventory["glicko_rd_summary"],
     )
-    pred_info = run_prediction_checks(checks, issues, inventory["glicko_predictions"])
+    run_prediction_checks(checks, issues, inventory["glicko_predictions"])
     similarity = compare_active_rating_lists(
         issues,
         inventory["elo_final_ratings"],
@@ -1020,7 +873,6 @@ def main() -> None:
     checks_df.to_csv(VALIDATION_CHECKS_PATH, index=False, encoding="utf-8-sig")
     similarity.to_csv(ACTIVE_SIMILARITY_PATH, index=False, encoding="utf-8-sig")
     issues_df.to_csv(VALIDATION_ISSUES_PATH, index=False, encoding="utf-8-sig")
-    write_summary(inventory, checks_df, issues_df[issues_df["issue_type"] != "none"], similarity, rd_info, pred_info, scatter_created)
 
     print("Meeting 5 Glicko implementation validation complete.")
     print("Files used:")
@@ -1032,7 +884,6 @@ def main() -> None:
         VALIDATION_CHECKS_PATH,
         ACTIVE_SIMILARITY_PATH,
         VALIDATION_ISSUES_PATH,
-        SUMMARY_MD_PATH,
     ]:
         print(f"  {path}")
     if scatter_created:

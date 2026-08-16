@@ -51,7 +51,6 @@ ORIENTATION_SENSITIVITY_PATH = (
 BURN_IN_SENSITIVITY_PATH = OUTPUT_DIR / "42_burnin_sensitivity_audit.csv"
 VALIDATION_PATH = OUTPUT_DIR / "42_validation_checks.csv"
 FIGURE_MANIFEST_PATH = OUTPUT_DIR / "42_figure_manifest.csv"
-SUMMARY_PATH = OUTPUT_DIR / "42_prematch_entry_scale_summary.md"
 
 FIGURE_1_PATH = (
     FIGURE_DIR / "42_fig01_entry_anchor_vs_contemporaneous_scale.png"
@@ -88,7 +87,7 @@ def configure_output_root(output_root: str | Path) -> Path:
     global ENTRY_YEAR_SUMMARY_PATH, ENTRY_COHORT_SUMMARY_PATH
     global CROSSFILE_AUDIT_PATH, ORIENTATION_SENSITIVITY_PATH
     global BURN_IN_SENSITIVITY_PATH, VALIDATION_PATH, FIGURE_MANIFEST_PATH
-    global SUMMARY_PATH, FIGURE_1_PATH, FIGURE_2_PATH, FIGURE_3_PATH
+    global FIGURE_1_PATH, FIGURE_2_PATH, FIGURE_3_PATH
 
     root = Path(output_root)
     if not root.is_absolute():
@@ -107,7 +106,6 @@ def configure_output_root(output_root: str | Path) -> Path:
     BURN_IN_SENSITIVITY_PATH = OUTPUT_DIR / "42_burnin_sensitivity_audit.csv"
     VALIDATION_PATH = OUTPUT_DIR / "42_validation_checks.csv"
     FIGURE_MANIFEST_PATH = OUTPUT_DIR / "42_figure_manifest.csv"
-    SUMMARY_PATH = OUTPUT_DIR / "42_prematch_entry_scale_summary.md"
     FIGURE_1_PATH = FIGURE_DIR / "42_fig01_entry_anchor_vs_contemporaneous_scale.png"
     FIGURE_2_PATH = FIGURE_DIR / "42_fig02_entry_anchor_vs_actual_opponent.png"
     FIGURE_3_PATH = FIGURE_DIR / "42_fig03_historical_orientation_sensitivity.png"
@@ -1383,148 +1381,6 @@ def build_validation_checks(
     return rows
 
 
-def write_summary(
-    dataset_path: Path,
-    inactivity_unit: str,
-    low_variant: dict[str, Any],
-    strict: pd.DataFrame,
-    step41_comparison: dict[str, Any],
-    diagnostics: pd.DataFrame,
-    cohort_summary: pd.DataFrame,
-    crossfile_metrics: dict[str, Any],
-    step33_metrics: dict[str, Any],
-    checks: pd.DataFrame,
-) -> None:
-    test = diagnostics.loc[diagnostics["first_recorded_year"].eq(TEST_YEAR)]
-    cohort = cohort_summary.set_index("group")
-    post = cohort.loc["post_burn_in_recorded_entry"]
-    test_cohort = cohort.loc["test_year_recorded_entry"]
-    qualitative_persists = bool(
-        post["current_prediction_bias"] > 0
-        and post["direct_prediction_bias"] > 0
-        and test_cohort["current_prediction_bias"] > 0
-        and test_cohort["direct_prediction_bias"] > 0
-    )
-    error_checks = checks.loc[checks["severity"].eq("error")]
-    failed_errors = error_checks.loc[~error_checks["passed"]]
-    warning_rows = checks.loc[
-        checks["severity"].eq("warning") & ~checks["passed"]
-    ]
-
-    if STEP41_YEARLY_SCALE_PATH.exists():
-        step41_yearly = pd.read_csv(STEP41_YEARLY_SCALE_PATH, low_memory=False)
-        step41_2025 = step41_yearly.loc[step41_yearly["year"].eq(TEST_YEAR)]
-        step41_end_year_median = (
-            float(step41_2025["median_rating_established_active"].iloc[0])
-            if len(step41_2025)
-            else float("nan")
-        )
-    else:
-        step41_end_year_median = float("nan")
-
-    lines = [
-        "# Meeting 8 Step 42: Prematch Entry-Scale and Cross-File Audit",
-        "",
-        "## Purpose",
-        "",
-        "Step 42 supplements Step 41 by using the exact model-processing order returned by Step 24 and by measuring rating-scale alignment immediately before each player's first recorded match. It reuses the frozen low-inflation Glicko configuration and does not tune or create a rating model.",
-        "",
-        "## Definitions",
-        "",
-        "- **First recorded appearance:** the row with the minimum frozen `match_sequence` for a player in the 1985-2025 processed history.",
-        "- **Model-start left censoring:** players first observed in 1985 may already have prior unrecorded experience.",
-        "- **Post-burn-in recorded entry:** first observed from 1990 onward after the primary five-calendar-year burn-in.",
-        "- **True career debut:** not observed and not claimed by this analysis.",
-        "",
-        "## Exact processing-order audit",
-        "",
-        f"- Strict unique players: {len(strict):,}",
-        f"- Step 41 classification available: {step41_comparison['step41_available']}",
-        f"- Step 41 mismatch rows: {step41_comparison['mismatch_rows']}",
-        f"- Strict classification agrees with Step 41: {step41_comparison['all_agree']}",
-        "",
-        "The strict definition uses the sequence already returned by `step24.load_matches()` and does not perform a second chronological sort.",
-        "",
-        "## Cross-file reconciliation",
-        "",
-        f"- First-appearance rows: {step33_metrics['debut_appearance_rows']}",
-        f"- Unique players: {step33_metrics['unique_debut_players']}",
-        f"- Unique matches: {step33_metrics['unique_debut_matches']}",
-        f"- Exactly-one-debut matches: {step33_metrics['exactly_one_debut_matches']}",
-        f"- Both-debut matches: {step33_metrics['both_debut_matches']}",
-        f"- Full history, Step 33, and Step 34 agree exactly: {crossfile_metrics['all_sources_agree']}",
-        f"- Maximum absolute current-probability difference from Step 34: {crossfile_metrics['max_abs_probability_difference']:.3e}",
-        "",
-        "## Prematch contemporaneous scale",
-        "",
-        "For each entrant, the primary contemporaneous scale includes all players with at least one prior processed match immediately before the entrant's match. The current focal player is excluded; when both players are new, both are excluded.",
-        "",
-        f"- 2025 mean contemporaneous established-player rating: {test['contemporaneous_established_mean_rating'].mean():.3f}",
-        f"- 2025 median contemporaneous established-player rating: {test['contemporaneous_established_median_rating'].median():.3f}",
-        f"- 2025 mean initial-minus-contemporaneous-median gap: {test['initial_minus_contemporaneous_median'].mean():.3f}",
-        f"- 2025 median initial-minus-contemporaneous-median gap: {test['initial_minus_contemporaneous_median'].median():.3f}",
-        f"- 2025 mean active-established-365-day median: {test['active_established_365d_median_rating'].mean():.3f}",
-        f"- 2025 mean initial-minus-active-365-day-median gap: {test['initial_minus_active_established_365d_median'].mean():.3f}",
-        f"- 2025 mean actual opponent rating: {test['opponent_rating_before'].mean():.3f}",
-        f"- 2025 mean initial-minus-opponent gap: {test['initial_minus_opponent_rating'].mean():.3f}",
-        "",
-        f"These are prematch entry-time quantities. They are distinct from the Step 41 end-of-year 2025 established-active median of {step41_end_year_median:.3f}; the end-of-year value must not be described as the contemporaneous entry-time scale.",
-        "",
-        "## Probability-orientation sensitivity",
-        "",
-        f"- 1990-2024 current-convention bias: {post['current_prediction_bias']:.6f}",
-        f"- 1990-2024 direct-focal bias: {post['direct_prediction_bias']:.6f}",
-        f"- 2025 current-convention mean probability: {test_cohort['mean_current_probability']:.6f}",
-        f"- 2025 direct-focal mean probability: {test_cohort['mean_direct_probability']:.6f}",
-        f"- 2025 empirical win rate: {test_cohort['empirical_win_rate']:.6f}",
-        f"- Qualitative post-burn-in over-prediction direction persists: {qualitative_persists}",
-        "",
-        "The primary formal 2025 result remains the Meeting 7 current convention. Direct-focal probabilities are a historical orientation sensitivity only. Results from 1990-2024 are in-sample descriptive mechanism evidence, not an independent held-out test.",
-        "",
-        "## Interpretation",
-        "",
-        "The held-out 2025 first-appearance sample consists entirely of players who enter the recorded system after a long burn-in. The weakness is therefore not an artefact of the 1985 model start. Immediately before entry, the fixed 1500 anchor is high relative to both the contemporaneous established-player scale and the actual first opponent ratings. This supports a relative initialisation mismatch interpretation. However, first recorded appearance does not establish true career debut, and the 1990-2024 cohort results are descriptive historical mechanism evidence rather than an independent held-out test.",
-        "",
-        "Rating-scale alignment is one component of the mechanism. This diagnostic does not make a causal claim that rating-scale drift alone creates the prediction error.",
-        "",
-        "## Relationship to Step 41",
-        "",
-        "- Step 41 provides broad burn-in classification and end-of-year scale trends.",
-        "- Step 42 provides strict processing-order classification, prematch scale alignment, and direct Step 33/34 reconciliation.",
-        "- The two steps are complementary.",
-        f"- Step 42 invalidates no Step 41 result because explicit classification mismatches found: {step41_comparison['mismatch_rows']}.",
-        "",
-        "## Dissertation use",
-        "",
-        "- Put operational entry definitions in Methodology.",
-        "- Put the held-out 2025 first-appearance result in the Early-game Results section.",
-        "- Put prematch scale alignment in the mechanism subsection.",
-        "- Label historical cohort and direct-probability results as sensitivity or supporting evidence.",
-        "- Treat the Step 41 end-of-year scale figure as descriptive rather than the primary initialisation diagnostic.",
-        "",
-        "## Validation",
-        "",
-        f"- Total checks: {len(checks)}",
-        f"- Passed error checks: {int(error_checks['passed'].sum())}/{len(error_checks)}",
-        f"- Failed error checks: {len(failed_errors)}",
-        f"- Active warnings: {len(warning_rows)}",
-        f"- Dataset: `{dataset_path.relative_to(PROJECT_ROOT)}`",
-        f"- Inactivity unit: {inactivity_unit}",
-        f"- Reused variant: `{low_variant['variant']}` with C={float(low_variant['c_value']):.12f}",
-    ]
-    if len(warning_rows):
-        lines.extend(
-            [
-                "",
-                "### Active warnings",
-                "",
-                *[
-                    f"- {row.check_name}: {row.detail} Observed={row.observed}."
-                    for row in warning_rows.itertuples(index=False)
-                ],
-            ]
-        )
-    SUMMARY_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def print_checks(checks: pd.DataFrame) -> None:
@@ -1726,18 +1582,6 @@ def main() -> None:
     checks = pd.DataFrame(check_rows)
     checks.to_csv(VALIDATION_PATH, index=False, encoding="utf-8")
 
-    write_summary(
-        dataset_path,
-        inactivity_unit,
-        low_variant,
-        strict,
-        step41_comparison,
-        diagnostics,
-        cohort_summary,
-        crossfile_metrics,
-        step33_metrics,
-        checks,
-    )
 
     print_checks(checks)
     print_console_report(

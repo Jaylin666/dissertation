@@ -1,11 +1,4 @@
-"""
-This script compares Elo rating volatility at match resolution and event resolution.
-
-The aim is not to re-select the best K or evaluate prediction accuracy. Instead,
-it quantifies how large match-by-match updates are, how large net event-level
-rating changes are, and whether an aggressive K looks different at event
-resolution than at match resolution.
-"""
+"""Measure Elo rating volatility at the event level."""
 
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -70,7 +63,6 @@ MATCH_SUMMARY_PATH = OUTPUT_DIR / "elo_event_level_volatility_match_summary.csv"
 EVENT_SUMMARY_PATH = OUTPUT_DIR / "elo_event_level_volatility_event_summary.csv"
 EVENT_SIZE_SUMMARY_PATH = OUTPUT_DIR / "elo_event_level_volatility_by_event_size.csv"
 EXAMPLES_PATH = OUTPUT_DIR / "elo_event_level_volatility_examples.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "elo_event_level_volatility_summary.md"
 
 
 REQUIRED_COLUMNS = ["fcode", "code", "year", "event", "winner", "loser"]
@@ -541,144 +533,11 @@ def remove_existing_outputs() -> None:
         EVENT_SUMMARY_PATH,
         EVENT_SIZE_SUMMARY_PATH,
         EXAMPLES_PATH,
-        SUMMARY_MD_PATH,
     ]:
         if path.exists():
             path.unlink()
 
 
-def write_markdown_summary(
-    matches: pd.DataFrame,
-    match_summary: pd.DataFrame,
-    event_summary: pd.DataFrame,
-    event_size_summary: pd.DataFrame,
-    output_path: Path,
-) -> str:
-    """Write a meeting-ready markdown summary."""
-    total_matches = len(matches[(matches["year"] >= BURNIN_START_YEAR) & (matches["year"] <= END_YEAR)])
-    unique_events = matches[
-        (matches["year"] >= BURNIN_START_YEAR) & (matches["year"] <= END_YEAR)
-    ][["year", "event"]].drop_duplicates().shape[0]
-
-    setting_lines = [
-        f"* {setting['label']}: `{setting['setting_name']}`, K={setting['k']:g}, scale={setting['scale']:g}"
-        for setting in ELO_SETTINGS
-    ]
-
-    match_lines = []
-    for _, row in match_summary.sort_values(["k", "scale"]).iterrows():
-        match_lines.append(
-            f"* {row['setting_name']}: mean abs match update {row['mean_abs_match_update']:.3f}, "
-            f"p95 {row['p95_abs_match_update']:.3f}, p99 {row['p99_abs_match_update']:.3f}, "
-            f"max {row['max_abs_match_update']:.3f}."
-        )
-
-    event_lines = []
-    for _, row in event_summary.sort_values(["k", "scale"]).iterrows():
-        event_lines.append(
-            f"* {row['setting_name']}: mean abs event net change {row['mean_abs_event_net_change']:.3f}, "
-            f"p95 {row['p95_abs_event_net_change']:.3f}, "
-            f"mean cumulative match movement {row['mean_cumulative_abs_match_updates_in_event']:.3f}, "
-            f"mean cancellation ratio {row['mean_event_cancellation_ratio']:.3f}."
-        )
-
-    interpretation_lines = []
-    merged = event_summary.merge(
-        match_summary[["setting_name", "mean_abs_match_update"]],
-        on="setting_name",
-        how="left",
-    )
-    for _, row in merged.sort_values(["k", "scale"]).iterrows():
-        interpretation_lines.append(
-            f"* {row['setting_name']}: mean event net change is "
-            f"{row['mean_abs_event_net_change']:.3f}, while the mean cumulative absolute "
-            f"within-event movement is {row['mean_cumulative_abs_match_updates_in_event']:.3f}. "
-            f"The mean cancellation ratio is {row['mean_event_cancellation_ratio']:.3f}."
-        )
-
-    size_lines = []
-    focus_setting = "validation_best_k30_scale300"
-    focus = event_size_summary[event_size_summary["setting_name"] == focus_setting]
-    if focus.empty:
-        focus = event_size_summary
-    for _, row in focus.iterrows():
-        size_lines.append(
-            f"* {row['setting_name']}, {row['games_in_event_bucket']}: "
-            f"records {int(row['player_event_records'])}, "
-            f"mean abs net {row['mean_abs_event_net_change']:.3f}, "
-            f"mean cumulative movement {row['mean_cumulative_abs_match_updates']:.3f}, "
-            f"mean cancellation ratio {row['mean_event_cancellation_ratio']:.3f}."
-        )
-
-    markdown = f"""# Elo event-level volatility analysis
-
-## 1. Aim of this experiment
-
-This experiment responds to the supervisor's point about match-by-match versus tournament/event resolution.
-Croquet data is naturally match-level, but rating systems such as Elo are often interpreted over a broader event or tournament context.
-The aim is to compare Elo volatility at match resolution and event resolution.
-
-## 2. Data and period used
-
-Input file: `outputs/elo_optimization/matches_1985_2025_checked.csv`.
-
-* Burn-in period: {BURNIN_START_YEAR}-{END_YEAR}
-* Total matches used per setting: {total_matches}
-* Unique year-event records: {unique_events}
-
-The script reruns Elo directly from the checked full-history dataset and does not read the large update-history file from the burn-in stability experiment.
-
-## 3. Elo settings tested
-
-{chr(10).join(setting_lines)}
-
-## 4. Match-level volatility
-
-The match-level summary records each match once because the winner and loser have the same absolute update size.
-
-{chr(10).join(match_lines)}
-
-## 5. Event-level volatility
-
-The event-level table groups by player within year-event.
-For each player-event, net event change is the rating after the player's last game in the event minus the rating before the player's first game in the event.
-
-{chr(10).join(event_lines)}
-
-## 6. Match-level versus event-level interpretation
-
-`cumulative_abs_match_updates_in_event` adds all within-event absolute updates.
-`abs_net_rating_change_in_event` measures the event-level net movement.
-If a player wins and loses within the same event, these match-level movements can cancel.
-Therefore, event resolution can look smoother than match-by-match resolution.
-
-{chr(10).join(interpretation_lines)}
-
-## 7. Effect of K and scale
-
-Larger or more aggressive settings generally increase both match-level updates and event-level net changes.
-However, the cancellation ratio shows that event-level interpretation is not identical to summing match-level movement.
-The aggressive settings should therefore be assessed alongside stability diagnostics, not only prediction metrics.
-
-## 8. Event size effect
-
-The table below focuses on the validation-best setting when available.
-It shows how games per player-event changes the relationship between cumulative movement and net event change.
-
-{chr(10).join(size_lines)}
-
-## 9. Implication for Elo baseline
-
-This experiment does not directly choose the final Elo parameters.
-It helps explain why K=30 can look volatile when inspected after every match, while event-level net changes may provide a smoother and more interpretable view.
-For the final Elo baseline, prediction performance should be reported together with rating stability and volatility diagnostics.
-
-## 10. Next step
-
-The next step is the Elo baseline decision summary, combining burn-in stability, single-year rerun convergence, event-level volatility and previous validation results before moving to Glicko comparison.
-"""
-    output_path.write_text(markdown, encoding="utf-8")
-    return markdown
 
 
 def main() -> None:
@@ -740,7 +599,6 @@ def main() -> None:
     event_summary_df.to_csv(EVENT_SUMMARY_PATH, index=False)
     size_summary_df.to_csv(EVENT_SIZE_SUMMARY_PATH, index=False)
     examples_df.to_csv(EXAMPLES_PATH, index=False)
-    write_markdown_summary(matches, match_summary_df, event_summary_df, size_summary_df, SUMMARY_MD_PATH)
 
     print("\nOutput paths:")
     print(f"  player-event table: {PLAYER_EVENT_PATH}")
@@ -748,7 +606,6 @@ def main() -> None:
     print(f"  event-level summary: {EVENT_SUMMARY_PATH}")
     print(f"  event-size summary: {EVENT_SIZE_SUMMARY_PATH}")
     print(f"  examples: {EXAMPLES_PATH}")
-    print(f"  markdown summary: {SUMMARY_MD_PATH}")
     print(f"Total runtime: {time.time() - start_time:.1f}s")
 
 

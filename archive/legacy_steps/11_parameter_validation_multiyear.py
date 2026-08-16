@@ -34,7 +34,6 @@ MATCHES_PATH = DATA_PROCESSED / f"matches_{YEAR_RANGE}_checked.csv"
 
 RESULTS_PATH = DATA_PROCESSED / f"parameter_validation_results_{YEAR_RANGE}.csv"
 BEST_TEST_PATH = DATA_PROCESSED / f"best_parameter_test_result_{YEAR_RANGE}.csv"
-SUMMARY_MD_PATH = DATA_PROCESSED / f"parameter_validation_summary_{YEAR_RANGE}.md"
 BEST_PREDICTIONS_PATH = DATA_PROCESSED / f"parameter_validation_best_predictions_{YEAR_RANGE}.csv"
 CHECK_SUMMARY_PATH = DATA_PROCESSED / f"parameter_validation_check_summary_{YEAR_RANGE}.csv"
 
@@ -373,96 +372,6 @@ def make_best_test_result(results: pd.DataFrame, best_result: pd.Series) -> pd.D
     return pd.DataFrame([row])
 
 
-def write_markdown_summary(results: pd.DataFrame, best_result: pd.Series, best_test: pd.DataFrame) -> str:
-    """Write an English summary suitable for meeting notes."""
-    default = results[(results["K"] == 20) & (results["scale"] == 500)]
-    default_text = "The default K=20, scale=500 setting was not found in the grid."
-    if not default.empty:
-        default_row = default.iloc[0]
-        default_text = (
-            f"Default K=20, scale=500 test result: log loss = "
-            f"{default_row['test_log_loss']:.6f}, Brier score = "
-            f"{default_row['test_brier_score']:.6f}, accuracy = "
-            f"{default_row['test_accuracy']:.6f}."
-        )
-
-    top_rows = results.head(5)
-    top_lines = []
-    for _, row in top_rows.iterrows():
-        top_lines.append(
-            f"* K={row['K']:g}, scale={row['scale']:g}: "
-            f"validation log loss = {row['validation_log_loss']:.6f}, "
-            f"validation Brier = {row['validation_brier_score']:.6f}, "
-            f"test log loss = {row['test_log_loss']:.6f}"
-        )
-
-    summary = f"""# Multi-year Elo parameter validation summary
-
-## Aim
-
-The aim is to build a fairer parameter validation framework for the transparent simple Elo baseline.
-Instead of choosing parameters directly on the 2025 test set, this script uses 2023-2024 as the validation period and keeps 2025 as a fixed final test period.
-
-## Method
-
-Each K/scale combination starts all players from the same default rating of 1500 and runs from {START_YEAR} to {END_YEAR}.
-The burn-in period is 2015-2022, validation years are 2023-2024, and the test year is 2025.
-The best parameters are selected using validation log loss, with validation Brier score as the tie-breaker.
-
-## Parameter grid
-
-* K values: {K_VALUES}
-* scale values: {SCALE_VALUES}
-* Number of parameter combinations: {len(results)}
-
-## Validation results
-
-Top validation settings:
-
-{chr(10).join(top_lines)}
-
-## Best parameter setting
-
-The selected parameter setting is K = {best_result['K']:g}, scale = {best_result['scale']:g}.
-It was selected by validation log loss, not by 2025 test performance.
-
-Validation performance:
-
-* log loss = {best_result['validation_log_loss']:.6f}
-* Brier score = {best_result['validation_brier_score']:.6f}
-* accuracy = {best_result['validation_accuracy']:.6f}
-
-## Test performance on 2025
-
-For the selected parameters, the 2025 test performance is:
-
-* log loss = {best_result['test_log_loss']:.6f}
-* Brier score = {best_result['test_brier_score']:.6f}
-* accuracy = {best_result['test_accuracy']:.6f}
-* baseline accuracy = {best_result['test_baseline_accuracy']:.6f}
-* test games = {int(best_result['test_games'])}
-
-## Comparison with default K=20, scale=500
-
-{default_text}
-
-## Interpretation
-
-These are preliminary results for the transparent simple Elo baseline.
-The best parameters are selected using the validation years 2023-2024, not the 2025 test set.
-The 2025 test set is kept fixed for fair comparison.
-If a more aggressive K performs better, this may reflect the need to adapt to changing player strength, but volatility should be checked separately.
-The result should not be treated as a final project conclusion before comparing with Glicko and considering rating stability.
-
-## Notes for supervisor
-
-* Is the 2023-2024 validation and 2025 test split appropriate for this project?
-* Should I repeat this validation framework with multiple test years?
-* Should I combine predictive performance with rating stability before choosing an Elo setting?
-* Is this a good point to compare simple Elo with Glicko or official DG-based predictions?
-"""
-    SUMMARY_MD_PATH.write_text(summary, encoding="utf-8")
-    return summary
 
 
 def save_outputs(
@@ -470,14 +379,12 @@ def save_outputs(
     best_test: pd.DataFrame,
     best_predictions: pd.DataFrame,
     checks: pd.DataFrame,
-    markdown_summary: str,
 ) -> None:
-    """Save all parameter validation outputs."""
+    """Save parameter-validation CSV outputs."""
     results.to_csv(RESULTS_PATH, index=False)
     best_test.to_csv(BEST_TEST_PATH, index=False)
     best_predictions.to_csv(BEST_PREDICTIONS_PATH, index=False)
     checks.to_csv(CHECK_SUMMARY_PATH, index=False)
-    SUMMARY_MD_PATH.write_text(markdown_summary, encoding="utf-8")
 
 
 def print_summary(results: pd.DataFrame, best_result: pd.Series, best_test: pd.DataFrame, checks: pd.DataFrame) -> None:
@@ -526,7 +433,6 @@ def print_summary(results: pd.DataFrame, best_result: pd.Series, best_test: pd.D
     print(f"  best test result: {BEST_TEST_PATH}")
     print(f"  best predictions: {BEST_PREDICTIONS_PATH}")
     print(f"  check summary: {CHECK_SUMMARY_PATH}")
-    print(f"  markdown summary: {SUMMARY_MD_PATH}")
 
 
 def main() -> None:
@@ -535,8 +441,7 @@ def main() -> None:
     best_result = select_best_parameters(results)
     checks = make_check_summary(results, best_predictions)
     best_test = make_best_test_result(results, best_result)
-    markdown_summary = write_markdown_summary(results, best_result, best_test)
-    save_outputs(results, best_test, best_predictions, checks, markdown_summary)
+    save_outputs(results, best_test, best_predictions, checks)
     print_summary(results, best_result, best_test, checks)
 
 

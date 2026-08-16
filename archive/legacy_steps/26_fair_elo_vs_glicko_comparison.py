@@ -1,14 +1,4 @@
-"""Meeting 5 fair Elo-vs-Glicko comparison.
-
-This script compares fixed Elo baselines and fixed Glicko candidates under the
-same full-history match data, chronological ordering, 2025 evaluation games,
-and prediction metrics.
-
-It does not tune new parameters, does not implement adaptive-K Elo, and does
-not rerun or modify existing Glicko experiments. Elo baselines are regenerated
-inside this script only when reusable 2025 prediction files are not available,
-and all outputs are written to outputs/meeting5_fair_elo_vs_glicko/.
-"""
+"""Compare Elo and Glicko-1 on a common evaluation set."""
 
 from __future__ import annotations
 
@@ -46,7 +36,6 @@ CONFIDENCE_PATH = OUTPUT_DIR / "meeting5_fair_elo_vs_glicko_confidence_bins.csv"
 RATING_SIMILARITY_PATH = OUTPUT_DIR / "meeting5_fair_elo_vs_glicko_rating_similarity.csv"
 FINAL_RATINGS_PATH = OUTPUT_DIR / "meeting5_fair_elo_vs_glicko_final_ratings.csv"
 ISSUES_PATH = OUTPUT_DIR / "meeting5_fair_elo_vs_glicko_issues.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "meeting5_fair_elo_vs_glicko_summary.md"
 
 BRIER_PLOT_PATH = OUTPUT_DIR / "meeting5_fair_elo_vs_glicko_brier_bar.png"
 LOGLOSS_PLOT_PATH = OUTPUT_DIR / "meeting5_fair_elo_vs_glicko_logloss_bar.png"
@@ -812,202 +801,8 @@ def save_rating_scatter(final_ratings: pd.DataFrame, active_counts: dict[int, in
     plt.close(fig)
 
 
-def markdown_table(df: pd.DataFrame, columns: list[str]) -> str:
-    if df.empty:
-        return "_No rows._"
-    lines = [
-        "| " + " | ".join(columns) + " |",
-        "| " + " | ".join(["---"] * len(columns)) + " |",
-    ]
-    for _, row in df[columns].iterrows():
-        values = []
-        for col in columns:
-            value = row[col]
-            if pd.isna(value):
-                values.append("")
-            elif isinstance(value, (float, np.floating)):
-                values.append(f"{float(value):.6f}")
-            else:
-                values.append(str(value))
-        lines.append("| " + " | ".join(values) + " |")
-    return "\n".join(lines)
 
 
-def write_summary(
-    metrics: pd.DataFrame,
-    evaluation_check: pd.DataFrame,
-    calibration_summary: pd.DataFrame,
-    confidence: pd.DataFrame,
-    rating_similarity: pd.DataFrame,
-    issues: pd.DataFrame,
-    dataset_path: Path,
-) -> None:
-    """Write meeting-ready markdown summary."""
-
-    ordered = metrics.sort_values(["brier", "log_loss"]).copy()
-    val_elo = metrics.loc[metrics["model"] == "Validation_best_Elo"].iloc[0]
-    glicko_low = metrics.loc[metrics["model"] == "Glicko_low_inflation_match_by_match"].iloc[0]
-    glicko_c0 = metrics.loc[metrics["model"] == "Glicko_C0_match_by_match"].iloc[0]
-
-    if glicko_low["log_loss"] < val_elo["log_loss"] and glicko_low["brier"] < val_elo["brier"]:
-        candidate_text = (
-            "Glicko low_inflation gives better 2025 prediction metrics than validation-best Elo "
-            "in this fixed test comparison. This supports treating it as the current candidate "
-            "main predictive model, not as proof that Glicko is universally better."
-        )
-    else:
-        candidate_text = (
-            "Validation-best Elo remains very competitive in this fixed test comparison. Glicko's "
-            "main value should be discussed in terms of uncertainty interpretation and inactive-player handling."
-        )
-
-    if glicko_c0["brier"] > val_elo["brier"] and glicko_low["brier"] < val_elo["brier"]:
-        inflation_text = (
-            "Glicko C0 is worse than validation-best Elo, while Glicko low_inflation is better. "
-            "This suggests the improvement comes from Glicko's uncertainty mechanism combined with "
-            "inactivity RD inflation, not simply from using Glicko without inflation."
-        )
-    else:
-        inflation_text = (
-            "The comparison does not isolate a clear C0-vs-inflation story; interpret RD inflation cautiously."
-        )
-
-    active_similarity = rating_similarity.loc[
-        rating_similarity["group"] == "active_2025_games_ge5_and_total_games_ge100"
-    ].copy()
-    issue_lines = ["- None"] if issues.empty else [
-        f"- {row.issue_type}: {row.model} - {row.detail}" for row in issues.itertuples(index=False)
-    ]
-
-    lines = [
-        "# Meeting 5 Fair Elo-vs-Glicko Comparison",
-        "",
-        "## Purpose",
-        "",
-        (
-            "This is a fair fixed-test comparison, not parameter tuning. The aim is to compare "
-            "model families under the same data, chronological ordering, 2025 evaluation games, "
-            "and metrics."
-        ),
-        "",
-        "## Experimental Design",
-        "",
-        f"- Dataset: `{dataset_path.name}` covering {START_YEAR}-{END_YEAR}.",
-        "- Evaluation set: 2025 games.",
-        "- Prediction perspective: probability assigned to the actual winner before update.",
-        "- Primary metrics: log loss and Brier score.",
-        "- Secondary metrics: accuracy, calibration diagnostics, confidence bins, rating-list similarity.",
-        "- No adaptive-K Elo is implemented here.",
-        "- No new Glicko tuning is performed here.",
-        "",
-        "## Models Compared",
-        "",
-        "- Conservative_Elo: K=10, scale=500, stability reference.",
-        "- Default_Elo: K=20, scale=500, transparent simple baseline.",
-        "- Validation_best_Elo: K=30, scale=300, prediction-oriented Elo baseline.",
-        "- Glicko_C0_match_by_match: basic Glicko-1 without inactivity inflation.",
-        "- Glicko_low_inflation_match_by_match: candidate Glicko variant from RD inflation sensitivity.",
-        "",
-        "## Evaluation Set Check",
-        "",
-        markdown_table(
-            evaluation_check,
-            [
-                "model",
-                "evaluation_games",
-                "unique_game_ids",
-                "missing_game_ids_vs_union",
-                "extra_game_ids_vs_reference",
-                "probability_min",
-                "probability_max",
-                "status",
-            ],
-        ),
-        "",
-        "## Main 2025 Prediction Results",
-        "",
-        markdown_table(
-            ordered,
-            [
-                "model",
-                "model_family",
-                "evaluation_games",
-                "log_loss",
-                "brier",
-                "accuracy",
-                "weighted_mean_abs_calibration_error",
-            ],
-        ),
-        "",
-        "## Calibration Results",
-        "",
-        markdown_table(
-            calibration_summary.sort_values("model"),
-            ["model", "weighted_mean_abs_calibration_error", "max_abs_calibration_error", "bins_used"],
-        ),
-        "",
-        "## Confidence-Bin Results",
-        "",
-        "Confidence-bin diagnostics are saved in the CSV output. These show how model performance changes as prediction confidence increases.",
-        "",
-        "## Rating-List Similarity",
-        "",
-        markdown_table(
-            active_similarity,
-            [
-                "comparison",
-                "players",
-                "spearman",
-                "pearson",
-                "top50_overlap",
-                "top100_overlap",
-                "mean_abs_rank_diff",
-                "mean_abs_centered_rating_diff",
-            ],
-        ),
-        "",
-        "## Interpretation For Supervisor",
-        "",
-        candidate_text,
-        "",
-        inflation_text,
-        "",
-        (
-            "If Elo and Glicko ranking lists are similar while Glicko predictions improve, the "
-            "main difference may be in probabilistic confidence and uncertainty handling rather "
-            "than radically different rankings."
-        ),
-        "",
-        "## Candidate Main Comparison Result",
-        "",
-        (
-            "Use cautious wording: this is the current fixed-test result and a candidate main "
-            "comparison outcome. It is not a proof of a universally best model."
-        ),
-        "",
-        "## Remaining Limitations",
-        "",
-        "- Results are based on the 2025 test set after previous model-selection decisions.",
-        "- Elo baselines are transparent, while Glicko adds uncertainty and implementation complexity.",
-        "- Accuracy should not be used as the only decision criterion; log loss and Brier score are primary here.",
-        "- Adaptive-K Elo is not included in this step.",
-        "",
-        "## Issues / Warnings",
-        "",
-        *issue_lines,
-        "",
-        "## Output Files",
-        "",
-        f"- `{METRICS_PATH}`",
-        f"- `{EVALUATION_CHECK_PATH}`",
-        f"- `{PREDICTIONS_PATH}`",
-        f"- `{CALIBRATION_PATH}`",
-        f"- `{CONFIDENCE_PATH}`",
-        f"- `{RATING_SIMILARITY_PATH}`",
-        f"- `{FINAL_RATINGS_PATH}`",
-        f"- `{ISSUES_PATH}`",
-    ]
-    SUMMARY_MD_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -1106,15 +901,6 @@ def main() -> None:
     save_confidence_brier_plot(confidence_df)
     save_rating_scatter(final_ratings_df, active_2025_counts, total_game_counts)
 
-    write_summary(
-        metrics_df,
-        evaluation_check_df,
-        calibration_summary_df,
-        confidence_df,
-        rating_similarity_df,
-        issues_df,
-        dataset_path,
-    )
 
     print("\nMain metrics:")
     print(
@@ -1142,7 +928,6 @@ def main() -> None:
         RATING_SIMILARITY_PATH,
         FINAL_RATINGS_PATH,
         ISSUES_PATH,
-        SUMMARY_MD_PATH,
         BRIER_PLOT_PATH,
         LOGLOSS_PLOT_PATH,
         ACCURACY_PLOT_PATH,

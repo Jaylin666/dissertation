@@ -1,9 +1,4 @@
-"""Meeting 7 Step 37: Glicko initial-rating sensitivity experiment.
-
-This script tests whether changing only the Glicko initial rating reduces
-new-player over-prediction. Candidate selection is performed on 2023-2024
-validation data only; 2025 is used only as a fixed test period.
-"""
+"""Test common initial-rating translation invariance in Glicko-1."""
 
 from __future__ import annotations
 
@@ -49,7 +44,6 @@ RATING_DISTRIBUTION_PATH = OUTPUT_DIR / "37_rating_distribution_diagnostics.csv"
 KEY_RESULTS_PATH = OUTPUT_DIR / "37_key_initial_rating_results.csv"
 FIGURE_MANIFEST_PATH = OUTPUT_DIR / "37_figure_manifest.csv"
 FINAL_VALIDATION_PATH = OUTPUT_DIR / "37_initial_rating_sensitivity_validation_checks.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "37_glicko_initial_rating_sensitivity_summary.md"
 
 START_YEAR = 1985
 END_YEAR = 2025
@@ -105,7 +99,6 @@ OUTPUT_FILES = [
     KEY_RESULTS_PATH,
     FIGURE_MANIFEST_PATH,
     FINAL_VALIDATION_PATH,
-    SUMMARY_MD_PATH,
 ]
 
 
@@ -1575,98 +1568,6 @@ def build_key_results(
     return out, improves_validation, improves_test, reduces_debut_overprediction, underprediction
 
 
-def write_summary(
-    selected_rating: int,
-    validation_metrics: pd.DataFrame,
-    test_metrics: pd.DataFrame,
-    early_metrics: pd.DataFrame,
-    bootstrap: pd.DataFrame,
-    selected_vs_elo: pd.DataFrame,
-    rating_distribution: pd.DataFrame,
-    improves_validation: bool,
-    improves_test: bool,
-    reduces_debut_overprediction: bool,
-    underprediction: bool,
-) -> None:
-    """Write a technical Step 37 summary."""
-
-    selected_validation = validation_metrics.loc[validation_metrics["candidate_initial_rating"].eq(selected_rating)].iloc[0]
-    current_validation = validation_metrics.loc[validation_metrics["candidate_initial_rating"].eq(CURRENT_INITIAL_RATING)].iloc[0]
-    selected_test = test_metrics.loc[test_metrics["candidate_initial_rating"].eq(selected_rating)].iloc[0]
-    current_test = test_metrics.loc[test_metrics["candidate_initial_rating"].eq(CURRENT_INITIAL_RATING)].iloc[0]
-
-    def ev(candidate: int, group: str, col: str) -> float:
-        return float(
-            early_metrics.loc[
-                early_metrics["candidate_initial_rating"].eq(candidate) & early_metrics["group"].eq(group),
-                col,
-            ].iloc[0]
-        )
-
-    overall_delta = selected_vs_elo.loc[
-        selected_vs_elo["analysis_group"].eq("overall_2025")
-        & selected_vs_elo["model"].eq("Delta_Elo_minus_Selected_Glicko")
-    ].iloc[0]
-    final_dist = rating_distribution.loc[
-        rating_distribution["candidate_initial_rating"].eq(selected_rating)
-        & rating_distribution["distribution"].eq("final_2025_player_ratings")
-    ].iloc[0]
-    max_validation_brier_difference = float(validation_metrics["brier"].max() - validation_metrics["brier"].min())
-    max_test_brier_difference = float(test_metrics["brier"].max() - test_metrics["brier"].min())
-    first1_bias = early_metrics.loc[early_metrics["group"].eq("first_1"), "prediction_bias"]
-    max_first1_bias_difference = float(first1_bias.max() - first1_bias.min())
-
-    lines = [
-        "# Step 37 Glicko Initial-Rating Sensitivity",
-        "",
-        "## 1. Research question",
-        "This experiment tests whether changing only the Glicko initial rating reduces new-player over-prediction without damaging validation-selected and fixed-test performance.",
-        "",
-        "## 2. Why Step 36 justified this experiment",
-        "Step 36 identified the debut initial rating level as the dominant diagnostic source of the first-appearance over-prediction pattern.",
-        "",
-        "## 3. Validation and test split",
-        "Candidate selection uses 2023-2024 validation matches only. The fixed test period is 2025.",
-        "",
-        "## 4. Candidate initial ratings",
-        f"Candidates tested: {', '.join(str(v) for v in INITIAL_RATING_CANDIDATES)}. Initial RD remains {DEFAULT_RD:.0f}.",
-        "",
-        "## 5. Validation selection rule",
-        f"The primary selection criterion is validation Brier score. Log loss, debut bias, and closeness to 1500 are used only within a tie tolerance of {SELECTION_TIE_TOLERANCE:g}.",
-        "",
-        "## 6. Selected initial rating",
-        f"The validation-selected initial rating is {selected_rating}. Validation Brier is {selected_validation['brier']:.6f}, compared with {current_validation['brier']:.6f} for 1500.",
-        f"All candidate Brier scores are identical within tolerance: the maximum validation Brier difference is {max_validation_brier_difference:.3e}, the maximum 2025 Brier difference is {max_test_brier_difference:.3e}, and the maximum first_1 bias difference is {max_first1_bias_difference:.3e}. This is expected because changing a common initial rating shifts the whole Glicko rating scale but leaves rating differences and probabilities unchanged.",
-        "",
-        "## 7. Overall 2025 performance",
-        f"On 2025, selected Brier/log loss are {selected_test['brier']:.6f}/{selected_test['log_loss']:.6f}; current 1500 Brier/log loss are {current_test['brier']:.6f}/{current_test['log_loss']:.6f}.",
-        "",
-        "## 8. Early-game prediction bias",
-        f"First_1 bias changes from {ev(CURRENT_INITIAL_RATING, 'first_1', 'prediction_bias'):.6f} at 1500 to {ev(selected_rating, 'first_1', 'prediction_bias'):.6f} at the selected rating. First_5 bias changes from {ev(CURRENT_INITIAL_RATING, 'first_5', 'prediction_bias'):.6f} to {ev(selected_rating, 'first_5', 'prediction_bias'):.6f}.",
-        "",
-        "## 9. Early-game Brier and log loss",
-        f"First_1 Brier changes from {ev(CURRENT_INITIAL_RATING, 'first_1', 'brier'):.6f} to {ev(selected_rating, 'first_1', 'brier'):.6f}. First_5 Brier changes from {ev(CURRENT_INITIAL_RATING, 'first_5', 'brier'):.6f} to {ev(selected_rating, 'first_5', 'brier'):.6f}.",
-        "",
-        "## 10. Comparison with initial rating 1500",
-        f"Validation improvement relative to 1500: {improves_validation}. Fixed 2025 Brier improvement relative to 1500: {improves_test}.",
-        "",
-        "## 11. Comparison with validation-best Elo",
-        f"Overall 2025 Elo-minus-selected-Glicko Delta Brier is {overall_delta['brier']:.6f}; positive values mean selected Glicko has lower Brier than Elo.",
-        "",
-        "## 12. Under-prediction check",
-        f"Evidence of new-player under-prediction by the selected candidate: {underprediction}.",
-        "",
-        "## 13. Rating-distribution effects",
-        f"Selected final rating mean/median/std are {final_dist['mean']:.3f}/{final_dist['median']:.3f}/{final_dist['std']:.3f}. Pure location shifts should not be interpreted as ranking-quality improvements.",
-        "",
-        "## 14. Limitations",
-        "Only the initial rating is varied. Initial RD, inactivity inflation, expected score formula, and match-by-match rating period are fixed. First recorded appearances may not be true career debuts.",
-        "",
-        "## 15. Main-specification status",
-        "Because this is a Meeting 7 sensitivity experiment selected on validation data, it should be treated as a sensitivity model unless the dissertation design explicitly updates the main Glicko specification after documenting the validation rule.",
-        "",
-    ]
-    SUMMARY_MD_PATH.write_text("\n".join(lines), encoding="utf-8")
 
 
 def main() -> None:
@@ -1728,7 +1629,7 @@ def main() -> None:
     bootstrap = build_selected_vs_1500_bootstrap(test_predictions, appearances, selected_rating)
     selected_vs_elo = build_selected_glicko_vs_elo(test_predictions, appearances, step33, step34, selected_rating)
     probability_bands = build_probability_bands(appearances, selected_rating)
-    rating_distribution = build_rating_distribution_diagnostics(final_ratings_all, appearances)
+    build_rating_distribution_diagnostics(final_ratings_all, appearances)
     key_results, improves_validation, improves_test, reduces_debut_overprediction, underprediction = build_key_results(
         validation_metrics,
         test_metrics,
@@ -1738,19 +1639,6 @@ def main() -> None:
         selected_rating,
     )
     figure_manifest = create_figures(validation_metrics, test_metrics, early_metrics, selected_vs_elo, selected_rating)
-    write_summary(
-        selected_rating,
-        validation_metrics,
-        test_metrics,
-        early_metrics,
-        bootstrap,
-        selected_vs_elo,
-        rating_distribution,
-        improves_validation,
-        improves_test,
-        reduces_debut_overprediction,
-        underprediction,
-    )
     final_checks = validate_final_outputs(
         predictions_all,
         test_predictions,

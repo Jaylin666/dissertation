@@ -1,9 +1,4 @@
-"""This script implements and tests the core Glicko-1 update formula before applying it to the full croquet dataset.
-
-The purpose of this first Glicko step is only to verify the core formula and a
-small reusable engine. It does not read the full croquet dataset, does not
-compare against Elo, does not tune parameters, and does not implement Glicko-2.
-"""
+"""Validate core Glicko-1 equations with deterministic sanity checks."""
 
 from __future__ import annotations
 
@@ -34,7 +29,6 @@ OUTPUT_DIR = PROJECT_ROOT / "outputs" / "glicko_implementation"
 
 SANITY_RESULTS_FILE = OUTPUT_DIR / "glicko_core_sanity_results.csv"
 EXAMPLE_UPDATES_FILE = OUTPUT_DIR / "glicko_core_example_updates.csv"
-SUMMARY_FILE = OUTPUT_DIR / "glicko_core_sanity_summary.md"
 
 
 def format_bool(value: bool) -> str:
@@ -251,82 +245,6 @@ def run_sanity_checks() -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
     return pd.DataFrame(sanity_rows), pd.DataFrame(example_rows), metadata
 
 
-def write_summary(
-    sanity_df: pd.DataFrame,
-    examples_df: pd.DataFrame,
-    metadata: dict[str, Any],
-) -> None:
-    passed_count = int(sanity_df["passed"].sum())
-    total_count = len(sanity_df)
-    failed = sanity_df.loc[~sanity_df["passed"], "check_name"].tolist()
-    warnings = sanity_df.loc[sanity_df["notes"].astype(str).str.len() > 0, ["check_name", "notes"]]
-
-    lines = [
-        "# Glicko-1 Core Sanity Check Summary",
-        "",
-        "## Aim",
-        "",
-        "This script implements and tests the core Glicko-1 update formula before applying it to the full croquet dataset.",
-        "",
-        "The goal is to verify the reusable Glicko-1 engine only. This step does not read the full croquet match dataset, does not compare against Elo, does not tune parameters, and does not implement Glicko-2.",
-        "",
-        "## Implemented Formulas",
-        "",
-        f"- Default rating: {DEFAULT_RATING:.1f}",
-        f"- Default RD: {DEFAULT_RD:.1f}",
-        f"- RD bounds: [{MIN_RD:.1f}, {MAX_RD:.1f}]",
-        f"- q = ln(10) / 400 = {Q:.10f}",
-        f"- Inactivity RD inflation C = {C:.1f}",
-        "- g(RD) = 1 / sqrt(1 + 3 * q^2 * RD^2 / pi^2)",
-        "- Expected score = 1 / (1 + 10^(-g(RD_j) * (r - r_j) / 400))",
-        "- Rating-period update uses all games in the period before computing the new rating and RD.",
-        "",
-        "## Sanity Check Results",
-        "",
-        f"- Passed checks: {passed_count} / {total_count}",
-        f"- Overall status: {'PASS' if metadata['all_passed'] else 'CHECK WARNINGS/FAILURES'}",
-        "",
-    ]
-
-    for _, row in sanity_df.iterrows():
-        lines.append(
-            f"- {row['check_name']}: {format_bool(bool(row['passed']))}; result = {row['result_value']}"
-        )
-
-    lines.extend(
-        [
-            "",
-            "## Official-Style Batch Example",
-            "",
-            "The batch example uses a player rated 1500 with RD 200 against three opponents: 1400/RD30 win, 1550/RD100 loss, and 1700/RD300 loss.",
-            "",
-            f"- New rating: {metadata['batch_new_rating']:.3f}",
-            f"- New RD: {metadata['batch_new_rd']:.3f}",
-            "- Common reference expectation: approximately rating 1464 and RD 152.",
-            f"- Tolerance check: {'PASS' if metadata['batch_passed'] else 'WARNING'}",
-            "",
-            "## Readiness for Next Step",
-            "",
-            "The core engine is ready for a small full-data match-by-match Glicko baseline script, provided the next step keeps the same match ordering and prediction column conventions as the Elo pipeline.",
-            "",
-            "## Remaining Limitations",
-            "",
-            "- Inactivity RD inflation is not implemented yet because rating-period design for croquet still needs to be decided.",
-            "- Monthly, event-level, and yearly rating-period sensitivity are not implemented in this first core sanity step.",
-            "- Glicko-2 volatility is intentionally out of scope for this baseline implementation.",
-        ]
-    )
-
-    if failed:
-        lines.extend(["", "## Failed Checks", ""])
-        lines.extend(f"- {name}" for name in failed)
-
-    if not warnings.empty:
-        lines.extend(["", "## Warnings", ""])
-        for _, row in warnings.iterrows():
-            lines.append(f"- {row['check_name']}: {row['notes']}")
-
-    SUMMARY_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -361,13 +279,11 @@ def main() -> None:
 
     sanity_df.to_csv(SANITY_RESULTS_FILE, index=False, encoding="utf-8-sig")
     examples_df.to_csv(EXAMPLE_UPDATES_FILE, index=False, encoding="utf-8-sig")
-    write_summary(sanity_df, examples_df, metadata)
 
     print()
     print("Output files:")
     print(f"  {SANITY_RESULTS_FILE}")
     print(f"  {EXAMPLE_UPDATES_FILE}")
-    print(f"  {SUMMARY_FILE}")
     print()
     if metadata["all_passed"]:
         print("Core Glicko-1 engine is ready for the next full-data match-by-match baseline step.")

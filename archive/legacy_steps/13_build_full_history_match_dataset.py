@@ -24,7 +24,6 @@ YEAR_RANGE = f"{START_YEAR}_{END_YEAR}"
 MATCHES_OUTPUT_PATH = OUTPUT_DIR / f"matches_{YEAR_RANGE}_checked.csv"
 YEARLY_SUMMARY_PATH = OUTPUT_DIR / f"full_history_yearly_check_summary_{YEAR_RANGE}.csv"
 OVERALL_SUMMARY_PATH = OUTPUT_DIR / f"full_history_data_check_summary_{YEAR_RANGE}.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "full_history_dataset_summary.md"
 
 
 def load_step07_module():
@@ -125,54 +124,6 @@ def collect_check_flags(overall_summary: pd.DataFrame) -> Dict[str, bool]:
     return checks
 
 
-def write_markdown_summary(overall_summary: pd.DataFrame, output_path: Path) -> str:
-    """Write a short markdown summary for the full-history dataset step."""
-    row = overall_summary.iloc[0]
-    checks = collect_check_flags(overall_summary)
-    check_lines = [
-        f"* duplicated fcode count is 0: {checks['duplicated_fcode_count_is_zero']}",
-        f"* missing event rows is 0: {checks['missing_event_rows_is_zero']}",
-        f"* missing hidx rows is 0: {checks['missing_hidx_rows_is_zero']}",
-        f"* missing winner names is 0: {checks['missing_winner_names_is_zero']}",
-        f"* missing loser names is 0: {checks['missing_loser_names_is_zero']}",
-        f"* missing parsed event dates is 0: {checks['missing_event_date_parsed_is_zero']}",
-    ]
-
-    markdown = f"""# Full-history checked match-level dataset
-
-## Purpose
-
-This script builds the full-history checked match-level dataset for the Elo optimisation stage before the fourth meeting.
-It reuses the data loading, merging, date parsing and checking logic from `code/07_build_multiyear_match_dataset.py`.
-
-## Year range
-
-* Start year: {START_YEAR}
-* End year: {END_YEAR}
-
-## Dataset size
-
-* Total matches: {int(row['total_number_of_matches'])}
-* Unique players: {int(row['number_of_unique_players'])}
-* Unique events: {int(row['number_of_unique_events'])}
-
-## Key data checks
-
-{chr(10).join(check_lines)}
-
-Missing parsed event dates: {int(row['missing_event_date_parsed'])}.
-
-## Relationship to previous dataset
-
-This is a full-history extension of the existing 2015-2025 checked dataset.
-It is saved under `outputs/elo_optimization/` and does not overwrite the existing files in `data_processed/`.
-
-## Suggested next step
-
-Use this full-history dataset for the burn-in rating list stability experiment.
-"""
-    output_path.write_text(markdown, encoding="utf-8")
-    return markdown
 
 
 def save_outputs(
@@ -185,7 +136,6 @@ def save_outputs(
     matches.to_csv(MATCHES_OUTPUT_PATH, index=False)
     yearly_summary.to_csv(YEARLY_SUMMARY_PATH, index=False)
     overall_summary.to_csv(OVERALL_SUMMARY_PATH, index=False)
-    write_markdown_summary(overall_summary, SUMMARY_MD_PATH)
 
 
 def print_yearly_counts(yearly_summary: pd.DataFrame) -> None:
@@ -216,7 +166,6 @@ def print_command_line_summary(overall_summary: pd.DataFrame) -> None:
     print(f"  matches: {MATCHES_OUTPUT_PATH}")
     print(f"  yearly summary: {YEARLY_SUMMARY_PATH}")
     print(f"  overall summary: {OVERALL_SUMMARY_PATH}")
-    print(f"  markdown summary: {SUMMARY_MD_PATH}")
 
 
 def main() -> None:

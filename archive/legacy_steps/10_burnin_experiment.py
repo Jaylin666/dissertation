@@ -41,7 +41,6 @@ STEP09_METRICS_PATH = DATA_PROCESSED / f"elo_multiyear_metrics_{YEAR_RANGE}.csv"
 
 RESULTS_PATH = DATA_PROCESSED / f"burnin_experiment_results_{YEAR_RANGE}.csv"
 CHECKS_PATH = DATA_PROCESSED / f"burnin_experiment_evaluation_checks_{YEAR_RANGE}.csv"
-SUMMARY_MD_PATH = DATA_PROCESSED / f"burnin_experiment_summary_{YEAR_RANGE}.md"
 FINAL_RATINGS_PATH = DATA_PROCESSED / f"burnin_experiment_final_ratings_{YEAR_RANGE}.csv"
 
 
@@ -382,72 +381,6 @@ def read_step09_log_loss() -> float:
     return float(metrics.iloc[0]["log_loss"])
 
 
-def make_summary_markdown(results_df: pd.DataFrame, checks_df: pd.DataFrame, output_path: Path) -> str:
-    """Create an English markdown summary for third meeting notes."""
-    best_log_loss = results_df.sort_values("log_loss").iloc[0]
-    best_brier = results_df.sort_values("brier_score").iloc[0]
-    best_accuracy = results_df.sort_values("accuracy", ascending=False).iloc[0]
-
-    table_cols = ["run_label", "log_loss", "brier_score", "accuracy", "number_of_evaluation_games"]
-    result_lines = []
-    for _, row in results_df[table_cols].iterrows():
-        result_lines.append(
-            f"* {row['run_label']}: log loss = {row['log_loss']:.6f}, "
-            f"Brier score = {row['brier_score']:.6f}, "
-            f"accuracy = {row['accuracy']:.6f}, "
-            f"evaluation games = {int(row['number_of_evaluation_games'])}"
-        )
-
-    identical_eval_sets = bool(checks_df["matches_reference_evaluation_set"].all())
-    stability_lines = []
-    for _, row in results_df.iterrows():
-        stability_lines.append(
-            f"* {row['run_label']}: average abs rating change = "
-            f"{row['average_abs_rating_change_all_games']:.3f}, "
-            f"final rating std = {row['final_rating_std']:.3f}, "
-            f"top 50 overlap with 2015 run = "
-            f"{row['top_50_overlap_with_2015_run']:.3f}"
-        )
-
-    markdown = f"""# Burn-in experiment summary
-
-## Aim
-
-The aim is to test how much historical data is needed before evaluating the simple Elo model on the fixed 2025 games.
-Each burn-in configuration starts all players from the same default rating and then runs the same simple Elo update rule.
-
-## Method
-
-Each run starts all players from 1500, uses K = 20 and scale = 500, runs from a different start year to 2025, and evaluates only on the same 2025 games.
-The tested start years are: {', '.join(str(year) for year in results_df['start_year'].tolist())}.
-The evaluation fcode sets are identical across runs: {identical_eval_sets}.
-
-## Main results
-
-{chr(10).join(result_lines)}
-
-Best run by log loss: {best_log_loss['run_label']} with log loss {best_log_loss['log_loss']:.6f}.
-Best run by Brier score: {best_brier['run_label']} with Brier score {best_brier['brier_score']:.6f}.
-Best run by accuracy: {best_accuracy['run_label']} with accuracy {best_accuracy['accuracy']:.6f}.
-
-## Interpretation
-
-These are preliminary results for the transparent simple Elo baseline. If longer burn-in improves log loss or Brier score, this suggests that historical data helps produce more sensible ratings before the 2025 evaluation year. If the differences are small, the simple Elo model may be relatively stable for this dataset, but more checks are needed before making a final claim.
-
-## Stability
-
-{chr(10).join(stability_lines)}
-
-The top-ranking overlap uses the full 2015-2025 run as the reference. Lower overlap means that the shorter burn-in produces a noticeably different final ranking.
-
-## Notes for supervisor
-
-* Does this burn-in experiment design seem fair for comparing rating systems?
-* Should I use 2025 as the test year and earlier years as burn-in/validation, or use multiple test years?
-* Should rating stability be included alongside predictive scores in the final comparison?
-"""
-    output_path.write_text(markdown, encoding="utf-8")
-    return markdown
 
 
 def run_burnin_experiment(matches: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -554,7 +487,6 @@ def save_outputs(results_df: pd.DataFrame, checks_df: pd.DataFrame, final_rating
     results_df.to_csv(RESULTS_PATH, index=False)
     checks_df.to_csv(CHECKS_PATH, index=False)
     final_ratings.to_csv(FINAL_RATINGS_PATH, index=False)
-    make_summary_markdown(results_df, checks_df, SUMMARY_MD_PATH)
 
 
 def print_command_line_summary(results_df: pd.DataFrame, checks_df: pd.DataFrame) -> None:
@@ -603,7 +535,6 @@ def print_command_line_summary(results_df: pd.DataFrame, checks_df: pd.DataFrame
     print("Output paths:")
     print(f"  results: {RESULTS_PATH}")
     print(f"  evaluation checks: {CHECKS_PATH}")
-    print(f"  summary markdown: {SUMMARY_MD_PATH}")
     print(f"  final ratings: {FINAL_RATINGS_PATH}")
 
 

@@ -1,13 +1,4 @@
-"""
-This script implements a single-year repeated rerun diagnostic: run one year
-of matches, use the final ratings as the initial ratings for the next
-iteration, and repeat until the rating list stabilises.
-
-Important limitation: this is not a fair predictive evaluation. The same
-year's results are reused across iterations, so log loss and Brier score
-from these repeated runs would not represent out-of-sample performance.
-This script is only a rating convergence / stability diagnostic.
-"""
+"""Measure convergence under repeated single-year Elo reruns."""
 
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
@@ -60,7 +51,6 @@ ITERATION_SUMMARY_PATH = OUTPUT_DIR / "elo_single_year_rerun_iteration_summary.c
 FINAL_RATINGS_PATH = OUTPUT_DIR / "elo_single_year_rerun_final_ratings.csv"
 UPDATE_SUMMARY_PATH = OUTPUT_DIR / "elo_single_year_rerun_update_summary.csv"
 DECISIONS_PATH = OUTPUT_DIR / "elo_single_year_rerun_convergence_decisions.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "elo_single_year_rerun_convergence_summary.md"
 
 
 REQUIRED_COLUMNS = ["fcode", "code", "year", "winner", "loser"]
@@ -498,110 +488,6 @@ def make_decision_row(
     }
 
 
-def write_markdown_summary(
-    matches: pd.DataFrame,
-    iteration_summary: pd.DataFrame,
-    decisions: pd.DataFrame,
-    update_summary: pd.DataFrame,
-    output_path: Path,
-) -> str:
-    """Write a meeting-ready markdown summary."""
-    year_lines = []
-    for year in YEARS_TO_TEST:
-        year_matches = matches[matches["year"] == year]
-        players = pd.concat([year_matches["winner"], year_matches["loser"]]).dropna().astype(int).nunique()
-        year_lines.append(f"* {year}: {len(year_matches)} matches, {players} players")
-
-    setting_lines = [
-        f"* {setting['label']}: `{setting['setting_name']}`, K={setting['k']:g}, scale={setting['scale']:g}"
-        for setting in ELO_SETTINGS
-    ]
-
-    convergence_lines = []
-    for _, row in decisions.sort_values(["year", "setting_name"], ascending=[False, True]).iterrows():
-        if bool(row["converged"]):
-            status = f"converged at iteration {int(row['convergence_iteration'])}"
-        else:
-            status = f"not converged after {int(row['total_iterations_run'])} iterations"
-        convergence_lines.append(
-            f"* {int(row['year'])}, {row['setting_name']}: {status}; "
-            f"final mean abs change = {format_optional_float(row['final_mean_abs_change'])}, "
-            f"final max abs change = {format_optional_float(row['final_max_abs_change'])}, "
-            f"final Spearman = {format_optional_float(row['final_spearman_rank_correlation'])}."
-        )
-
-    effect_lines = []
-    grouped = decisions.groupby("setting_name", sort=False)
-    for setting_name, group in grouped:
-        converged_count = int(group["converged"].sum())
-        median_iterations = group["total_iterations_run"].median()
-        median_final_change = group["final_mean_abs_change"].median()
-        effect_lines.append(
-            f"* {setting_name}: {converged_count}/{len(group)} year tests converged; "
-            f"median iterations run = {median_iterations:.1f}; "
-            f"median final mean abs change = {median_final_change:.4f}."
-        )
-
-    markdown = f"""# Single-year repeated rerun convergence diagnostic
-
-## 1. Aim of this experiment
-
-This is the supervisor-suggested single-year repeated rerun diagnostic.
-For a chosen year, the script runs that year's matches once, uses the final ratings as the initial ratings for the next iteration, and repeats until the rating list stabilises or the maximum iteration count is reached.
-
-## 2. Important limitation
-
-This is not a fair prediction test.
-The same year's match results are reused across iterations, so log loss, Brier score or accuracy from these reruns would not be valid out-of-sample performance measures.
-This experiment is only a rating convergence / stability diagnostic.
-It complements the full-history burn-in stability experiment by asking whether a single year of repeated information can stabilise an Elo rating list.
-
-## 3. Data and years used
-
-Input file: `outputs/elo_optimization/matches_1985_2025_checked.csv`.
-The default years are:
-
-{chr(10).join(year_lines)}
-
-## 4. Elo settings tested
-
-{chr(10).join(setting_lines)}
-
-Convergence thresholds:
-
-* mean absolute rating change from previous iteration < {MEAN_ABS_CHANGE_THRESHOLD}
-* or max absolute rating change from previous iteration < {MAX_ABS_CHANGE_THRESHOLD}
-* Spearman rank correlation is recorded, with reference threshold {SPEARMAN_THRESHOLD}, but is not used alone to decide convergence.
-
-## 5. Convergence results
-
-{chr(10).join(convergence_lines)}
-
-## 6. Effect of K and scale
-
-{chr(10).join(effect_lines)}
-
-The setting-level comparison should be read cautiously because this diagnostic reuses the same matches repeatedly.
-Different K/scale values can change both how quickly rating values move and how quickly the final ranking stabilises.
-
-## 7. Interpretation
-
-The full-history burn-in experiment checks sensitivity to historical data length.
-This single-year rerun diagnostic checks whether one year's results, repeatedly reused, can produce a stable rating list.
-Together, they help explain why historical burn-in matters and why short-window ratings can be sensitive to parameter choices.
-
-## 8. Implication for Elo baseline
-
-This experiment does not directly choose the final Elo baseline.
-It helps interpret the need for historical burn-in and the role of K/scale in rating stability.
-If a setting does not stabilise under repeated single-year reruns, that is evidence that one-year data alone is not enough to define a robust rating list.
-
-## 9. Next step
-
-The next Elo optimisation step is event-level volatility analysis, which addresses the difference between match-by-match volatility and tournament/event-level resolution.
-"""
-    output_path.write_text(markdown, encoding="utf-8")
-    return markdown
 
 
 def remove_existing_outputs() -> None:
@@ -611,7 +497,6 @@ def remove_existing_outputs() -> None:
         FINAL_RATINGS_PATH,
         UPDATE_SUMMARY_PATH,
         DECISIONS_PATH,
-        SUMMARY_MD_PATH,
     ]:
         if path.exists():
             path.unlink()
@@ -660,14 +545,12 @@ def main() -> None:
     final_ratings.to_csv(FINAL_RATINGS_PATH, index=False)
     update_summary.to_csv(UPDATE_SUMMARY_PATH, index=False)
     decisions.to_csv(DECISIONS_PATH, index=False)
-    write_markdown_summary(matches, iteration_summary, decisions, update_summary, SUMMARY_MD_PATH)
 
     print("\nOutput paths:")
     print(f"  iteration summary: {ITERATION_SUMMARY_PATH}")
     print(f"  final ratings: {FINAL_RATINGS_PATH}")
     print(f"  update summary: {UPDATE_SUMMARY_PATH}")
     print(f"  convergence decisions: {DECISIONS_PATH}")
-    print(f"  markdown summary: {SUMMARY_MD_PATH}")
     print(f"Total runtime: {time.time() - start_time:.1f}s")
 
 

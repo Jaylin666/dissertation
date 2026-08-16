@@ -1,12 +1,4 @@
-"""Step 38: Asymmetric Adaptive-K Elo proof-of-concept.
-
-This script audits and extends the Step 27 adaptive-K Elo model.  The central
-methodological point is deliberately conservative: reuse the exact Step 27
-previous-year activity K rule and Elo scale, then test whether a canonical
-player-A/player-B asymmetric update differs from the saved Step 27 reference.
-
-Outputs are written to outputs/meeting7 and do not modify earlier steps.
-"""
+"""Compare symmetric and asymmetric Adaptive-K Elo updates."""
 
 from __future__ import annotations
 
@@ -53,7 +45,6 @@ GAP_RECOVERY_PATH = OUTPUT_DIR / "38_glicko_gap_recovery.csv"
 KEY_RESULTS_PATH = OUTPUT_DIR / "38_key_asymmetric_k_results.csv"
 FIGURE_MANIFEST_PATH = OUTPUT_DIR / "38_figure_manifest.csv"
 VALIDATION_CHECKS_PATH = OUTPUT_DIR / "38_asymmetric_k_validation_checks.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "38_asymmetric_adaptive_k_summary.md"
 
 FIGURE_PATHS = {
     "38_fig01_overall_brier_comparison": FIGURE_DIR / "38_fig01_overall_brier_comparison.png",
@@ -256,12 +247,7 @@ def run_asymmetric_adaptive_elo(
     *,
     recenter_after_year: bool = False,
 ) -> dict[str, Any]:
-    """Run the canonical A/B asymmetric adaptive-K Elo model.
-
-    If recenter_after_year is True, every existing rating and the future-new-player
-    initial rating are shifted by the same constant at each year boundary.  That
-    preserves rating differences and therefore should preserve probabilities.
-    """
+    """Run player-specific Adaptive-K Elo; common recentering preserves rating differences."""
 
     ratings: dict[int, float] = {}
     new_player_initial_rating = INITIAL_RATING
@@ -1441,7 +1427,7 @@ def build_validation_checks(
     add_check(
         "all_required_outputs_generated",
         all(path.exists() for path in required_outputs),
-        "Every required CSV output needed before the final validation and Markdown writes exists.",
+        "Every required CSV output exists before final validation.",
     )
     add_check(
         "all_required_figures_generated",
@@ -1454,88 +1440,6 @@ def build_validation_checks(
     return validation
 
 
-def write_summary_markdown(
-    reproduction_checks: pd.DataFrame,
-    validation_metrics: pd.DataFrame,
-    overall_metrics: pd.DataFrame,
-    early_metrics: pd.DataFrame,
-    activity_metrics: pd.DataFrame,
-    k_summary: pd.DataFrame,
-    rating_drift: pd.DataFrame,
-    recentering: pd.DataFrame,
-    recovery: pd.DataFrame,
-    validation_checks: pd.DataFrame,
-) -> None:
-    overall = overall_metrics.set_index("model")
-    first_groups = early_metrics.loc[early_metrics["group"].isin(["first_1", "first_5", "first_10", "first_20"])]
-    k_row = k_summary.iloc[0]
-    drift_row = rating_drift.loc[rating_drift["model"].eq(ASYMMETRIC_MODEL)].iloc[0]
-    rec_row = recentering.iloc[0]
-    recovery_brier = recovery.loc[(recovery["group"].eq("all_matches")) & (recovery["metric"].eq("brier"))].iloc[0]
-    pass_count = int(validation_checks["status"].eq("PASS").sum())
-    fail_count = int(validation_checks["status"].eq("FAIL").sum())
-
-    text = f"""# Step 38: Asymmetric Adaptive-K Elo Proof-of-Concept
-
-## Research question
-
-This step tests whether assigning different adaptive-K update sizes to the two players in the same match can recover part of low-inflation Glicko's predictive advantage.
-
-## Existing Step 27 rule
-
-The reused rule is:
-
-- previous_year_games <= 5: K = 30
-- 6 <= previous_year_games <= 30: K = 20
-- previous_year_games > 30: K = 10
-- Elo scale = 300
-
-The Step 27 audit found that the saved adaptive-K model already calculates player-specific `winner_K` and `loser_K`. Therefore the canonical Step 38 A/B asymmetric implementation is algebraically equivalent to the saved Step 27 reference.
-
-## Reproduction check
-
-Step 27 reproduction status: {reproduction_checks['status'].eq('PASS').all()}.
-
-## Validation and test design
-
-Validation uses 2023-2024 only. The fixed 2025 test set contains {EXPECTED_TEST_MATCHES:,} matches. No 2025 outcomes are used for parameter selection.
-
-## Overall 2025 performance
-
-| Model | Brier | Log loss | Accuracy |
-|---|---:|---:|---:|
-| Validation-best Elo | {overall.loc[ELO_MODEL, 'brier']:.6f} | {overall.loc[ELO_MODEL, 'log_loss']:.6f} | {overall.loc[ELO_MODEL, 'accuracy']:.6f} |
-| Adaptive-K reference | {overall.loc[STEP27_MODEL, 'brier']:.6f} | {overall.loc[STEP27_MODEL, 'log_loss']:.6f} | {overall.loc[STEP27_MODEL, 'accuracy']:.6f} |
-| Asymmetric adaptive-K | {overall.loc[ASYMMETRIC_MODEL, 'brier']:.6f} | {overall.loc[ASYMMETRIC_MODEL, 'log_loss']:.6f} | {overall.loc[ASYMMETRIC_MODEL, 'accuracy']:.6f} |
-| Low-inflation Glicko | {overall.loc[GLICKO_MODEL, 'brier']:.6f} | {overall.loc[GLICKO_MODEL, 'log_loss']:.6f} | {overall.loc[GLICKO_MODEL, 'accuracy']:.6f} |
-
-## Early-game performance
-
-The early-game comparison uses identical Step 34 focal-player appearance rows across all models. The asymmetric adaptive-K model is identical to the Step 27 adaptive-K reference, so it does not create a new early-game improvement.
-
-## Activity and returning-player performance
-
-Activity subgroup results are saved in `38_activity_subgroup_metrics.csv`. These subgroups use existing Step 33 flags and previous-year activity variables.
-
-## Player-specific K and rating drift
-
-K_A differs from K_B in {k_row['percentage_matches_K_A_differs_from_K_B']:.2f}% of 2025 matches. Mean absolute K difference is {k_row['mean_absolute_K_A_minus_K_B']:.4f}. Total net rating drift during 2025 is {drift_row['total_rating_drift_during_2025']:.6f}.
-
-## Recentered robustness
-
-The maximum absolute probability difference after common-shift recentering is {rec_row['maximum_absolute_probability_difference']:.3e}. This confirms that common rating shifts affect displayed rating levels but not predicted probabilities when applied consistently.
-
-## Recovery of the Glicko gap
-
-Overall Brier recovery fraction is {recovery_brier['recovery_fraction']:.6f}. Because the asymmetric implementation reproduces the existing adaptive-K reference, it recovers none of the adaptive-K-to-Glicko gap.
-
-## Conclusion and limitations
-
-This proof-of-concept is useful primarily as a method audit. It shows that the supervisor's proposed player-specific update idea was already present in the Step 27 best adaptive-K implementation. Further improvement would therefore require a genuinely different, pre-specified adaptive-K rule or another source of uncertainty information, not merely rewriting the update in A/B asymmetric notation.
-
-Validation checks: {pass_count} PASS, {fail_count} FAIL.
-"""
-    SUMMARY_MD_PATH.write_text(text, encoding="utf-8")
 
 
 def print_console_summary(
@@ -1611,7 +1515,7 @@ def main() -> None:
     overall_metrics, overall_pairwise = build_overall_outputs(comparison)
     appearances = build_appearance_dataset(predictions)
     early_metrics, stage_metrics = build_early_game_metrics(appearances)
-    activity_metrics = build_activity_subgroup_metrics(comparison)
+    build_activity_subgroup_metrics(comparison)
 
     k_diagnostics.to_csv(K_DIAGNOSTICS_PATH, index=False)
     k_summary = build_k_summary(k_diagnostics)
@@ -1633,7 +1537,7 @@ def main() -> None:
         recovery,
         validation_metrics,
     )
-    figure_manifest = build_figures(overall_metrics, early_metrics, k_diagnostics, drift_trace, recovery)
+    build_figures(overall_metrics, early_metrics, k_diagnostics, drift_trace, recovery)
 
     output_paths = [
         REPRODUCTION_CHECKS_PATH,
@@ -1670,20 +1574,8 @@ def main() -> None:
         output_paths,
         list(FIGURE_PATHS.values()),
     )
-    write_summary_markdown(
-        reproduction_checks,
-        validation_metrics,
-        overall_metrics,
-        early_metrics,
-        activity_metrics,
-        k_summary,
-        rating_drift,
-        recentering,
-        recovery,
-        validation_checks,
-    )
-    # Re-run the output existence check after writing the Markdown and validation file.
-    all_final_outputs = output_paths + [SUMMARY_MD_PATH, VALIDATION_CHECKS_PATH]
+    # Re-run the output existence check after writing the validation file.
+    all_final_outputs = output_paths + [VALIDATION_CHECKS_PATH]
     if not all(path.exists() for path in all_final_outputs):
         missing = [str(path) for path in all_final_outputs if not path.exists()]
         raise RuntimeError(f"Missing required Step 38 outputs: {missing}")

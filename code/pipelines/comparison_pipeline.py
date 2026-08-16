@@ -1581,119 +1581,6 @@ def validate_final_outputs(
     return checks
 
 
-def write_markdown_summary(
-    overall_metrics: pd.DataFrame,
-    overall_ci: pd.DataFrame,
-    key_results: pd.DataFrame,
-    adaptive_recovery: pd.DataFrame,
-    returning_exclusive: pd.DataFrame,
-    orientation_metrics: pd.DataFrame,
-    checks: pd.DataFrame,
-    figure_paths: list[Path],
-    output_paths: list[Path],
-) -> Path:
-    def fmt(x: Any, digits: int = 6) -> str:
-        return "NA" if pd.isna(x) else f"{float(x):.{digits}f}"
-
-    g = overall_metrics.loc[overall_metrics["model"] == "Glicko_low_fixed"].iloc[0]
-    e = overall_metrics.loc[overall_metrics["model"] == "Validation_best_Elo"].iloc[0]
-    c0 = overall_metrics.loc[overall_metrics["model"] == "Glicko_C0_fixed"].iloc[0]
-    ak = overall_metrics.loc[overall_metrics["model"] == "best_AdaptiveK"].iloc[0]
-    main_ci = overall_ci.loc[overall_ci["diff_name"] == "delta_brier_glicko_vs_elo"].iloc[0]
-    log_ci = overall_ci.loc[overall_ci["diff_name"] == "delta_logloss_glicko_vs_elo"].iloc[0]
-    inflation_ci = overall_ci.loc[overall_ci["diff_name"] == "delta_brier_inflation"].iloc[0]
-    recovery_overall = adaptive_recovery.loc[adaptive_recovery["range_label"] == "Overall"].iloc[0]
-    old_overall = orientation_metrics.loc[
-        (orientation_metrics["model"] == "Glicko_low")
-        & (orientation_metrics["sample"] == "Overall")
-        & (orientation_metrics["orientation"] == "old_step29_saved_winner_orientation")
-    ].iloc[0]
-    fixed_overall = orientation_metrics.loc[
-        (orientation_metrics["model"] == "Glicko_low")
-        & (orientation_metrics["sample"] == "Overall")
-        & (orientation_metrics["orientation"] == "fixed_player_a_direct")
-    ].iloc[0]
-
-    conclusion_lines = []
-    for _, row in key_results.head(8).iterrows():
-        conclusion_lines.append(
-            f"- {row['subgroup']}: games={int(row['games'])}, "
-            f"Brier diff={fmt(row['delta_brier'])} [{fmt(row['delta_brier_ci_lower'])}, {fmt(row['delta_brier_ci_upper'])}], "
-            f"log-loss diff={fmt(row['delta_logloss'])} [{fmt(row['delta_logloss_ci_lower'])}, {fmt(row['delta_logloss_ci_upper'])}]; "
-            f"{row['interpretation']}."
-        )
-
-    lines = [
-        "# Meeting 6 Step 33: Orientation-Corrected Final Results",
-        "",
-        "## Purpose",
-        "",
-        "This step recomputes all Meeting 6 probability-based results after the Step 32 Glicko probability-orientation audit.",
-        "It does not rerun Elo, Glicko, or adaptive-K ratings, and it does not reselect parameters.",
-        "",
-        "## Probability Orientation Fix",
-        "",
-        "The final Glicko probability is now the outcome-independent direct player-A probability:",
-        "",
-        "`p_a_Glicko_low_fixed = expected_score(rating_A, rating_B, RD_B)`.",
-        "",
-        "The Glicko formula itself is unchanged. The correction is only in evaluation orientation: the script no longer converts actual-winner probability to player-A probability using the match outcome.",
-        "The diagnostic symmetric probability remains a sensitivity check, not the standard Glicko probability.",
-        "",
-        "## Overall Model Comparison",
-        "",
-        f"- Glicko low inflation: Brier={fmt(g['brier'])}, log loss={fmt(g['log_loss'])}, accuracy={fmt(g['accuracy'])}.",
-        f"- Validation-best Elo: Brier={fmt(e['brier'])}, log loss={fmt(e['log_loss'])}, accuracy={fmt(e['accuracy'])}.",
-        f"- Best adaptive-K Elo: Brier={fmt(ak['brier'])}, log loss={fmt(ak['log_loss'])}, accuracy={fmt(ak['accuracy'])}.",
-        f"- Glicko C0: Brier={fmt(c0['brier'])}, log loss={fmt(c0['log_loss'])}, accuracy={fmt(c0['accuracy'])}.",
-        "",
-        f"Main paired Brier improvement, Elo minus Glicko low: {fmt(main_ci['point_estimate'])} "
-        f"[{fmt(main_ci['ci_lower'])}, {fmt(main_ci['ci_upper'])}].",
-        f"Main paired log-loss improvement, Elo minus Glicko low: {fmt(log_ci['point_estimate'])} "
-        f"[{fmt(log_ci['ci_lower'])}, {fmt(log_ci['ci_upper'])}].",
-        "",
-        "## What Changed From Step 29-31",
-        "",
-        f"- Old saved-winner orientation Glicko low Brier: {fmt(old_overall['brier'])}.",
-        f"- Fixed direct player-A Glicko low Brier: {fmt(fixed_overall['brier'])}.",
-        "- The direction of the main conclusion is stable: Glicko low remains better overall than validation-best Elo.",
-        "- Step29-31 probability-based outputs are superseded by Step33 outputs. Rating-level outputs such as the unique-player snapshot and debut opponent rating distribution remain valid.",
-        "",
-        "## Debut and Returning Players",
-        "",
-        "- The debut anomaly remains after correction: validation-best Elo is much better for exactly-one-debut matches.",
-        "- The direct cause is not that the debut player's own RD=350 directly enters the current match expected-score formula. The direct expected score uses the opponent RD; the large debut probability mainly comes from the initial rating being high relative to many opponents.",
-        "- Returning/inactive-player estimates remain small-sample and uncertain for Glicko-vs-Elo, but low inactivity RD inflation still improves Glicko relative to C0.",
-        f"- Overall inflation contribution, C0 Brier minus low-inflation Brier: {fmt(inflation_ci['point_estimate'])} "
-        f"[{fmt(inflation_ci['ci_lower'])}, {fmt(inflation_ci['ci_upper'])}].",
-        "",
-        "## Adaptive-K Comparison",
-        "",
-        f"- Overall adaptive-K Brier recovery ratio: {fmt(recovery_overall['improvement_recovered_brier'])} "
-        f"(valid={bool(recovery_overall['recovery_ratio_valid_brier'])}).",
-        f"- Overall adaptive-K log-loss recovery ratio: {fmt(recovery_overall['improvement_recovered_logloss'])} "
-        f"(valid={bool(recovery_overall['recovery_ratio_valid_logloss'])}).",
-        "",
-        "## Main Conclusions for Meeting 6",
-        "",
-        *conclusion_lines,
-        "",
-        "## Validation",
-        "",
-        f"- Validation checks passed: {int(checks['passed'].sum())} / {len(checks)}.",
-        "- The fixed Glicko low Brier matches the Step 32 audit target of approximately 0.187604.",
-        "- Missing date information and debut groups were retained.",
-        "- All new outputs use the `33_` prefix.",
-        "",
-        "## Files Written",
-        "",
-        *[f"- `{path.relative_to(PROJECT_ROOT)}`" for path in output_paths],
-        *[f"- `{path.relative_to(PROJECT_ROOT)}`" for path in figure_paths],
-        "",
-    ]
-    path = OUTPUT_DIR / "33_meeting6_orientation_corrected_final_summary.md"
-    path.write_text("\n".join(lines), encoding="utf-8")
-    return path
 
 
 def main() -> None:
@@ -1794,7 +1681,7 @@ def main() -> None:
     key_results_path = OUTPUT_DIR / "33_meeting6_final_results.csv"
     key_results.to_csv(key_results_path, index=False, float_format="%.12g")
 
-    supersession_map = write_supersession_map()
+    write_supersession_map()
     supersession_path = OUTPUT_DIR / "33_supersession_map.csv"
 
     figure_paths = create_figures(
@@ -1853,19 +1740,6 @@ def main() -> None:
     )
     validation_path = OUTPUT_DIR / "33_final_validation_checks.csv"
     output_paths.append(validation_path)
-
-    summary_path = write_markdown_summary(
-        overall_metrics=overall_metrics,
-        overall_ci=overall_ci,
-        key_results=key_results,
-        adaptive_recovery=adaptive_recovery,
-        returning_exclusive=returning_exclusive,
-        orientation_metrics=orientation_metrics,
-        checks=checks,
-        figure_paths=figure_paths,
-        output_paths=output_paths,
-    )
-    output_paths.append(summary_path)
 
     passed = int(checks["passed"].sum())
     total = len(checks)

@@ -1,9 +1,4 @@
-"""Meeting 6 step 1: build pre-match player features for 2025 games.
-
-This script creates leakage-safe player history features for the fixed 2025
-evaluation games. It does not rerun Elo/Glicko models and writes only to
-outputs/meeting6/.
-"""
+"""Build leakage-free prematch player features."""
 
 from __future__ import annotations
 
@@ -33,7 +28,6 @@ VALIDATION_CHECKS_PATH = OUTPUT_DIR / "28_feature_validation_checks.csv"
 SPOT_CHECKS_PATH = OUTPUT_DIR / "28_feature_spot_checks.csv"
 FEATURE_SUMMARY_PATH = OUTPUT_DIR / "28_feature_summary.csv"
 GROUP_COUNTS_PATH = OUTPUT_DIR / "28_feature_group_counts.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "28_prematch_features_summary.md"
 
 REQUIRED_MATCH_COLUMNS = ["fcode", "year", "event", "winner", "loser"]
 OPTIONAL_MATCH_COLUMNS = ["event_date_raw", "event_date_parsed", "winner_name", "loser_name"]
@@ -255,11 +249,7 @@ def make_initial_state() -> dict[str, Any]:
 
 
 def count_recent_games(recent_dates: deque[pd.Timestamp], current_date: pd.Timestamp, days: int) -> int:
-    """Count previous games in a rolling day window.
-
-    The state contains only matches already processed by match_sequence, so
-    earlier same-day matches are included while the current match is not.
-    """
+    """Count prior games in a rolling window, including earlier same-day games."""
 
     window_start = current_date - pd.Timedelta(days=days)
     return int(sum(1 for game_date in recent_dates if game_date >= window_start))
@@ -1119,128 +1109,6 @@ def format_int(value: Any) -> str:
     return f"{int(value):,}"
 
 
-def write_markdown_summary(
-    dataset_path: Path,
-    prediction_path: Path | None,
-    matches: pd.DataFrame,
-    long_df: pd.DataFrame,
-    match_df: pd.DataFrame,
-    feature_summary: pd.DataFrame,
-    group_counts: pd.DataFrame,
-    validation_checks: pd.DataFrame,
-    spot_checks: pd.DataFrame,
-) -> str:
-    """Write a concise markdown summary for meeting preparation."""
-
-    date_quality_counts = matches.loc[matches["year"] == END_YEAR, "date_quality"].value_counts().to_dict()
-    validation_passed = int(validation_checks["passed"].sum())
-    validation_total = int(len(validation_checks))
-    spot_passed = int(spot_checks["passed"].sum())
-    spot_total = int(len(spot_checks))
-    important_flags = group_counts.loc[group_counts["group_type"] == "flag"].copy()
-
-    lines = [
-        "# Meeting 6 Step 1 Prematch Player Features",
-        "",
-        "## Purpose",
-        "",
-        "This step builds leakage-safe pre-match player-history features for the fixed 2025 evaluation set. It does not rerun Elo or Glicko and does not evaluate subgroup model performance.",
-        "",
-        "## Inputs",
-        "",
-        f"- Canonical match dataset: `{dataset_path.relative_to(PROJECT_ROOT)}`",
-        f"- Fair-comparison prediction file: `{prediction_path.relative_to(PROJECT_ROOT) if prediction_path else 'not found'}`",
-        "- Ordering rule: year, date availability, event order date, event ID, then fcode, matching the meeting 5 scripts.",
-        "- Same-day earlier matches are included through `match_sequence`; the current match is recorded before its players' states are updated.",
-        "",
-        "## Output Size",
-        "",
-        f"- Full-history matches scanned: {len(matches):,}",
-        f"- Fixed 2025 evaluation matches: {len(match_df):,}",
-        f"- Long-format player-match rows: {len(long_df):,}",
-        "",
-        "## Date Quality In 2025 Features",
-        "",
-    ]
-    for label in ["exact", "project_fallback", "missing"]:
-        lines.append(f"- {label}: {date_quality_counts.get(label, 0):,} matches")
-
-    lines.extend(
-        [
-            "",
-            "## Main Group Count Preview",
-            "",
-        ]
-    )
-    for row in important_flags.itertuples(index=False):
-        lines.append(f"- {row.group}: {format_int(row.games)} games ({row.percentage:.1%})")
-
-    lines.extend(
-        [
-            "",
-            "## Feature Distribution Highlights",
-            "",
-        ]
-    )
-    highlight_vars = [
-        "total_games_before",
-        "games_last_365_days",
-        "days_since_last_game",
-        "min_total_games_before",
-        "min_games_last_365_days",
-        "max_days_since_last_game",
-    ]
-    for variable in highlight_vars:
-        row = feature_summary.loc[feature_summary["variable"] == variable]
-        if row.empty:
-            continue
-        r = row.iloc[0]
-        lines.append(
-            f"- {variable}: count={format_int(r['count'])}, missing={format_int(r['missing'])}, "
-            f"median={r['median']:.3f}, p90={r['p90']:.3f}"
-        )
-
-    failed = validation_checks.loc[~validation_checks["passed"]]
-    lines.extend(
-        [
-            "",
-            "## Validation",
-            "",
-        f"- Validation checks passed: {validation_passed} / {validation_total}",
-        f"- Leakage spot checks passed: {spot_passed} / {spot_total}",
-        "- Spot checks recomputed features using only rows with `match_sequence < current_match_sequence`.",
-        "- Debut matches are kept separate from inactive/returning flags as `No previous history`.",
-        "- `days_since_last_game` and `career_days_before` are missing for debut rows or rows with unreliable date history.",
-        ]
-    )
-    if failed.empty:
-        lines.append("- Issues: none")
-    else:
-        lines.append("- Issues:")
-        for row in failed.itertuples(index=False):
-            lines.append(f"  - {row.check_name}: observed {row.observed}; expected {row.expected}")
-
-    lines.extend(
-        [
-            "",
-            "## Files Written",
-            "",
-            f"- `{LONG_FEATURES_PATH.relative_to(PROJECT_ROOT)}`",
-            f"- `{MATCH_FEATURES_PATH.relative_to(PROJECT_ROOT)}`",
-            f"- `{VALIDATION_CHECKS_PATH.relative_to(PROJECT_ROOT)}`",
-            f"- `{SPOT_CHECKS_PATH.relative_to(PROJECT_ROOT)}`",
-            f"- `{FEATURE_SUMMARY_PATH.relative_to(PROJECT_ROOT)}`",
-            f"- `{GROUP_COUNTS_PATH.relative_to(PROJECT_ROOT)}`",
-            "",
-            "## Next Step",
-            "",
-            "The next script can merge `28_prematch_match_features_2025.csv` with model predictions and compare Glicko vs Elo performance across low-experience, low-activity, and returning-player groups.",
-        ]
-    )
-
-    markdown = "\n".join(lines)
-    SUMMARY_MD_PATH.write_text(markdown, encoding="utf-8")
-    return markdown
 
 
 def main() -> None:
@@ -1263,17 +1131,6 @@ def main() -> None:
     spot_df.to_csv(SPOT_CHECKS_PATH, index=False, encoding="utf-8-sig")
     feature_summary.to_csv(FEATURE_SUMMARY_PATH, index=False, encoding="utf-8-sig")
     group_counts.to_csv(GROUP_COUNTS_PATH, index=False, encoding="utf-8-sig")
-    write_markdown_summary(
-        dataset_path,
-        prediction_path,
-        matches,
-        long_df,
-        match_df,
-        feature_summary,
-        group_counts,
-        validation_checks,
-        spot_df,
-    )
 
     print("Meeting 6 step 1 pre-match features complete.")
     print(f"Full-history matches scanned: {len(matches):,}")

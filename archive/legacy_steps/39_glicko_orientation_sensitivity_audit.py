@@ -1,10 +1,4 @@
-"""Step 39: Glicko probability orientation sensitivity audit.
-
-This script does not rerun Elo or Glicko rating updates.  It reconstructs the
-two direct Glicko expected-score perspectives from saved pre-match ratings/RDs
-and checks whether the Meeting 7 conclusions depend on the arbitrary canonical
-player-ID orientation used in Step 33.
-"""
+"""Audit Glicko probability-orientation sensitivity."""
 
 from __future__ import annotations
 
@@ -50,7 +44,6 @@ SENSITIVITY_COMPARISON_PATH = OUTPUT_DIR / "39_orientation_sensitivity_compariso
 KEY_RESULTS_PATH = OUTPUT_DIR / "39_key_orientation_results.csv"
 FIGURE_MANIFEST_PATH = OUTPUT_DIR / "39_figure_manifest.csv"
 VALIDATION_CHECKS_PATH = OUTPUT_DIR / "39_orientation_validation_checks.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "39_glicko_orientation_sensitivity_summary.md"
 
 FIGURE_PATHS = {
     "39_fig01_complement_gap_by_group": FIGURE_DIR / "39_fig01_complement_gap_by_group.png",
@@ -998,76 +991,6 @@ def build_validation_checks(
     return checks
 
 
-def write_summary(
-    key_results: pd.DataFrame,
-    complement_summary: pd.DataFrame,
-    side_distribution: pd.DataFrame,
-    match_metrics: pd.DataFrame,
-    appearance_metrics: pd.DataFrame,
-    final_code: str,
-    validation_checks: pd.DataFrame,
-) -> None:
-    key = key_results.set_index("metric")["value"].to_dict()
-    overall_gap = complement_summary.loc[
-        (complement_summary["model"].eq("Glicko_low")) & (complement_summary["group"].eq("all_2025_matches"))
-    ].iloc[0]
-    side_first1 = side_distribution.loc[side_distribution["group"].eq("first_1")].iloc[0]
-    overall_rows = match_metrics.loc[
-        (match_metrics["group"].eq("all_2025_matches"))
-        & (match_metrics["model"].isin(["Validation_best_Elo", "Glicko_low_current", "Glicko_low_reversed", "Glicko_low_midpoint"]))
-    ]
-    first1_rows = appearance_metrics.loc[
-        (appearance_metrics["group"].eq("first_1"))
-        & (appearance_metrics["model"].isin(["Validation_best_Elo", "Glicko_low_current", "Glicko_low_reversed", "Glicko_low_midpoint", "Glicko_low_direct_focal"]))
-    ]
-    pass_count = int(validation_checks["status"].eq("PASS").sum())
-    fail_count = int(validation_checks["status"].eq("FAIL").sum())
-
-    text = [
-        "# Step 39 Glicko Orientation Sensitivity Audit",
-        "",
-        "## 1. Why this audit was necessary",
-        "Step 32 showed that the two direct Glicko expected scores need not be complementary when player RDs differ. Step 33 therefore used a canonical smaller-ID Player A convention. This audit checks whether Meeting 7 conclusions depend on that arbitrary direction.",
-        "",
-        "## 2. Current Step 33 convention",
-        "The current convention is reproduced as `expected_score(rating_small, rating_large, RD_large)`, with the smaller player ID as canonical Player A.",
-        "",
-        "## 3. Two direct Glicko expected scores",
-        "`E_small_direct` uses the larger player's RD. `E_large_direct` uses the smaller player's RD. Their sum can differ from one.",
-        "",
-        "## 4. Complementarity gap",
-        f"Overall mean absolute complement gap is {overall_gap['mean_absolute_complement_gap']:.6f}; maximum is {overall_gap['maximum_absolute_complement_gap']:.6f}.",
-        "",
-        "## 5. Player-ID side imbalance",
-        f"For first_1 focal appearances, {side_first1['percentage_focal_player_is_small_id']:.2f}% are on the smaller-ID side and {side_first1['percentage_focal_player_is_large_id']:.2f}% are on the larger-ID side.",
-        "",
-        "## 6. Overall performance under conventions",
-        overall_rows[["model", "brier", "log_loss", "accuracy", "prediction_bias"]].to_markdown(index=False),
-        "",
-        "## 7. Early-game performance under conventions",
-        first1_rows[["model", "brier", "log_loss", "accuracy", "mean_predicted_probability", "prediction_bias"]].to_markdown(index=False),
-        "",
-        "## 8. First_1 over-prediction",
-        f"Current first_1 mean probability is {key['current_first_1_mean_probability']}; reversed is {key['reversed_first_1_mean_probability']}; midpoint is {key['midpoint_first_1_mean_probability']}; empirical win rate is {key['first_1_empirical_win_rate']}.",
-        "",
-        "## 9. Overall Glicko advantage",
-        "Overall low-inflation Glicko remains better than validation-best Elo under the current, reversed and midpoint conventions if the delta Brier remains positive in all three.",
-        "",
-        "## 10. Direct focal diagnostic",
-        "The direct focal probability is diagnostic only because it is not complementary within a match and therefore is not the primary match-level proper-score forecast.",
-        "",
-        "## 11. Final conclusion code",
-        final_code,
-        "",
-        "## 12. Meeting 7 implications",
-        "The audit states whether Meeting 7 claims must be changed in `39_key_orientation_results.csv`.",
-        "",
-        "## 13. Main convention status",
-        "This step does not replace the Step 33 main convention. It only provides sensitivity evidence around it.",
-        "",
-        f"Validation checks: {pass_count} PASS / {fail_count} FAIL.",
-    ]
-    SUMMARY_MD_PATH.write_text("\n".join(text), encoding="utf-8")
 
 
 def print_console_summary(
@@ -1181,16 +1104,7 @@ def main() -> None:
         figure_manifest,
         required_outputs,
     )
-    write_summary(
-        key_results,
-        complement_summary,
-        side_distribution,
-        match_metrics,
-        appearance_metrics,
-        final_code,
-        validation_checks,
-    )
-    final_outputs = required_outputs + [VALIDATION_CHECKS_PATH, SUMMARY_MD_PATH, *FIGURE_PATHS.values()]
+    final_outputs = required_outputs + [VALIDATION_CHECKS_PATH, *FIGURE_PATHS.values()]
     if not all(path.exists() for path in final_outputs):
         missing = [str(path) for path in final_outputs if not path.exists()]
         raise RuntimeError(f"Missing required Step 39 outputs: {missing}")

@@ -1,16 +1,4 @@
-"""Meeting 5 Glicko rating-period runtime comparison.
-
-This script compares how the Glicko rating-period choice affects prediction
-performance, computation time, and active-player rating-list similarity.
-
-The experiment fixes the Glicko-1 formula, initial rating/RD, RD bounds, the
-full-history match dataset, and the low_inflation inactivity RD setting from
-the previous sensitivity step. Only the rating-period setting changes:
-match-by-match, event-level, monthly, and yearly.
-
-This script does not run an Elo-vs-Glicko final comparison and does not
-implement adaptive-K Elo.
-"""
+"""Compare Glicko-1 runtime and results across rating periods."""
 
 from __future__ import annotations
 
@@ -61,7 +49,6 @@ SIMILARITY_PATH = OUTPUT_DIR / "meeting5_glicko_rating_period_similarity.csv"
 RUNTIME_DETAILS_PATH = OUTPUT_DIR / "meeting5_glicko_rating_period_runtime_details.csv"
 PREDICTIONS_2025_PATH = OUTPUT_DIR / "meeting5_glicko_rating_period_predictions_2025.csv"
 FINAL_RATINGS_PATH = OUTPUT_DIR / "meeting5_glicko_rating_period_final_ratings.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "meeting5_glicko_rating_period_runtime_summary.md"
 
 BRIER_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rating_period_brier_bar.png"
 LOGLOSS_PLOT_PATH = OUTPUT_DIR / "meeting5_glicko_rating_period_logloss_bar.png"
@@ -907,27 +894,6 @@ def make_similarity_table(final_ratings: pd.DataFrame, active_2025_counts: dict[
     return pd.DataFrame(rows)
 
 
-def markdown_table(df: pd.DataFrame, columns: list[str]) -> str:
-    """Render a compact markdown table."""
-
-    if df.empty:
-        return "_No rows._"
-    lines = [
-        "| " + " | ".join(columns) + " |",
-        "| " + " | ".join(["---"] * len(columns)) + " |",
-    ]
-    for _, row in df[columns].iterrows():
-        values = []
-        for col in columns:
-            value = row[col]
-            if pd.isna(value):
-                values.append("")
-            elif isinstance(value, (float, np.floating)):
-                values.append(f"{float(value):.6f}")
-            else:
-                values.append(str(value))
-        lines.append("| " + " | ".join(values) + " |")
-    return "\n".join(lines)
 
 
 def save_bar_plot(metrics: pd.DataFrame, metric: str, path: Path, title: str, ylabel: str) -> None:
@@ -985,182 +951,6 @@ def save_similarity_plot(similarity: pd.DataFrame) -> None:
     plt.close(fig)
 
 
-def write_summary(
-    metrics: pd.DataFrame,
-    similarity: pd.DataFrame,
-    runtime_details: pd.DataFrame,
-    c_value: float,
-    inactivity_unit: str,
-    c_source: str,
-    warnings: list[str],
-    dataset_path: Path,
-) -> None:
-    """Write the meeting-ready markdown summary."""
-
-    best_brier = metrics.sort_values(["brier", "log_loss"]).iloc[0]
-    active_similarity = similarity.loc[similarity["group"] == "active_2025_games_ge5"].copy()
-    total_high_similarity = similarity.loc[similarity["group"] == "total_games_ge100"].copy()
-
-    if best_brier["rating_period"] == "match_by_match":
-        recommendation = (
-            "match_by_match is the candidate main Glicko rating-period choice in this run: "
-            "it has the best 2025 prediction metrics, and the runtime is manageable."
-        )
-    elif best_brier["rating_period"] in {"event_level", "monthly"}:
-        recommendation = (
-            f"{best_brier['rating_period']} is computationally defensible in this run because "
-            "it gives the best Brier/log-loss trade-off under fixed low_inflation."
-        )
-    else:
-        recommendation = (
-            "yearly is best on one metric in this run, but it should be treated cautiously because "
-            "yearly periods are very coarse and less realistic as a main Glicko candidate."
-        )
-
-    warning_lines = ["- None"] if not warnings else [f"- {warning}" for warning in warnings]
-
-    lines = [
-        "# Meeting 5 Glicko Rating-Period Runtime Comparison",
-        "",
-        "## Purpose",
-        "",
-        (
-            "This experiment asks how the Glicko rating-period choice affects prediction "
-            "performance, computation time, and active-player final rating-list similarity."
-        ),
-        "",
-        "## Experimental Design",
-        "",
-        f"- Dataset: `{dataset_path.name}` covering {START_YEAR}-{END_YEAR}.",
-        "- Evaluation set: 2025 games.",
-        "- Glicko formula: existing validated Glicko-1 core.",
-        f"- Initial rating/RD: {DEFAULT_RATING:.0f} / {DEFAULT_RD:.0f}.",
-        f"- RD bounds: MIN_RD={MIN_RD:.0f}, MAX_RD={MAX_RD:.0f}.",
-        "- Prediction rule: prediction is recorded before rating/RD update.",
-        "- The only model-design change is the rating-period setting.",
-        "",
-        "## Rating Periods Compared",
-        "",
-        "- `match_by_match`: one rating period per match.",
-        "- `event_level`: one rating period per year-event.",
-        "- `monthly`: one rating period per calendar month.",
-        "- `yearly`: one rating period per calendar year.",
-        "",
-        "## Inactivity RD Inflation Setting",
-        "",
-        (
-            f"All rating-period settings use `{RD_INFLATION_VARIANT}` with "
-            f"`c={c_value:.6f}` and `{inactivity_unit}`-based inactivity. "
-            f"The C value was {c_source}."
-        ),
-        "",
-        (
-            "Rating period and inactivity period are separate concepts here: rating period "
-            "controls how games are grouped for Glicko batch updates; inactivity period measures "
-            "how long a player has been absent before their next rating period."
-        ),
-        "",
-        "## Runtime Measurement",
-        "",
-        markdown_table(
-            runtime_details.sort_values("rating_period"),
-            [
-                "rating_period",
-                "periods",
-                "games",
-                "update_operations",
-                "mean_games_per_period",
-                "mean_players_updated_per_period",
-                "runtime_seconds",
-            ],
-        ),
-        "",
-        "## Main 2025 Prediction Results",
-        "",
-        markdown_table(
-            metrics.sort_values("rating_period"),
-            [
-                "rating_period",
-                "evaluation_games_2025",
-                "log_loss",
-                "brier",
-                "accuracy",
-                "runtime_seconds",
-                "final_median_rd",
-                "players_at_min_rd",
-            ],
-        ),
-        "",
-        "## Runtime and Update-Operation Results",
-        "",
-        (
-            "Match-by-match has the largest number of rating periods and update operations. "
-            "Event/month/year periods combine many games into fewer update blocks, so they can "
-            "be computationally lighter, although their predictions use coarser period-start states."
-        ),
-        "",
-        "## Active-Player Rating-List Similarity",
-        "",
-        "Active 2025 players with at least 5 games:",
-        "",
-        markdown_table(
-            active_similarity.sort_values("comparison_rating_period"),
-            [
-                "comparison",
-                "players",
-                "spearman",
-                "pearson",
-                "top50_overlap",
-                "top100_overlap",
-                "mean_abs_rank_diff",
-                "mean_abs_centered_rating_diff",
-            ],
-        ),
-        "",
-        "Players with at least 100 total games:",
-        "",
-        markdown_table(
-            total_high_similarity.sort_values("comparison_rating_period"),
-            [
-                "comparison",
-                "players",
-                "spearman",
-                "pearson",
-                "top50_overlap",
-                "top100_overlap",
-                "mean_abs_rank_diff",
-                "mean_abs_centered_rating_diff",
-            ],
-        ),
-        "",
-        "## Interpretation For Supervisor",
-        "",
-        (
-            "This directly answers the runtime/rating-period question. Shorter rating periods "
-            "usually require more period updates, while coarser periods reuse the same period-start "
-            "ratings for more games. The relevant decision is therefore a prediction-runtime "
-            "trade-off, not only which method is theoretically neatest."
-        ),
-        "",
-        "## Recommended Rating-Period Choice",
-        "",
-        recommendation,
-        "",
-        "Use cautious wording: this is a candidate main rating-period choice and a sensitivity result, not a final best model.",
-        "",
-        "## Remaining Limitations",
-        "",
-        "- This is still Glicko-1, not Glicko-2.",
-        "- It does not compare Glicko against Elo.",
-        "- It does not implement adaptive-K Elo.",
-        "- Runtime depends on this local implementation and machine, so relative differences are more important than exact seconds.",
-        "- Yearly is included as a coarse diagnostic, not necessarily a realistic main candidate.",
-        "",
-        "## Warnings",
-        "",
-        *warning_lines,
-    ]
-    SUMMARY_MD_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -1288,16 +1078,6 @@ def main() -> None:
     save_runtime_vs_brier_plot(metrics_df)
     save_similarity_plot(similarity_df)
 
-    write_summary(
-        metrics_df,
-        similarity_df,
-        runtime_details_df,
-        c_value,
-        inactivity_unit,
-        c_source,
-        warnings,
-        dataset_path,
-    )
 
     print("\nConsistency checks:")
     print(metrics_df[["rating_period", "evaluation_games_2025", "log_loss", "brier", "accuracy"]].to_string(index=False))
@@ -1316,7 +1096,6 @@ def main() -> None:
         RUNTIME_DETAILS_PATH,
         PREDICTIONS_2025_PATH,
         FINAL_RATINGS_PATH,
-        SUMMARY_MD_PATH,
         BRIER_PLOT_PATH,
         LOGLOSS_PLOT_PATH,
         RUNTIME_PLOT_PATH,

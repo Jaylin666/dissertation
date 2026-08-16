@@ -1,11 +1,4 @@
-"""
-This script checks how sensitive the final Elo rating list is to the length
-of the historical burn-in period.
-
-The aim is not to keep chasing the lowest log loss. Instead, this script
-checks whether different burn-in start years lead to materially different
-2025 final rating lists.
-"""
+"""Compare Elo rating-list stability across burn-in start years."""
 
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
@@ -69,7 +62,6 @@ VS_REFERENCE_PATH = OUTPUT_DIR / "elo_burnin_vs_1985_reference.csv"
 ADJACENT_COMPARISONS_PATH = OUTPUT_DIR / "elo_burnin_adjacent_start_year_comparisons.csv"
 ACTIVE_PLAYER_COUNTS_PATH = OUTPUT_DIR / "elo_burnin_active_player_counts.csv"
 DATE_ORDERING_SUMMARY_PATH = OUTPUT_DIR / "elo_burnin_date_ordering_summary.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "elo_burnin_rating_list_stability_summary.md"
 
 
 REQUIRED_COLUMNS = ["fcode", "code", "year", "winner", "loser"]
@@ -634,172 +626,6 @@ def append_update_history(update_history: pd.DataFrame, first_write: bool) -> No
     )
 
 
-def write_markdown_summary(
-    matches: pd.DataFrame,
-    date_summary: pd.DataFrame,
-    prediction_metrics: pd.DataFrame,
-    vs_reference: pd.DataFrame,
-    adjacent: pd.DataFrame,
-    active_counts: pd.DataFrame,
-    all_fcodes_consistent: bool,
-    output_path: Path,
-) -> str:
-    """Write a meeting-ready markdown summary."""
-    total_matches = len(matches)
-    players = pd.concat([matches["winner"], matches["loser"]]).dropna().astype(int).nunique()
-    unique_events = matches[["year", "event"]].drop_duplicates().shape[0]
-
-    date_lines = []
-    for _, row in date_summary.iterrows():
-        date_lines.append(
-            f"* {row['event_date_ordering_method']}: {int(row['match_count'])} matches "
-            f"({row['share_of_matches']:.3%})"
-        )
-
-    setting_lines = [
-        f"* {setting['label']}: `{setting['setting_name']}`, K={setting['k']:g}, scale={setting['scale']:g}"
-        for setting in ELO_SETTINGS
-    ]
-
-    prediction_lines = []
-    for setting_name, group in prediction_metrics.groupby("setting_name", sort=False):
-        ordered = group.sort_values("start_year")
-        longest = ordered[ordered["start_year"] == FULL_HISTORY_START_YEAR].iloc[0]
-        shortest = ordered[ordered["start_year"] == END_YEAR].iloc[0]
-        best = ordered.sort_values(["log_loss", "brier_score"]).iloc[0]
-        prediction_lines.append(
-            f"* {setting_name}: 1985-start log loss {longest['log_loss']:.6f}, "
-            f"2025-only log loss {shortest['log_loss']:.6f}; best selected-start log loss "
-            f"{best['log_loss']:.6f} at start year {int(best['start_year'])}."
-        )
-
-    stability_lines = []
-    focus = vs_reference[
-        (vs_reference["player_subset"] == "all_common_players")
-        & (vs_reference["comparison_start_year"].isin([1995, 2005, 2015, 2020, 2025]))
-    ]
-    for setting_name, group in focus.groupby("setting_name", sort=False):
-        parts = []
-        for _, row in group.sort_values("comparison_start_year").iterrows():
-            parts.append(
-                f"{int(row['comparison_start_year'])}: mean abs rating diff "
-                f"{row['mean_abs_rating_difference']:.2f}, top50 {row['top50_overlap']:.3f}"
-            )
-        stability_lines.append(f"* {setting_name}: " + "; ".join(parts))
-
-    active_lines = []
-    active_focus = vs_reference[
-        (vs_reference["player_subset"].isin(["active_2025_games_ge1", "active_2025_games_ge5", "active_2025_games_ge10"]))
-        & (vs_reference["comparison_start_year"].isin([2015, 2020, 2025]))
-    ]
-    for setting_name, group in active_focus.groupby("setting_name", sort=False):
-        best_parts = []
-        for subset_name, subset_group in group.groupby("player_subset", sort=False):
-            row = subset_group.sort_values("comparison_start_year").tail(1).iloc[0]
-            best_parts.append(
-                f"{subset_name} at start {int(row['comparison_start_year'])}: "
-                f"mean abs rating diff {row['mean_abs_rating_difference']:.2f}, "
-                f"top50 {row['top50_overlap']:.3f}"
-            )
-        active_lines.append(f"* {setting_name}: " + "; ".join(best_parts))
-
-    k_scale_lines = []
-    k_scale_focus = vs_reference[
-        (vs_reference["player_subset"] == "active_2025_games_ge5")
-        & (vs_reference["comparison_start_year"].isin([2015, 2020, 2025]))
-    ]
-    for setting_name, group in k_scale_focus.groupby("setting_name", sort=False):
-        row = group.sort_values("comparison_start_year").tail(1).iloc[0]
-        k_scale_lines.append(
-            f"* {setting_name}: 2025-only vs 1985 reference on active_2025_games_ge5 has "
-            f"mean abs rating diff {row['mean_abs_rating_difference']:.2f}, "
-            f"Spearman {row['spearman_rank_correlation']:.4f}, top50 {row['top50_overlap']:.3f}."
-        )
-
-    active_count_lines = [
-        f"* {row['player_subset']} (min_2025_games={int(row['min_2025_games'])}): "
-        f"{int(row['number_of_players'])} players"
-        for _, row in active_counts.iterrows()
-    ]
-
-    candidate_text = choose_provisional_burnin_text(vs_reference)
-
-    markdown = f"""# Elo burn-in rating list stability experiment
-
-## 1. Aim of this experiment
-
-This experiment checks how sensitive the final Elo rating list is to the historical burn-in period.
-It responds to the supervisor's suggestion to run a long historical period, remove early years, and compare the final rating list.
-The purpose is not to optimise log loss alone, but to diagnose whether different start years materially change the 2025 final ratings.
-
-## 2. Data used
-
-Input file: `outputs/elo_optimization/matches_1985_2025_checked.csv`.
-
-* Year range: 1985-2025
-* Total matches: {total_matches}
-* Unique players: {players}
-* Unique events: {unique_events}
-* Core merge checks from the full-history dataset passed: duplicated fcode, missing event rows, missing hidx rows, missing winner names and missing loser names were all zero.
-
-## 3. Event date ordering limitation
-
-The full-history dataset contains some early events where `event_date_raw` has only month-year information and no specific day.
-This script does not delete those matches. It adds `event_order_date` and `event_date_ordering_method`.
-Full dates use the parsed event date. Month-year dates are imputed to the 15th of that month only for ordering.
-The original `event_date_raw` and `event_date_parsed` columns are preserved.
-
-{chr(10).join(date_lines)}
-
-## 4. Elo settings tested
-
-{chr(10).join(setting_lines)}
-
-## 5. Start years tested
-
-Selected start years: {', '.join(str(year) for year in get_start_years())}.
-All runs end in {END_YEAR}. All players start from rating {INITIAL_RATING:g}.
-
-## 6. Prediction metrics on 2025
-
-All 2025 fcode sets consistent across runs: {all_fcodes_consistent}.
-
-{chr(10).join(prediction_lines)}
-
-## 7. Final rating list stability vs 1985 reference
-
-For each setting, the start-year 1985 run is the full-history reference.
-The table `elo_burnin_vs_1985_reference.csv` reports rating correlations, rank correlations, rating differences and top-N overlap.
-
-{chr(10).join(stability_lines)}
-
-## 8. Active player stability
-
-Active player subsets are based on 2025 match appearances:
-
-{chr(10).join(active_count_lines)}
-
-{chr(10).join(active_lines)}
-
-## 9. Does the answer depend on K and scale?
-
-{chr(10).join(k_scale_lines)}
-
-More aggressive settings can produce larger match-by-match updates and may also make final rating lists more sensitive to burn-in length.
-The comparison tables should therefore be read by setting, not only in aggregate.
-
-## 10. Provisional conclusion for Elo baseline
-
-This does not prove a theoretically correct burn-in period.
-It provides an empirical diagnostic of how much historical data is needed before the 2025 final rating list becomes stable relative to the full-history reference.
-{candidate_text}
-
-## 11. Next step
-
-The next Elo optimisation step is the single-year rerun convergence experiment, which is the supervisor's second suggested burn-in diagnostic.
-"""
-    output_path.write_text(markdown, encoding="utf-8")
-    return markdown
 
 
 def choose_provisional_burnin_text(vs_reference: pd.DataFrame) -> str:
@@ -841,7 +667,6 @@ def remove_existing_outputs() -> None:
         ADJACENT_COMPARISONS_PATH,
         ACTIVE_PLAYER_COUNTS_PATH,
         DATE_ORDERING_SUMMARY_PATH,
-        SUMMARY_MD_PATH,
     ]:
         if path.exists():
             path.unlink()
@@ -946,16 +771,6 @@ def main() -> None:
     vs_reference.to_csv(VS_REFERENCE_PATH, index=False)
     adjacent.to_csv(ADJACENT_COMPARISONS_PATH, index=False)
 
-    write_markdown_summary(
-        matches=matches,
-        date_summary=date_summary,
-        prediction_metrics=prediction_metrics,
-        vs_reference=vs_reference,
-        adjacent=adjacent,
-        active_counts=active_counts,
-        all_fcodes_consistent=all_fcodes_consistent,
-        output_path=SUMMARY_MD_PATH,
-    )
 
     print("\nOutput paths:")
     print(f"  prediction metrics: {PREDICTION_METRICS_PATH}")
@@ -965,7 +780,6 @@ def main() -> None:
     print(f"  adjacent comparisons: {ADJACENT_COMPARISONS_PATH}")
     print(f"  active player counts: {ACTIVE_PLAYER_COUNTS_PATH}")
     print(f"  date ordering summary: {DATE_ORDERING_SUMMARY_PATH}")
-    print(f"  markdown summary: {SUMMARY_MD_PATH}")
     print(f"Total runtime: {time.time() - start_time:.1f}s")
 
 

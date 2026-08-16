@@ -1,16 +1,4 @@
-"""Meeting 6 step 4: methodological corrections and finalisation.
-
-This script fixes two methodological presentation issues from step 30:
-
-1. It separates match-weighted rating observations from a unique-player
-   first-2025-appearance rating snapshot.
-2. It recalculates Murphy Brier decomposition using the common player-A
-   outcome and each model's player-A probability.
-
-It also generates final meeting-ready robustness figures with confidence
-intervals and a concise final summary. It reads existing outputs only and does
-not rerun or retune any rating model.
-"""
+"""Apply methodological corrections and produce scientific robustness outputs."""
 
 from __future__ import annotations
 
@@ -63,7 +51,6 @@ RETURNER_EXCLUSIVE_BINS_PATH = OUTPUT_DIR / "31_returner_exclusive_bins.csv"
 MEETING6_FINAL_RESULTS_PATH = OUTPUT_DIR / "31_meeting6_final_results.csv"
 FIGURE_MANIFEST_PATH = OUTPUT_DIR / "31_meeting6_figure_manifest.csv"
 FINAL_VALIDATION_PATH = OUTPUT_DIR / "31_final_validation_checks.csv"
-FINAL_SUMMARY_PATH = OUTPUT_DIR / "31_meeting6_final_analysis_summary.md"
 
 RANDOM_SEED = 20260714
 BOOTSTRAP_REPS = 2_000
@@ -1371,162 +1358,6 @@ def run_final_validation_checks(
     return pd.DataFrame(rows)
 
 
-def fnum(value: Any, digits: int = 6) -> str:
-    """Format a numeric value for markdown."""
-
-    return "NA" if pd.isna(value) else f"{float(value):.{digits}f}"
-
-
-def write_final_markdown_summary(
-    rating_summary: pd.DataFrame,
-    debut_opponent_summary: pd.DataFrame,
-    brier_summary: pd.DataFrame,
-    brier_bootstrap: pd.DataFrame,
-    debut_mechanism_summary: pd.DataFrame,
-    cumulative_returners: pd.DataFrame,
-    final_results: pd.DataFrame,
-    figure_manifest: pd.DataFrame,
-    validation: pd.DataFrame,
-    output_paths: list[Path],
-    figure_paths: list[Path],
-) -> str:
-    """Write the final Meeting 6 analysis summary."""
-
-    rs = rating_summary.set_index(["model", "observation_type"])
-    g_unique = rs.loc[("Glicko_low", "unique_player_first_2025_appearance")]
-    e_unique = rs.loc[("Validation_best_Elo", "unique_player_first_2025_appearance")]
-    g_opp = debut_opponent_summary.set_index("model").loc["Glicko_low"]
-    e_opp = debut_opponent_summary.set_index("model").loc["Validation_best_Elo"]
-    b_overall = brier_summary.set_index(["sample", "model"])
-    boot = brier_bootstrap.set_index("sample")
-    final = final_results.set_index("subgroup")
-    mech = debut_mechanism_summary.set_index("model")
-    return365 = cumulative_returners.loc[cumulative_returners["threshold_days"] == 365].iloc[0]
-
-    main_rows = final_results.head(8)
-    main_figures = figure_manifest.loc[figure_manifest["recommended_for_main_meeting"]]
-    appendix_figures = figure_manifest.loc[figure_manifest["recommended_for_appendix"]]
-
-    lines = [
-        "# Meeting 6 Final Analysis Summary",
-        "",
-        "## Purpose",
-        "",
-        "This step finalises the Meeting 6 diagnostics after correcting the rating-distribution and Brier-decomposition methodology.",
-        "",
-        "## Methodological Corrections",
-        "",
-        "- The 22,682 rating rows are match-weighted player-match observations, not 22,682 unique players.",
-        "- A separate unique-player first-2025-appearance snapshot is now reported.",
-        "- The main Murphy decomposition now uses the common `outcome_a` and each model's `p_a_model`, so uncertainty is shared within each sample.",
-        "- The Glicko debut mechanism is described through initial rating, opponent rating, and RD orientation. In the direct debut-player expected score, the debut player's own RD=350 is not the opponent RD; however, the saved meeting5 probabilities are winner-perspective, so lost-debut cases are reconstructed as the complement of the experienced opponent's expected score.",
-        "",
-        "## Validated Overall Comparison",
-        "",
-        f"- Overall Glicko low vs validation-best Elo: Brier difference {fnum(final.loc['Overall', 'delta_brier'])}, CI [{fnum(final.loc['Overall', 'delta_brier_ci_lower'])}, {fnum(final.loc['Overall', 'delta_brier_ci_upper'])}].",
-        f"- Excluding debut: Brier difference {fnum(final.loc['Overall excluding debut', 'delta_brier'])}, CI [{fnum(final.loc['Overall excluding debut', 'delta_brier_ci_lower'])}, {fnum(final.loc['Overall excluding debut', 'delta_brier_ci_upper'])}].",
-        "",
-        "## Debut-Player Initialisation Mismatch",
-        "",
-        f"- Exactly-one-debut games: {int(final.loc['Exactly one debut', 'games'])}.",
-        f"- Debut subgroup Brier difference: {fnum(final.loc['Exactly one debut', 'delta_brier'])}, CI [{fnum(final.loc['Exactly one debut', 'delta_brier_ci_lower'])}, {fnum(final.loc['Exactly one debut', 'delta_brier_ci_upper'])}].",
-        f"- Mean Glicko low debut rating difference: {fnum(mech.loc['Glicko_low', 'mean_rating_difference'])}.",
-        f"- Mean Glicko low saved-orientation reconstructed debut probability: {fnum(mech.loc['Glicko_low', 'mean_reconstructed_probability'])}.",
-        f"- Mean Glicko low direct debut-perspective probability: {fnum(mech.loc['Glicko_low', 'mean_direct_debut_perspective_probability'])}.",
-        f"- Mean Elo reconstructed debut probability: {fnum(mech.loc['Validation_best_Elo', 'mean_reconstructed_probability'])}.",
-        "",
-        "## Unique-Player Rating Snapshot and Debut-Opponent Ratings",
-        "",
-        f"- Glicko unique established players: {int(g_unique['unique_players'])}; initial rating percentile: {fnum(g_unique['initial_percentile'])}; initial minus median: {fnum(g_unique['initial_minus_median'])}.",
-        f"- Elo unique established players: {int(e_unique['unique_players'])}; initial rating percentile: {fnum(e_unique['initial_percentile'])}; initial minus median: {fnum(e_unique['initial_minus_median'])}.",
-        f"- Glicko debut-opponent initial percentile: {fnum(g_opp['initial_percentile_within_opponent_distribution'])}; initial minus opponent median: {fnum(g_opp['initial_minus_median'])}.",
-        f"- Elo debut-opponent initial percentile: {fnum(e_opp['initial_percentile_within_opponent_distribution'])}; initial minus opponent median: {fnum(e_opp['initial_minus_median'])}.",
-        "",
-        "## Overall Robustness After Excluding Debut",
-        "",
-        f"- The Glicko advantage strengthens from {fnum(final.loc['Overall', 'delta_brier'])} overall to {fnum(final.loc['Overall excluding debut', 'delta_brier'])} after excluding debut matches.",
-        f"- Both active and no debut: games={int(final.loc['Both active and no debut', 'games'])}, delta Brier={fnum(final.loc['Both active and no debut', 'delta_brier'])}, CI [{fnum(final.loc['Both active and no debut', 'delta_brier_ci_lower'])}, {fnum(final.loc['Both active and no debut', 'delta_brier_ci_upper'])}].",
-        "",
-        "## New Players Versus Returning Players",
-        "",
-        "- The no-recent-activity result should be separated into debut/no-history cases, genuine returners, and missing-date records.",
-        f"- Returning >=365 days, no debut: games={int(final.loc['Returning >=365 days, no debut', 'games'])}, Glicko-vs-Elo delta Brier={fnum(final.loc['Returning >=365 days, no debut', 'delta_brier'])}.",
-        "",
-        "## Contribution of Inactivity RD Inflation",
-        "",
-        f"- For cumulative returning >=365 days, Glicko C0 Brier - Glicko low Brier = {fnum(return365['delta_brier_inflation'])}, CI [{fnum(return365['delta_brier_inflation_ci_lower'])}, {fnum(return365['delta_brier_inflation_ci_upper'])}].",
-        "- The point estimates support RD inflation for long-inactivity samples, but these nested threshold samples are not mutually exclusive.",
-        "",
-        "## No-Debut RD Results",
-        "",
-        f"- RD quartile 3: delta Brier={fnum(final.loc['No-debut RD quartile 3', 'delta_brier'])}, CI [{fnum(final.loc['No-debut RD quartile 3', 'delta_brier_ci_lower'])}, {fnum(final.loc['No-debut RD quartile 3', 'delta_brier_ci_upper'])}].",
-        f"- RD quartile 4: delta Brier={fnum(final.loc['No-debut RD quartile 4', 'delta_brier'])}, CI [{fnum(final.loc['No-debut RD quartile 4', 'delta_brier_ci_lower'])}, {fnum(final.loc['No-debut RD quartile 4', 'delta_brier_ci_upper'])}].",
-        "- The no-debut RD pattern is not monotonic, so it should not be presented as 'higher RD always means larger Glicko advantage'.",
-        "",
-        "## Prediction Confidence",
-        "",
-        "- Step 30 confidence diagnostics remain useful as mechanism diagnostics, but the final calibration/decomposition figures now use the common player-A outcome.",
-        "",
-        "## Standard Brier Decomposition",
-        "",
-        f"- Overall common uncertainty: {fnum(b_overall.loc[('Overall', 'Glicko_low'), 'uncertainty'])}.",
-        f"- Glicko low overall reliability/resolution: {fnum(b_overall.loc[('Overall', 'Glicko_low'), 'reliability'])} / {fnum(b_overall.loc[('Overall', 'Glicko_low'), 'resolution'])}.",
-        f"- Elo overall reliability/resolution: {fnum(b_overall.loc[('Overall', 'Validation_best_Elo'), 'reliability'])} / {fnum(b_overall.loc[('Overall', 'Validation_best_Elo'), 'resolution'])}.",
-        f"- Bootstrap delta reliability (Elo - Glicko): {fnum(boot.loc['Overall', 'delta_reliability'])}, CI [{fnum(boot.loc['Overall', 'delta_reliability_ci_lower'])}, {fnum(boot.loc['Overall', 'delta_reliability_ci_upper'])}].",
-        f"- Bootstrap delta resolution (Glicko - Elo): {fnum(boot.loc['Overall', 'delta_resolution'])}, CI [{fnum(boot.loc['Overall', 'delta_resolution_ci_lower'])}, {fnum(boot.loc['Overall', 'delta_resolution_ci_upper'])}].",
-        "",
-        "## Main Conclusions for Meeting 6",
-        "",
-    ]
-    for row in main_rows.itertuples(index=False):
-        lines.append(f"- {row.subgroup}: games={int(row.games)}, delta Brier={fnum(row.delta_brier)}, CI [{fnum(row.delta_brier_ci_lower)}, {fnum(row.delta_brier_ci_upper)}], message={row.meeting_message}")
-
-    lines.extend(
-        [
-            "",
-            "## Findings That Remain Uncertain",
-            "",
-            "- Glicko versus Elo within returning-player subgroups remains uncertain because confidence intervals are wide.",
-            "- New-but-not-debut low-experience groups have positive point estimates for Glicko, but the intervals can cross zero.",
-            "- RD quartile results are exploratory and should not be interpreted as a monotonic law.",
-            "",
-            "## Recommended Meeting Figures",
-            "",
-        ]
-    )
-    for row in main_figures.itertuples(index=False):
-        lines.append(f"- {row.figure_number}: {row.title} (`{row.filename}`).")
-
-    lines.extend(["", "## Appendix Figures", ""])
-    for row in appendix_figures.itertuples(index=False):
-        lines.append(f"- {row.figure_number}: {row.title} (`{row.filename}`).")
-
-    lines.extend(
-        [
-            "",
-            "## Limitations",
-            "",
-            "- These are paired predictive diagnostics, not causal proof.",
-            "- No model parameter is changed based on 2025 test results.",
-            "- Debut-opponent ratings describe the opponents actually faced by debut players, not the full player population.",
-            "- Favourite-perspective decomposition from Step 30 is retained only as an appendix diagnostic; the main decomposition is player-A based.",
-            "",
-            "## Validation",
-            "",
-            f"- Final validation checks passed: {int(validation['passed'].sum())} / {len(validation)}.",
-            "",
-            "## Files Written",
-            "",
-        ]
-    )
-    for path in output_paths + figure_paths:
-        lines.append(f"- `{path.relative_to(PROJECT_ROOT)}`")
-
-    markdown = "\n".join(lines)
-    FINAL_SUMMARY_PATH.write_text(markdown, encoding="utf-8")
-    return markdown
-
-
 def main() -> None:
     """Run the step 31 finalisation pipeline."""
 
@@ -1577,7 +1408,6 @@ def main() -> None:
         MEETING6_FINAL_RESULTS_PATH,
         FIGURE_MANIFEST_PATH,
         FINAL_VALIDATION_PATH,
-        FINAL_SUMMARY_PATH,
     ]
 
     input_validation.to_csv(INPUT_VALIDATION_PATH, index=False, encoding="utf-8-sig")
@@ -1608,19 +1438,6 @@ def main() -> None:
         constants,
     )
     validation.to_csv(FINAL_VALIDATION_PATH, index=False, encoding="utf-8-sig")
-    write_final_markdown_summary(
-        rating_summary,
-        debut_opponent_summary,
-        brier_summary,
-        brier_bootstrap,
-        debut_mechanism_summary,
-        cumulative_returners,
-        final_results,
-        figure_manifest,
-        validation,
-        output_paths,
-        figure_paths,
-    )
     validation = run_final_validation_checks(
         scores,
         unique_snapshot,

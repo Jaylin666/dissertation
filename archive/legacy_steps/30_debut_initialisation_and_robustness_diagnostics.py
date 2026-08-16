@@ -1,10 +1,4 @@
-"""Meeting 6 step 3: debut and robustness diagnostics.
-
-This script diagnoses mechanisms behind the step 29 subgroup results, especially
-the unexpectedly poor Glicko result for debut-player matches. It reads existing
-meeting 5/6 outputs only, does not rerun any model, and writes new outputs under
-outputs/meeting6/.
-"""
+"""Evaluate debut initialisation and robustness diagnostics."""
 
 from __future__ import annotations
 
@@ -64,7 +58,6 @@ TOTAL_THRESHOLD_PATH = OUTPUT_DIR / "30_total_games_threshold_sensitivity.csv"
 RECENT_THRESHOLD_PATH = OUTPUT_DIR / "30_recent_activity_threshold_sensitivity.csv"
 KEY_DIAGNOSTIC_PATH = OUTPUT_DIR / "30_key_diagnostic_results.csv"
 VALIDATION_CHECKS_PATH = OUTPUT_DIR / "30_diagnostic_validation_checks.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "30_debut_initialisation_and_robustness_summary.md"
 
 EPS = 1e-15
 EXPECTED_GAMES = 11_379
@@ -1073,179 +1066,6 @@ def run_validation_checks(
     return pd.DataFrame(rows)
 
 
-def write_markdown_summary(
-    constants: dict[str, Any],
-    input_validation: pd.DataFrame,
-    history_counts: pd.DataFrame,
-    debut_summary: pd.DataFrame,
-    init_diag: pd.DataFrame,
-    rating_dist: pd.DataFrame,
-    loo_summary: pd.DataFrame,
-    zero_recent: pd.DataFrame,
-    returners: pd.DataFrame,
-    exclusion: pd.DataFrame,
-    rd_quartiles: pd.DataFrame,
-    confidence: pd.DataFrame,
-    brier_decomp: pd.DataFrame,
-    key_table: pd.DataFrame,
-    output_paths: list[Path],
-    figure_paths: list[Path],
-) -> str:
-    """Write the meeting-ready diagnostic summary."""
-
-    def f(value: Any, digits: int = 6) -> str:
-        return "NA" if pd.isna(value) else f"{float(value):.{digits}f}"
-
-    exact = history_counts.set_index("category")
-    debut_row = debut_summary.loc[debut_summary["model"] == "Glicko_low"].iloc[0]
-    elo_debut = debut_summary.loc[debut_summary["model"] == "Validation_best_Elo"].iloc[0]
-    prob_diff = debut_summary.loc[debut_summary["model"] == "Glicko_minus_Elo_probability_difference"].iloc[0]
-    overall_excl = exclusion.set_index("subgroup")
-    return365 = returners.loc[returners["threshold_days"] == 365].iloc[0]
-    glicko_dist = rating_dist.loc[rating_dist["model"] == "Glicko_low"].iloc[0]
-    elo_dist = rating_dist.loc[rating_dist["model"] == "Validation_best_Elo"].iloc[0]
-
-    robust = key_table.loc[key_table["interpretation_flag"].isin(["robust_glicko_advantage", "robust_elo_advantage", "initialisation_mismatch"])].head(6)
-    uncertain = key_table.loc[key_table["interpretation_flag"].isin(["uncertain", "small_sample"])].head(6)
-
-    lines = [
-        "# Meeting 6 Step 3: Debut Initialisation and Robustness Diagnostics",
-        "",
-        "## Purpose",
-        "",
-        "This diagnostic step investigates why validation-best Elo outperformed Glicko low-inflation in debut-player matches and whether the broader Glicko advantage is robust after excluding debut cases.",
-        "",
-        "## Inputs and validation",
-        "",
-        f"- Step 29 per-match scores: `{STEP29_SCORES_PATH.relative_to(PROJECT_ROOT)}`",
-        f"- Step 28 match features: `{STEP28_MATCH_FEATURES_PATH.relative_to(PROJECT_ROOT)}`",
-        f"- Validation checks passed: {int(input_validation['passed'].sum())} / {len(input_validation)}",
-        "",
-        "## Model settings read from code/outputs",
-        "",
-        f"- Elo initial rating: {f(constants['elo_initial_rating'], 3)}",
-        f"- Glicko initial rating: {f(constants['glicko_initial_rating'], 3)}",
-        f"- Glicko initial RD: {f(constants['glicko_initial_rd'], 3)}",
-        f"- Glicko MIN_RD / MAX_RD: {f(constants['glicko_min_rd'], 3)} / {f(constants['glicko_max_rd'], 3)}",
-        f"- Low-inflation C: {f(constants['glicko_low_inflation_c'], 6)} over target periods {f(constants['glicko_low_inflation_target_periods'], 0)}",
-        f"- Glicko probability formula: {constants['glicko_probability_formula']}",
-        f"- Elo probability formula: {constants['elo_probability_formula']}",
-        "",
-        "## The unexpected debut-player result",
-        "",
-        f"- No debut games: {int(exact.loc['No debut', 'games'])}",
-        f"- Exactly one debut games: {int(exact.loc['Exactly one debut', 'games'])}",
-        f"- Both players debut games: {int(exact.loc['Both players debut', 'games'])}",
-        f"- Exactly-one-debut empirical debut win rate: {f(debut_row['debut_empirical_win_rate'])}",
-        f"- Glicko mean predicted debut win probability: {f(debut_row['mean_predicted_debut_win_probability'])}",
-        f"- Validation-best Elo mean predicted debut win probability: {f(elo_debut['mean_predicted_debut_win_probability'])}",
-        f"- Mean Glicko minus Elo debut probability: {f(prob_diff['mean_predicted_debut_win_probability'])}",
-        "",
-        "## Initial rating and 2025 rating-scale compatibility",
-        "",
-        f"- Glicko initial rating minus 2025 established-player Glicko median: {f(glicko_dist['initial_minus_median'])}",
-        f"- Elo initial rating minus 2025 established-player Elo median: {f(elo_dist['initial_minus_median'])}",
-        "- This is a mechanism diagnostic only; it does not imply retuning the initial rating on the 2025 test set.",
-        "",
-        "## Is the debut result driven by a few games or events?",
-        "",
-        f"- Full debut Brier difference: {f(loo_summary.iloc[0]['full_delta_brier'])}",
-        f"- Leave-one-event-out min/max: {f(loo_summary.iloc[0]['minimum_leave_one_event_out_delta_brier'])} / {f(loo_summary.iloc[0]['maximum_leave_one_event_out_delta_brier'])}",
-        f"- Sign changes after leaving one event out: {int(loo_summary.iloc[0]['number_of_sign_changes'])}",
-        "",
-        "## Recent activity zero: debut versus genuine returners",
-        "",
-    ]
-    for row in zero_recent.itertuples(index=False):
-        lines.append(f"- {row.subgroup}: games={int(row.games)}, Brier diff={f(row.delta_brier)}, inflation contribution={f(row.inflation_delta_brier)}.")
-
-    lines.extend(
-        [
-            "",
-            "## RD inflation for genuine returning players",
-            "",
-            f"- Returning >=365 days, no debut: games={int(return365.games)}, Glicko-vs-Elo Brier diff={f(return365.delta_brier)}, inflation delta Brier={f(return365.delta_brier_inflation)}.",
-            "",
-            "## Overall robustness after excluding debut",
-            "",
-        ]
-    )
-    for label in ["All games", "Excluding all debut games", "Both players have history", "Both active in last 365 days and no debut"]:
-        if label in overall_excl.index:
-            row = overall_excl.loc[label]
-            lines.append(f"- {label}: games={int(row.games)}, Brier diff={f(row.delta_brier)}, CI [{f(row.delta_brier_ci_lower)}, {f(row.delta_brier_ci_upper)}].")
-
-    lines.extend(
-        [
-            "",
-            "## No-debut RD analysis",
-            "",
-        ]
-    )
-    for row in rd_quartiles.itertuples(index=False):
-        lines.append(f"- {row.subgroup}: games={int(row.games)}, mean max RD={f(row.mean_max_rd)}, Brier diff={f(row.delta_brier)}.")
-
-    lines.extend(
-        [
-            "",
-            "## Prediction confidence mechanism",
-            "",
-        ]
-    )
-    conf_all = confidence.loc[confidence["sample"] == "All games"]
-    for row in conf_all.itertuples(index=False):
-        lines.append(f"- {row.confidence_category}: games={int(row.games)}, mean confidence diff={f(row.mean_confidence_difference)}, Brier diff={f(row.delta_brier)}.")
-
-    lines.extend(
-        [
-            "",
-            "## Brier reliability and resolution diagnostics",
-            "",
-            "- This is an approximate favourite-perspective Brier decomposition based on fixed probability bins; it is sensitive to bin choice and does not replace the raw Brier score.",
-        ]
-    )
-    for model in ["Glicko_low", "Validation_best_Elo"]:
-        row = brier_decomp.loc[(brier_decomp["sample"] == "Overall") & (brier_decomp["model"] == model)].iloc[0]
-        lines.append(f"- {MODEL_LABELS[model]}: reliability={f(row.reliability)}, resolution={f(row.resolution)}, actual Brier={f(row.actual_brier)}.")
-
-    lines.extend(["", "## Main robust findings", ""])
-    for row in robust.itertuples(index=False):
-        lines.append(
-            f"- {row.subgroup}: games={int(row.games)}, Brier diff={f(row.delta_brier)}, CI [{f(row.delta_brier_ci_lower)}, {f(row.delta_brier_ci_upper)}], flag={row.interpretation_flag}."
-        )
-
-    lines.extend(["", "## Findings that remain uncertain", ""])
-    for row in uncertain.itertuples(index=False):
-        lines.append(
-            f"- {row.subgroup}: games={int(row.games)}, Brier diff={f(row.delta_brier)}, CI [{f(row.delta_brier_ci_lower)}, {f(row.delta_brier_ci_upper)}], flag={row.interpretation_flag}."
-        )
-
-    lines.extend(
-        [
-            "",
-            "## Implications for Meeting 6",
-            "",
-            "- The debut result should be reported directly: validation-best Elo is much better for exactly-one-debut matches in the current fixed 2025 test.",
-            "- The broader Glicko advantage remains after excluding debut matches.",
-            "- RD inflation improves Glicko C0 for long-inactivity cases, but this is not the same as proving Glicko low beats validation-best Elo in every returning-player subgroup.",
-            "- The calibration/Brier tension should be discussed as a reliability-resolution-confidence trade-off rather than a single accuracy claim.",
-            "",
-            "## Limitations",
-            "",
-            "- These are exploratory mechanism diagnostics, not causal proof.",
-            "- Some returning and debut subgroups are small.",
-            "- Historical rating-scale drift is not rerun here; the rating-scale analysis is a 2025 cross-section diagnostic.",
-            "",
-            "## Files written",
-            "",
-        ]
-    )
-    for path in output_paths + figure_paths:
-        lines.append(f"- `{path.relative_to(PROJECT_ROOT)}`")
-
-    markdown = "\n".join(lines)
-    SUMMARY_MD_PATH.write_text(markdown, encoding="utf-8")
-    return markdown
 
 
 def main() -> None:
@@ -1300,7 +1120,6 @@ def main() -> None:
         RECENT_THRESHOLD_PATH,
         KEY_DIAGNOSTIC_PATH,
         VALIDATION_CHECKS_PATH,
-        SUMMARY_MD_PATH,
     ]
 
     input_validation.to_csv(INPUT_VALIDATION_PATH, index=False, encoding="utf-8-sig")
@@ -1342,24 +1161,6 @@ def main() -> None:
     )
     validation = run_validation_checks(scores, history_counts, debut, zero_recent, table_paths, figure_paths, constants)
     validation.to_csv(VALIDATION_CHECKS_PATH, index=False, encoding="utf-8-sig")
-    write_markdown_summary(
-        constants,
-        input_validation,
-        history_counts,
-        debut_summary,
-        init_diag,
-        rating_dist,
-        loo_summary,
-        zero_recent,
-        returners,
-        exclusion,
-        rd_quartiles,
-        confidence,
-        brier_decomp_summary,
-        key_table,
-        table_paths,
-        figure_paths,
-    )
     validation = run_validation_checks(scores, history_counts, debut, zero_recent, table_paths, figure_paths, constants)
     validation.to_csv(VALIDATION_CHECKS_PATH, index=False, encoding="utf-8-sig")
 

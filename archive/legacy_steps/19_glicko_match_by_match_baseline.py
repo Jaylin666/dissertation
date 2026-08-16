@@ -1,11 +1,4 @@
-"""This script applies the validated Glicko-1 core formula to the full croquet match dataset using a match-by-match rating-period assumption.
-
-This is the first full-data Glicko-1 baseline. It uses the already validated
-Glicko core functions, treats each croquet match as one rating period, records
-pre-match predictions, evaluates 2025 test games, and outputs final ratings
-with RD. It does not compare against Elo, tune Glicko parameters, implement
-Glicko-2, or test event/monthly/yearly rating periods.
-"""
+"""Run the match-by-match Glicko-1 baseline."""
 
 from __future__ import annotations
 
@@ -70,7 +63,6 @@ CONFIDENCE_PATH = OUTPUT_DIR / "glicko_mbm_confidence_2025.csv"
 RD_SUMMARY_PATH = OUTPUT_DIR / "glicko_mbm_rd_summary.csv"
 YEARLY_RD_SUMMARY_PATH = OUTPUT_DIR / "glicko_mbm_yearly_rd_summary.csv"
 DATE_ORDERING_SUMMARY_PATH = OUTPUT_DIR / "glicko_mbm_date_ordering_summary.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "glicko_mbm_baseline_summary.md"
 
 REQUIRED_COLUMNS = ["fcode", "code", "year", "event", "winner", "loser"]
 NUMERIC_ID_COLUMNS = ["fcode", "code", "year", "event", "winner", "loser"]
@@ -626,102 +618,6 @@ def make_rd_summary(final_ratings: pd.DataFrame, setting: dict[str, Any]) -> pd.
     )
 
 
-def write_summary(
-    matches: pd.DataFrame,
-    setting: dict[str, Any],
-    metrics: pd.DataFrame,
-    rd_summary: pd.DataFrame,
-    date_summary: pd.DataFrame,
-    warnings: list[str],
-) -> None:
-    """Write meeting-ready markdown summary."""
-
-    metric = metrics.iloc[0]
-    rd = rd_summary.iloc[0]
-    date_lines = [
-        f"- {row.event_date_ordering_method}: {int(row.match_count):,} matches ({row.share_of_matches:.2%})"
-        for row in date_summary.itertuples(index=False)
-    ]
-
-    warning_lines = ["- None"] if not warnings else [f"- {warning}" for warning in warnings]
-    near_max = int(rd["number_near_max_rd_within_5"])
-
-    lines = [
-        "# Glicko-1 Match-by-Match Baseline Summary",
-        "",
-        "## Aim",
-        "",
-        "This is the first full-data Glicko-1 baseline. It applies the validated Glicko-1 core formula to the full croquet match dataset and records pre-match predictions for later fair comparison work.",
-        "",
-        "## Rating-Period Assumption",
-        "",
-        "This first baseline uses a match-by-match rating-period assumption. Croquet data are available at game level, so this is the most pragmatic starting point. Event-level, monthly, or yearly rating periods should be tested later as sensitivity analysis.",
-        "",
-        "## Data Used",
-        "",
-        f"- Dataset: `outputs/elo_optimization/matches_1985_2025_checked.csv`",
-        f"- Years: {int(matches['year'].min())}-{int(matches['year'].max())}",
-        f"- Matches: {len(matches):,}",
-        f"- Unique players: {pd.concat([matches['winner'], matches['loser']]).dropna().astype(int).nunique():,}",
-        "",
-        "## Glicko Setting",
-        "",
-        "- Model: classic Glicko-1",
-        f"- Setting name: `{setting['setting_name']}`",
-        f"- Initial rating: {setting['default_rating']:.1f}",
-        f"- Initial RD: {setting['default_rd']:.1f}",
-        f"- Minimum RD: {setting['min_rd']:.1f}",
-        f"- Maximum RD: {setting['max_rd']:.1f}",
-        f"- Inactivity RD inflation C: {setting['c']:.1f}",
-        "- No inactivity RD inflation is applied in this first baseline.",
-        "",
-        "## Data Ordering",
-        "",
-        "The script preserves the raw date columns and creates ordering helper columns only where needed. Full parsed dates are used directly. Month-year-only dates are imputed to the 15th of the month for ordering only. Rows with no usable date fall back to year/event/code/fcode ordering.",
-        "",
-        *date_lines,
-        "",
-        "## 2025 Prediction Results",
-        "",
-        f"- Evaluation games: {int(metric['evaluation_games']):,}",
-        f"- Log loss: {metric['log_loss']:.6f}",
-        f"- Brier score: {metric['brier_score']:.6f}",
-        f"- Accuracy: {metric['accuracy']:.6f}",
-        f"- Baseline accuracy: {metric['baseline_accuracy']:.6f}",
-        "",
-        "These metrics are not compared directly against Elo in this step. They are saved so that a later fair-comparison script can use the same match list, ordering, and metric definitions.",
-        "",
-        "## RD Behaviour",
-        "",
-        f"- Players with final ratings: {int(rd['n_players']):,}",
-        f"- Median final RD: {rd['median_final_rd']:.3f}",
-        f"- Mean final RD: {rd['mean_final_rd']:.3f}",
-        f"- Minimum final RD: {rd['min_final_rd']:.3f}",
-        f"- Maximum final RD: {rd['max_final_rd']:.3f}",
-        f"- Number of players at MIN_RD: {int(rd['number_at_min_rd']):,}",
-        f"- Number of players at MAX_RD: {int(rd['number_at_max_rd']):,}",
-        f"- Number of players within 5 RD points of MAX_RD: {near_max:,}",
-        "",
-        "Because C=0, inactive players do not become more uncertain over time. RD shrinkage should therefore be interpreted as a first pipeline diagnostic, not the final uncertainty model.",
-        "",
-        "## Important Limitations",
-        "",
-        "- This is only the first match-by-match Glicko baseline.",
-        "- It does not yet test alternative rating periods.",
-        "- It does not yet include inactivity RD inflation.",
-        "- It does not yet compare directly against Elo.",
-        "- Because C=0, inactive players do not become more uncertain over time; this will be addressed later.",
-        "",
-        "## Warnings",
-        "",
-        *warning_lines,
-        "",
-        "## Next Step",
-        "",
-        "Next, inspect this baseline's metrics and RD behaviour before deciding whether to prioritise inactivity/RD inflation, rating-period sensitivity, or Elo-vs-Glicko fair comparison preparation.",
-    ]
-
-    SUMMARY_MD_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -793,7 +689,6 @@ def main() -> None:
     rd_summary.to_csv(RD_SUMMARY_PATH, index=False, encoding="utf-8-sig")
     yearly_rd_summary.to_csv(YEARLY_RD_SUMMARY_PATH, index=False, encoding="utf-8-sig")
     date_summary.to_csv(DATE_ORDERING_SUMMARY_PATH, index=False, encoding="utf-8-sig")
-    write_summary(matches, setting, metrics, rd_summary, date_summary, warnings)
 
     print()
     print("Output files:")
@@ -806,7 +701,6 @@ def main() -> None:
         RD_SUMMARY_PATH,
         YEARLY_RD_SUMMARY_PATH,
         DATE_ORDERING_SUMMARY_PATH,
-        SUMMARY_MD_PATH,
     ]:
         print(f"  {path}")
 

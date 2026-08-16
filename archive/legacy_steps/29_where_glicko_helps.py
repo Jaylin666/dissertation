@@ -1,9 +1,4 @@
-"""Meeting 6 step 2: analyse where Glicko helps.
-
-This script merges leakage-safe pre-match features from step 28 with existing
-meeting 5 prediction files. It does not rerun Elo, Glicko, or adaptive-K Elo.
-All outputs are written to outputs/meeting6/.
-"""
+"""Analyse where fixed-orientation Glicko-1 differs from Elo."""
 
 from __future__ import annotations
 
@@ -31,7 +26,6 @@ FAIR_PREDICTIONS_PATH = PROJECT_ROOT / "outputs" / "meeting5_fair_elo_vs_glicko"
 FAIR_METRICS_PATH = PROJECT_ROOT / "outputs" / "meeting5_fair_elo_vs_glicko" / "meeting5_fair_elo_vs_glicko_metrics_2025.csv"
 ADAPTIVE_PREDICTIONS_PATH = PROJECT_ROOT / "outputs" / "meeting5_adaptive_k_elo" / "meeting5_adaptive_k_elo_predictions_2025.csv"
 ADAPTIVE_METRICS_PATH = PROJECT_ROOT / "outputs" / "meeting5_adaptive_k_elo" / "meeting5_adaptive_k_elo_metrics_2025.csv"
-ADAPTIVE_SUMMARY_PATH = PROJECT_ROOT / "outputs" / "meeting5_adaptive_k_elo" / "meeting5_adaptive_k_elo_summary.md"
 
 ALIGNMENT_CHECKS_PATH = OUTPUT_DIR / "29_model_alignment_checks.csv"
 PER_MATCH_SCORES_PATH = OUTPUT_DIR / "29_per_match_model_scores_2025.csv"
@@ -44,7 +38,6 @@ CALIBRATION_BINS_PATH = OUTPUT_DIR / "29_corrected_calibration_bins.csv"
 ADAPTIVE_RECOVERY_PATH = OUTPUT_DIR / "29_adaptive_k_improvement_recovered.csv"
 KEY_RESULTS_PATH = OUTPUT_DIR / "29_key_meeting6_results.csv"
 VALIDATION_CHECKS_PATH = OUTPUT_DIR / "29_where_glicko_helps_validation_checks.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "29_where_glicko_helps_summary.md"
 RD_CUTPOINTS_PATH = OUTPUT_DIR / "29_glicko_rd_quartile_cutpoints.csv"
 
 EPS = 1e-15
@@ -467,10 +460,7 @@ def score_one_model(df: pd.DataFrame, alias: str) -> None:
     clipped = p.clip(EPS, 1.0 - EPS)
     tie = p == 0.5
     predicted_a_win = p >= 0.5
-    # Meeting 5 evaluated actual-winner probability with p >= 0.5 counted as
-    # correct. After converting to player-A orientation, an exact 0.5 tie has
-    # no side direction, so count it as a correct favourite/tie prediction to
-    # preserve the existing fixed-test accuracy definition.
+    # A 0.5 forecast has no side; count it as correct to preserve fixed-test accuracy.
     favourite_won = np.where(tie, 1.0, np.where(predicted_a_win, y, 1.0 - y))
     df[f"brier_{alias}"] = (p - y) ** 2
     df[f"logloss_{alias}"] = -(y * np.log(clipped) + (1.0 - y) * np.log(1.0 - clipped))
@@ -1518,194 +1508,6 @@ def build_main_conclusions(key_results: pd.DataFrame) -> list[str]:
     return conclusions[:8]
 
 
-def write_markdown_summary(
-    overall: pd.DataFrame,
-    pairwise: pd.DataFrame,
-    bootstrap: pd.DataFrame,
-    calibration_summary: pd.DataFrame,
-    adaptive_recovery: pd.DataFrame,
-    key_results: pd.DataFrame,
-    rd_available: bool,
-    output_paths: list[Path],
-) -> str:
-    """Write the meeting-ready markdown summary."""
-
-    overall_display = overall.set_index("model")
-    glicko = overall_display.loc["Glicko_low"]
-    elo = overall_display.loc["Validation_best_Elo"]
-    adaptive = overall_display.loc["best_AdaptiveK"]
-    main_row = pairwise.loc[(pairwise["subgroup_variable"] == "overall") & (pairwise["subgroup"] == "Overall")].iloc[0]
-    main_brier_ci = find_bootstrap_row(bootstrap, "overall", "Overall", "delta_brier_glicko_vs_elo")
-    main_logloss_ci = find_bootstrap_row(bootstrap, "overall", "Overall", "delta_logloss_glicko_vs_elo")
-
-    inflation = pairwise.loc[(pairwise["subgroup_variable"] == "inactivity_gap")].copy()
-    inflation_focus = inflation.sort_values("delta_brier_inflation", ascending=False).head(3)
-
-    recovery_overall = adaptive_recovery.loc[adaptive_recovery["range"] == "overall"].iloc[0]
-    conclusions = build_main_conclusions(key_results)
-
-    lines = [
-        "# Meeting 6 Step 2: Where Glicko Helps",
-        "",
-        "## Purpose",
-        "",
-        "This script merges validated pre-match features with existing meeting 5 prediction files to analyse where Glicko low-inflation improves over validation-best Elo.",
-        "",
-        "## Inputs and model alignment",
-        "",
-        f"- Prematch features: `{FEATURE_PATH.relative_to(PROJECT_ROOT)}`",
-        f"- Fair Elo-vs-Glicko predictions: `{FAIR_PREDICTIONS_PATH.relative_to(PROJECT_ROOT)}`",
-        f"- Adaptive-K predictions: `{ADAPTIVE_PREDICTIONS_PATH.relative_to(PROJECT_ROOT)}`",
-        "- Probability orientation: fair and adaptive files store actual-winner probability; this script converts to neutral player-A probability using player IDs.",
-        "- All model predictions are merged by `match_id == game_id == fcode`, not by row number.",
-        "",
-        "## Overall model comparison",
-        "",
-        f"- Glicko low inflation: Brier={format_float(glicko['brier'])}, log loss={format_float(glicko['log_loss'])}, accuracy={format_float(glicko['accuracy'])}.",
-        f"- Validation-best Elo: Brier={format_float(elo['brier'])}, log loss={format_float(elo['log_loss'])}, accuracy={format_float(elo['accuracy'])}.",
-        f"- Best adaptive-K Elo: Brier={format_float(adaptive['brier'])}, log loss={format_float(adaptive['log_loss'])}, accuracy={format_float(adaptive['accuracy'])}.",
-        f"- Main paired Brier difference, Elo minus Glicko: {format_float(main_row['delta_brier_glicko_vs_elo'])}, 95% CI [{format_float(main_brier_ci['ci_lower'])}, {format_float(main_brier_ci['ci_upper'])}].",
-        f"- Main paired log-loss difference, Elo minus Glicko: {format_float(main_row['delta_logloss_glicko_vs_elo'])}, 95% CI [{format_float(main_logloss_ci['ci_lower'])}, {format_float(main_logloss_ci['ci_upper'])}].",
-        "",
-        "## Where Glicko improves over validation-best Elo",
-        "",
-    ]
-    top_groups = pairwise.loc[
-        (pairwise["subgroup_kind"].isin(["player_category", "prediction_confidence", "rd_uncertainty"]))
-        & (pairwise["games"] >= 50)
-    ].sort_values("delta_brier_glicko_vs_elo", ascending=False).head(6)
-    for row in top_groups.itertuples(index=False):
-        ci = find_bootstrap_row(bootstrap, row.subgroup_variable, row.subgroup, "delta_brier_glicko_vs_elo")
-        ci_text = f"[{format_float(ci['ci_lower'])}, {format_float(ci['ci_upper'])}]" if ci is not None else "NA"
-        lines.append(
-            f"- {row.subgroup_title} = {row.subgroup}: games={int(row.games)}, "
-            f"Brier diff={format_float(row.delta_brier_glicko_vs_elo)}, 95% CI {ci_text}."
-        )
-
-    lines.extend(
-        [
-            "",
-            "## Contribution of inactivity RD inflation",
-            "",
-        ]
-    )
-    for row in inflation_focus.itertuples(index=False):
-        lines.append(
-            f"- {row.subgroup}: games={int(row.games)}, Glicko C0 Brier - Glicko low Brier = {format_float(row.delta_brier_inflation)}."
-        )
-
-    lines.extend(
-        [
-            "",
-            "## Comparison with adaptive-K Elo",
-            "",
-            f"- Overall adaptive-K Brier recovery ratio: {format_float(recovery_overall['improvement_recovered_brier'])} "
-            f"(valid={bool(recovery_overall['recovery_ratio_valid_brier'])}).",
-            f"- Overall adaptive-K log-loss recovery ratio: {format_float(recovery_overall['improvement_recovered_logloss'])} "
-            f"(valid={bool(recovery_overall['recovery_ratio_valid_logloss'])}).",
-            "",
-            "## New and low-experience players",
-            "",
-        ]
-    )
-    for variable, subgroup in [
-        ("flag_either_player_debut", "True"),
-        ("flag_min_total_games_before_le5", "True"),
-        ("flag_min_total_games_before_le20", "True"),
-    ]:
-        row = pairwise.loc[(pairwise["subgroup_variable"] == variable) & (pairwise["subgroup"] == subgroup)]
-        if not row.empty:
-            r = row.iloc[0]
-            lines.append(
-                f"- {r['subgroup_title']}: games={int(r['games'])}, Brier diff={format_float(r['delta_brier_glicko_vs_elo'])}, log-loss diff={format_float(r['delta_logloss_glicko_vs_elo'])}."
-            )
-
-    lines.extend(
-        [
-            "",
-            "## Low recent activity and returning players",
-            "",
-        ]
-    )
-    for variable, subgroup in [
-        ("flag_min_games_last_365_days_le5", "True"),
-        ("flag_either_player_inactive_365d", "True"),
-        ("flag_either_player_inactive_730d", "True"),
-    ]:
-        row = pairwise.loc[(pairwise["subgroup_variable"] == variable) & (pairwise["subgroup"] == subgroup)]
-        if not row.empty:
-            r = row.iloc[0]
-            lines.append(
-                f"- {r['subgroup_title']}: games={int(r['games'])}, Brier diff={format_float(r['delta_brier_glicko_vs_elo'])}, log-loss diff={format_float(r['delta_logloss_glicko_vs_elo'])}."
-            )
-
-    lines.extend(
-        [
-            "",
-            "## Prediction confidence",
-            "",
-        ]
-    )
-    conf = pairwise.loc[pairwise["subgroup_variable"] == "elo_favourite_probability"]
-    for row in conf.itertuples(index=False):
-        lines.append(
-            f"- Elo favourite probability {row.subgroup}: games={int(row.games)}, Brier diff={format_float(row.delta_brier_glicko_vs_elo)}."
-        )
-
-    lines.extend(
-        [
-            "",
-            "## Pre-match RD analysis",
-            "",
-        ]
-    )
-    if rd_available:
-        lines.append("- Reliable pre-match Glicko RD was available and RD quartile analysis was generated.")
-    else:
-        lines.append("- RD subgroup analysis was skipped because reliable pre-match RD was not available.")
-
-    lines.extend(
-        [
-            "",
-            "## Bootstrap uncertainty",
-            "",
-            f"- Bootstrap type is event-cluster when a subgroup has at least 10 events, with {BOOTSTRAP_REPS:,} replications.",
-            "- Small groups are retained and marked with `small_sample_warning`.",
-            "",
-            "## Corrected calibration",
-            "",
-        ]
-    )
-    cal_overall = calibration_summary.loc[calibration_summary["range"] == "overall"].set_index("model")
-    for alias in ["Glicko_low", "Validation_best_Elo", "best_AdaptiveK"]:
-        if alias in cal_overall.index:
-            lines.append(
-                f"- {DISPLAY_BY_ALIAS[alias]} corrected calibration error: {format_float(cal_overall.loc[alias, 'corrected_calibration_error'])}."
-            )
-
-    lines.extend(
-        [
-            "",
-            "## Main conclusions for Meeting 6",
-            "",
-            *conclusions,
-            "",
-            "## Limitations",
-            "",
-            "- Subgroup results are exploratory and should not be interpreted as causal proof.",
-            "- Some debut and inactive groups are small, so confidence intervals can be wide.",
-            "- The script uses fixed meeting5 model outputs and does not retune models on 2025 results.",
-            "",
-            "## Files written",
-            "",
-        ]
-    )
-    for path in output_paths:
-        lines.append(f"- `{path.relative_to(PROJECT_ROOT)}`")
-
-    markdown = "\n".join(lines)
-    SUMMARY_MD_PATH.write_text(markdown, encoding="utf-8")
-    return markdown
 
 
 def main() -> None:
@@ -1744,7 +1546,6 @@ def main() -> None:
         ADAPTIVE_RECOVERY_PATH,
         KEY_RESULTS_PATH,
         VALIDATION_CHECKS_PATH,
-        SUMMARY_MD_PATH,
         RD_CUTPOINTS_PATH,
         *figure_paths,
     ]
@@ -1783,20 +1584,9 @@ def main() -> None:
         ADAPTIVE_RECOVERY_PATH,
         KEY_RESULTS_PATH,
         VALIDATION_CHECKS_PATH,
-        SUMMARY_MD_PATH,
         RD_CUTPOINTS_PATH,
         *figure_paths,
     ]
-    write_markdown_summary(
-        overall,
-        pairwise,
-        bootstrap,
-        calibration_summary,
-        adaptive_recovery,
-        key_results,
-        rd_available,
-        output_paths,
-    )
     validation = run_validation_checks(
         per_match,
         alignment,

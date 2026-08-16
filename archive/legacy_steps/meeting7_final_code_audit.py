@@ -1,20 +1,10 @@
-"""
-Final source-code audit and report-ready summary for Meeting 7.
-
-This script intentionally does not create a new numbered analysis step. It reads
-the existing Step 33 to Step 40 source files and outputs, performs independent
-consistency checks, records any issues or limitations, and writes a concise
-technical summary for discussion with the supervisor.
-
-No Elo/Glicko model is re-run here, and no Step 27 to Step 40 output is
-overwritten.
-"""
+"""Validate retained scientific outputs and cross-step consistency."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -28,8 +18,6 @@ FIGURE_DIR = MEETING7_DIR / "figures"
 
 AUDIT_CHECKS_PATH = MEETING7_DIR / "meeting7_final_code_audit_checks.csv"
 AUDIT_ISSUES_PATH = MEETING7_DIR / "meeting7_final_code_audit_issues.csv"
-AUDIT_MD_PATH = MEETING7_DIR / "meeting7_final_code_audit.md"
-REPORT_SUMMARY_PATH = MEETING7_DIR / "meeting7_final_report_summary.md"
 
 EPS = 1e-12
 LOGL_loss_EPS = 1e-15
@@ -86,7 +74,6 @@ REQUIRED_OUTPUTS = {
     "39 early-player side distribution": MEETING7_DIR / "39_early_player_side_distribution.csv",
     "40 corrected orientation table": MEETING7_DIR / "40_final_orientation_reporting_table.csv",
     "40 conclusion codes": MEETING7_DIR / "40_orientation_conclusion_codes.csv",
-    "40 wording note": MEETING7_DIR / "40_meeting7_orientation_wording.md",
 }
 
 VALIDATION_OUTPUTS = {
@@ -136,16 +123,6 @@ def format_float(value: Any, digits: int = 6) -> str:
     return str(value)
 
 
-def markdown_table(rows: Iterable[dict[str, Any]], columns: list[tuple[str, str]]) -> str:
-    headers = [header for _, header in columns]
-    lines = [
-        "| " + " | ".join(headers) + " |",
-        "| " + " | ".join(["---"] * len(headers)) + " |",
-    ]
-    for row in rows:
-        values = [str(row.get(key, "")) for key, _ in columns]
-        lines.append("| " + " | ".join(values) + " |")
-    return "\n".join(lines)
 
 
 def load_csv(path: Path) -> pd.DataFrame:
@@ -192,7 +169,7 @@ def get_ci_row(df: pd.DataFrame, group: str, comparison: str, metric: str) -> pd
     return rows.iloc[0]
 
 
-def build_audit_outputs() -> tuple[pd.DataFrame, pd.DataFrame, str, str]:
+def build_audit_outputs() -> tuple[pd.DataFrame, pd.DataFrame]:
     checks: list[dict[str, Any]] = []
     issues: list[dict[str, Any]] = []
 
@@ -282,10 +259,8 @@ def build_audit_outputs() -> tuple[pd.DataFrame, pd.DataFrame, str, str]:
     step33_overall = load_csv(REQUIRED_OUTPUTS["33 overall metrics"])
     app = load_csv(REQUIRED_OUTPUTS["34 appearance dataset"])
     cum = load_csv(REQUIRED_OUTPUTS["34 cumulative metrics"])
-    stage = load_csv(REQUIRED_OUTPUTS["34 stage metrics"])
     pairwise = load_csv(REQUIRED_OUTPUTS["34 pairwise differences"])
     boot = load_csv(REQUIRED_OUTPUTS["34 bootstrap CIs"])
-    key35 = load_csv(REQUIRED_OUTPUTS["35 key mechanism results"])
     bias35 = load_csv(REQUIRED_OUTPUTS["35 probability bias"])
     extremity35 = load_csv(REQUIRED_OUTPUTS["35 extremity"])
     rd35 = load_csv(REQUIRED_OUTPUTS["35 Glicko rating/RD"])
@@ -295,11 +270,9 @@ def build_audit_outputs() -> tuple[pd.DataFrame, pd.DataFrame, str, str]:
     key37 = load_csv(REQUIRED_OUTPUTS["37 key initial-rating results"])
     val37 = load_csv(REQUIRED_OUTPUTS["37 validation initial-rating metrics"])
     test37 = load_csv(REQUIRED_OUTPUTS["37 test initial-rating metrics"])
-    key38 = load_csv(REQUIRED_OUTPUTS["38 key asymmetric-K results"])
     overall38 = load_csv(REQUIRED_OUTPUTS["38 overall model metrics"])
     asym38 = load_csv(REQUIRED_OUTPUTS["38 asymmetric-K summary"])
     recovery38 = load_csv(REQUIRED_OUTPUTS["38 Glicko gap recovery"])
-    key39 = load_csv(REQUIRED_OUTPUTS["39 key orientation results"])
     orient39 = load_csv(REQUIRED_OUTPUTS["39 orientation comparison"])
     comp39 = load_csv(REQUIRED_OUTPUTS["39 complement gap"])
     side39 = load_csv(REQUIRED_OUTPUTS["39 early-player side distribution"])
@@ -538,426 +511,15 @@ def build_audit_outputs() -> tuple[pd.DataFrame, pd.DataFrame, str, str]:
 
     audit_checks = pd.DataFrame(checks)
     audit_issues = pd.DataFrame(issues)
-
-    material_error_count = int((audit_issues["classification"] == "MATERIAL_IMPLEMENTATION_ERROR").sum())
-    failed_check_count = int(audit_checks["status"].eq("FAIL").sum())
-    minor_issue_count = int((audit_issues["classification"] == "MINOR_IMPLEMENTATION_ISSUE").sum())
-    reporting_issue_count = int((audit_issues["classification"] == "REPORTING_OR_METADATA_ISSUE").sum())
-    limitation_count = int((audit_issues["classification"] == "LIMITATION_NOT_CODE_ERROR").sum())
-
-    audit_md = build_audit_markdown(
-        audit_checks,
-        audit_issues,
-        material_error_count,
-        failed_check_count,
-        minor_issue_count,
-        reporting_issue_count,
-        limitation_count,
-    )
-    report_summary_md = build_report_summary(
-        step33_overall=step33_overall,
-        cum=cum,
-        stage=stage,
-        pairwise=pairwise,
-        boot=boot,
-        key35=key35,
-        bias35=bias35,
-        extremity35=extremity35,
-        rd35=rd35,
-        key36=key36,
-        counter36=counter36,
-        val37=val37,
-        test37=test37,
-        key37=key37,
-        key38=key38,
-        overall38=overall38,
-        asym38=asym38,
-        recovery38=recovery38,
-        key39=key39,
-        comp39=comp39,
-        side39=side39,
-        orient40=orient40,
-        codes40=codes40,
-    )
-
-    if material_error_count > 0 or failed_check_count > 0:
-        report_summary_md = (
-            "# Meeting 7 Final Report Summary\n\n"
-            "Report-summary generation was stopped because the final audit found a material failed check. "
-            "See meeting7_final_code_audit_checks.csv and meeting7_final_code_audit_issues.csv.\n"
-        )
-
-    return audit_checks, audit_issues, audit_md, report_summary_md
-
-
-def build_audit_markdown(
-    audit_checks: pd.DataFrame,
-    audit_issues: pd.DataFrame,
-    material_error_count: int,
-    failed_check_count: int,
-    minor_issue_count: int,
-    reporting_issue_count: int,
-    limitation_count: int,
-) -> str:
-    source_rows = [
-        {"step": source.step, "file": str(source.path.relative_to(PROJECT_ROOT)), "role": source.role}
-        for source in SOURCE_FILES
-    ]
-    status_counts = audit_checks["status"].value_counts().to_dict()
-    issue_counts = audit_issues["classification"].value_counts().to_dict()
-
-    lines = [
-        "# Meeting 7 Final Source-Code Audit",
-        "",
-        "This audit reviews the Meeting 7 analysis without creating a new numbered step and without re-running Elo/Glicko model estimation.",
-        "",
-        "## Overall Decision",
-        "",
-        f"- Source-code files reviewed: {len(SOURCE_FILES)}",
-        f"- Audit checks: {len(audit_checks)} ({status_counts})",
-        f"- Failed checks: {failed_check_count}",
-        f"- Material implementation errors: {material_error_count}",
-        f"- Minor implementation issues: {minor_issue_count}",
-        f"- Reporting or metadata issues: {reporting_issue_count}",
-        f"- Limitations, not code errors: {limitation_count}",
-        "",
-        "**Decision:** The Meeting 7 technical analysis can be frozen for the supervisor meeting, provided the report uses the Step 40 corrected orientation wording and avoids the visually uninformative Step 38 recovery figure.",
-        "",
-        "## Source Files Reviewed",
-        "",
-        markdown_table(source_rows, [("step", "Step"), ("file", "File"), ("role", "Role")]),
-        "",
-        "## Issue Classification",
-        "",
-        f"- Issue counts by classification: `{issue_counts}`",
-        "- No material implementation error was identified.",
-        "- No minor implementation issue requiring code correction was identified.",
-        "- Two reporting/metadata points should be handled in presentation wording.",
-        "",
-        "## Main Checks Performed",
-        "",
-        "- Step 33 per-match probabilities were independently recomputed into overall Brier score, log loss and accuracy.",
-        "- Step 34 appearance-level row counts, focal orientation, early-game groups, pairwise deltas and bootstrap point estimates were checked.",
-        "- Step 35 mechanism summaries were checked against their definitions.",
-        "- Step 36 initialisation diagnostics were checked against Step 34/35 first-appearance probabilities and counterfactual outputs.",
-        "- Step 37 common initial-rating sensitivity was checked for invariant validation and test metrics.",
-        "- Step 38 asymmetric adaptive-K outputs were checked for reproduction, separate K assignment and absence of material Glicko-gap recovery.",
-        "- Step 39/40 orientation robustness conclusions and corrected reporting metadata were checked.",
-        "",
-        "## Recommendation",
-        "",
-        "Use the Meeting 7 results as a technical basis for the meeting report. The strongest defensible claim is: overall, low-inflation Glicko remains slightly better than validation-best Elo on the full 2025 test set, but for first recorded appearances Elo is substantially better because Glicko over-predicts new players due mainly to initialisation against often lower-rated opponents. The common initial rating itself is not the cause, because shifting every player's common initial rating leaves relative probabilities unchanged.",
-        "",
-    ]
-    return "\n".join(lines)
-
-
-def build_report_summary(
-    *,
-    step33_overall: pd.DataFrame,
-    cum: pd.DataFrame,
-    stage: pd.DataFrame,
-    pairwise: pd.DataFrame,
-    boot: pd.DataFrame,
-    key35: pd.DataFrame,
-    bias35: pd.DataFrame,
-    extremity35: pd.DataFrame,
-    rd35: pd.DataFrame,
-    key36: pd.DataFrame,
-    counter36: pd.DataFrame,
-    val37: pd.DataFrame,
-    test37: pd.DataFrame,
-    key37: pd.DataFrame,
-    key38: pd.DataFrame,
-    overall38: pd.DataFrame,
-    asym38: pd.DataFrame,
-    recovery38: pd.DataFrame,
-    key39: pd.DataFrame,
-    comp39: pd.DataFrame,
-    side39: pd.DataFrame,
-    orient40: pd.DataFrame,
-    codes40: pd.DataFrame,
-) -> str:
-    overall_models = ["Validation_best_Elo", "Glicko_low_fixed", "Glicko_C0_fixed", "best_AdaptiveK"]
-    overall_rows = []
-    for model in overall_models:
-        row = step33_overall.loc[step33_overall["model"].eq(model)].iloc[0]
-        overall_rows.append(
-            {
-                "model": row["display_name"],
-                "brier": format_float(row["brier"]),
-                "log_loss": format_float(row["log_loss"]),
-                "accuracy": format_float(row["accuracy"]),
-                "games": int(row["evaluation_games"]),
-            }
-        )
-
-    early_rows = []
-    for group in ["first_1", "first_5", "first_10", "first_20"]:
-        elo_brier = get_model_metric(cum, group, "Validation_best_Elo", "brier")
-        glicko_brier = get_model_metric(cum, group, "Glicko_low_fixed", "brier")
-        c0_brier = get_model_metric(cum, group, "Glicko_C0_fixed", "brier")
-        adaptive_brier = get_model_metric(cum, group, "best_AdaptiveK", "brier")
-        n = int(cum.loc[cum["group"].eq(group) & cum["model"].eq("Validation_best_Elo"), "appearances"].iloc[0])
-        ci = get_ci_row(boot, group, "Validation_best_Elo_minus_Glicko_low_fixed", "delta_brier")
-        early_rows.append(
-            {
-                "group": group,
-                "n": n,
-                "elo": format_float(elo_brier),
-                "glicko": format_float(glicko_brier),
-                "c0": format_float(c0_brier),
-                "adaptive": format_float(adaptive_brier),
-                "delta": format_float(float(ci["point_estimate"])),
-                "ci": f"[{format_float(ci['ci_lower'])}, {format_float(ci['ci_upper'])}]",
-            }
-        )
-
-    stage_rows = []
-    for st in ["1", "2-5", "6-10", "11-20", "21-50", "51+"]:
-        elo = stage.loc[stage["group"].astype(str).eq(st) & stage["model"].eq("Validation_best_Elo")].iloc[0]
-        gl = stage.loc[stage["group"].astype(str).eq(st) & stage["model"].eq("Glicko_low_fixed")].iloc[0]
-        stage_rows.append(
-            {
-                "stage": st,
-                "n": int(elo["appearances"]),
-                "elo_brier": format_float(elo["brier"]),
-                "glicko_brier": format_float(gl["brier"]),
-                "delta": format_float(float(elo["brier"]) - float(gl["brier"])),
-                "glicko_rd": format_float(rd35.loc[rd35["appearance_stage"].astype(str).eq(st), "mean_focal_rd"].iloc[0]),
-            }
-        )
-
-    mechanism_rows = []
-    for model in ["Validation_best_Elo", "Glicko_low_fixed", "Glicko_C0_fixed", "best_AdaptiveK"]:
-        row = bias35.loc[bias35["group"].eq("first_1") & bias35["model"].eq(model)].iloc[0]
-        extreme = extremity35.loc[extremity35["appearance_stage"].astype(str).eq("1") & extremity35["model"].eq(model)].iloc[0]
-        mechanism_rows.append(
-            {
-                "model": row["model_display"],
-                "mean_p": format_float(row["mean_predicted_win_probability"]),
-                "empirical": format_float(row["empirical_win_rate"]),
-                "bias": format_float(row["prediction_bias"]),
-                "extreme": format_float(extreme["pct_probability_below_0_10_or_above_0_90"]),
-            }
-        )
-
-    observed_counter = counter36.loc[counter36["counterfactual"].eq("observed_saved_probability")].iloc[0]
-    equal_counter = counter36.loc[counter36["counterfactual"].eq("B_set_focal_rating_equal_to_opponent")].iloc[0]
-    init_rows = [
-        {
-            "diagnostic": "Observed first_1 Glicko low",
-            "mean_p": format_float(observed_counter["mean_predicted_probability"]),
-            "bias": format_float(observed_counter["prediction_bias"]),
-            "brier": format_float(observed_counter["Brier_score"]),
-        },
-        {
-            "diagnostic": "Equalise focal rating to opponent",
-            "mean_p": format_float(equal_counter["mean_predicted_probability"]),
-            "bias": format_float(equal_counter["prediction_bias"]),
-            "brier": format_float(equal_counter["Brier_score"]),
-        },
-    ]
-
-    initial_sensitivity_rows = [
-        {
-            "period": "Validation 2023-2024",
-            "candidates": "1000, 1100, 1200, 1300, 1400, 1500",
-            "brier_range": f"{format_float(val37['brier'].min())} to {format_float(val37['brier'].max())}",
-            "selected": int(get_key_value(key37, "selected_initial_rating")),
-        },
-        {
-            "period": "Test 2025",
-            "candidates": "1000, 1100, 1200, 1300, 1400, 1500",
-            "brier_range": f"{format_float(test37['brier'].min())} to {format_float(test37['brier'].max())}",
-            "selected": int(get_key_value(key37, "selected_initial_rating")),
-        },
-    ]
-
-    asym_rows = []
-    for model in [
-        "Validation_best_Elo",
-        "AdaptiveK_PreviousYearGames_Elo_scale300",
-        "Asymmetric_AdaptiveK_PreviousYearGames_Elo_scale300",
-        "Glicko_low_inflation_match_by_match",
-    ]:
-        row = overall38.loc[overall38["model"].eq(model)].iloc[0]
-        asym_rows.append(
-            {
-                "model": row["model_display"],
-                "brier": format_float(row["brier"]),
-                "log_loss": format_float(row["log_loss"]),
-                "accuracy": format_float(row["accuracy"]),
-            }
-        )
-
-    orientation_rows = []
-    for group in ["overall", "first_1", "first_5", "first_10", "first_20"]:
-        current = orient40.loc[orient40["group"].eq(group) & orient40["convention"].eq("current")]
-        if current.empty:
-            continue
-        row = current.iloc[0]
-        orientation_rows.append(
-            {
-                "group": group,
-                "n": int(row["number_of_observations"]),
-                "delta": format_float(row["Elo_minus_Glicko_delta_Brier"]),
-                "ci": f"[{format_float(row['delta_Brier_CI_lower'])}, {format_float(row['delta_Brier_CI_upper'])}]",
-                "conclusion": row["Brier_conclusion"],
-                "note": row["evidence_strength_note"],
-            }
-        )
-
-    recommended_figures = [
-        "outputs/meeting7/figures/34_fig02_cumulative_brier_by_model.png",
-        "outputs/meeting7/figures/34_fig03_cumulative_delta_brier_elo_minus_glicko_ci.png",
-        "outputs/meeting7/figures/35_fig01_predicted_vs_empirical_by_stage.png",
-        "outputs/meeting7/figures/35_fig05_glicko_rd_by_stage.png",
-        "outputs/meeting7/figures/36_fig05_counterfactual_probability_comparison.png",
-        "outputs/meeting7/figures/38_fig01_overall_brier_comparison.png",
-        "outputs/meeting7/figures/39_fig03_elo_glicko_delta_brier_by_convention.png",
-    ]
-
-    excluded_figures = [
-        "outputs/meeting7/figures/38_fig07_glicko_gap_recovery.png - exclude or replace with the recovery table because the near-zero recovery fraction makes the plotted trend visually uninformative."
-    ]
-
-    main_code = codes40.iloc[0]["main_conclusion_code"]
-    secondary_note = codes40.iloc[0]["secondary_conclusion_note"]
-    first1_side = side39.loc[side39["group"].eq("first_1")].iloc[0]
-    comp_all = comp39.loc[comp39["model"].eq("Glicko_low") & comp39["group"].eq("all_2025_matches")].iloc[0]
-
-    lines = [
-        "# Meeting 7 Final Report Summary",
-        "",
-        "## A. Executive Summary",
-        "",
-        "Meeting 7 has produced a coherent answer to the supervisor's early-game question: ratings are least reliable for players with no previous recorded history, and the reason is not simply that the model has too little data, but that the Glicko initialisation and probability mechanism can strongly over-predict those players when they enter against lower-rated established opponents.",
-        "",
-        "The full 2025 result still favours low-inflation Glicko overall, but the first recorded appearance is an exception where validation-best Elo is clearly better. The evidence weakens as the early-career window expands: the first_5 result still tends to favour Elo, while first_10 and first_20 are closer and should be described more cautiously.",
-        "",
-        "A key diagnostic finding is that changing the common Glicko initial rating from 1000 to 1500 does not change validation or 2025 test performance. This is expected because a common additive shift to all ratings does not change rating differences. The problem is therefore not the absolute initial rating value, but the relative state created when a new player enters with the common initial rating against opponents whose Glicko ratings have already moved.",
-        "",
-        f"The orientation sensitivity audit concluded `{main_code}`. Overall Brier conclusions and the first-appearance conclusion are robust across current, reversed and midpoint conventions. The caveat is: `{secondary_note}`.",
-        "",
-        "## B. Overall Model Comparison",
-        "",
-        "Source: `outputs/meeting6/33_overall_model_metrics.csv` and independently checked against `outputs/meeting6/33_orientation_corrected_per_match_scores_2025.csv`.",
-        "",
-        markdown_table(overall_rows, [("model", "Model"), ("games", "Games"), ("brier", "Brier"), ("log_loss", "Log loss"), ("accuracy", "Accuracy")]),
-        "",
-        "Interpretation: low-inflation Glicko remains the best overall 2025 model by Brier score, log loss and accuracy. Glicko C0 is worse than both low-inflation Glicko and the validation-best Elo baseline, supporting the idea that uncertainty inflation is useful for the full test set.",
-        "",
-        "## C. Early-Game Results",
-        "",
-        "Source: `outputs/meeting7/34_cumulative_threshold_model_performance.csv`, `outputs/meeting7/34_pairwise_model_differences.csv`, and `outputs/meeting7/34_bootstrap_confidence_intervals.csv`. Delta Brier is Elo minus Glicko, so negative values favour Elo.",
-        "",
-        markdown_table(early_rows, [("group", "Group"), ("n", "Appearances"), ("elo", "Elo Brier"), ("glicko", "Glicko Brier"), ("c0", "Glicko C0 Brier"), ("adaptive", "Adaptive-K Brier"), ("delta", "Elo-Glicko Delta"), ("ci", "Bootstrap CI")]),
-        "",
-        "Interpretation: the first recorded appearance is the clearest failure point for Glicko. By first_20, the Brier gap is much smaller, so the answer to 'how quickly do ratings become reliable?' is gradual rather than immediate: the most severe problem is at match 1, with partial convergence over the next 10 to 20 appearances.",
-        "",
-        "## D. Non-Overlapping Stage Bins",
-        "",
-        "Source: `outputs/meeting7/34_stage_bin_model_performance.csv` and `outputs/meeting7/35_glicko_rating_rd_summary.csv`.",
-        "",
-        markdown_table(stage_rows, [("stage", "Stage"), ("n", "Appearances"), ("elo_brier", "Elo Brier"), ("glicko_brier", "Glicko Brier"), ("delta", "Elo-Glicko Delta"), ("glicko_rd", "Mean Glicko RD")]),
-        "",
-        "Interpretation: non-overlapping bins show the shape of the learning curve more cleanly than cumulative groups. Glicko is poor at stage 1, becomes competitive in stage 2-5, and then becomes close to or better than Elo in later stages. This supports the dissertation argument that Glicko's uncertainty machinery is not uniformly bad for new players; the main problem is the first recorded appearance and its initialisation context.",
-        "",
-        "## E. Mechanism Analysis",
-        "",
-        "Source: `outputs/meeting7/35_cumulative_probability_bias_summary.csv`, `outputs/meeting7/35_prediction_extremity_summary.csv`, and `outputs/meeting7/35_key_mechanism_results.csv`.",
-        "",
-        markdown_table(mechanism_rows, [("model", "Model"), ("mean_p", "First_1 Mean p"), ("empirical", "Empirical Win Rate"), ("bias", "Prediction Bias"), ("extreme", "Extreme p share")]),
-        "",
-        "Interpretation: first_1 focal players win about 40.8% of appearances, but Glicko low inflation predicts about 74.3% on average. The resulting bias of about 0.336 is much larger than Elo's bias of about 0.131. This is the central mechanism behind the first-appearance Brier gap.",
-        "",
-        "## F. Initialisation Source Diagnostic",
-        "",
-        "Source: `outputs/meeting7/36_debut_state_summary.csv`, `outputs/meeting7/36_debut_counterfactual_probability_diagnostics.csv`, and `outputs/meeting7/36_key_initialisation_diagnostic_results.csv`.",
-        "",
-        markdown_table(init_rows, [("diagnostic", "Diagnostic"), ("mean_p", "Mean p"), ("bias", "Bias"), ("brier", "Brier")]),
-        "",
-        f"The first_1 focal Glicko rating is 1500.000 while the mean opponent Glicko rating is {format_float(get_key_value(key36, 'mean_debut_opponent_Glicko_rating'))}; the mean focal-minus-opponent difference is {format_float(get_key_value(key36, 'mean_focal_minus_opponent_rating_difference'))}. Equalising the focal rating to the opponent rating reduces the mean predicted probability to 0.500 and reduces Brier to 0.250. This shows that the first-appearance problem is mainly driven by relative rating state rather than RD alone.",
-        "",
-        "## G. Initial Rating Sensitivity",
-        "",
-        "Source: `outputs/meeting7/37_validation_initial_rating_metrics.csv`, `outputs/meeting7/37_test_initial_rating_metrics.csv`, and `outputs/meeting7/37_key_initial_rating_results.csv`.",
-        "",
-        markdown_table(initial_sensitivity_rows, [("period", "Period"), ("candidates", "Candidate Initial Ratings"), ("brier_range", "Brier Range"), ("selected", "Selected")]),
-        "",
-        "Interpretation: all candidate common initial ratings produced identical validation and 2025 test Brier scores. This is a useful methodological point for the dissertation: common initial rating is not an independently meaningful hyperparameter when all players are shifted together; rating differences and update dynamics matter.",
-        "",
-        "## H. Asymmetric Adaptive-K Elo",
-        "",
-        "Source: `outputs/meeting7/38_overall_model_metrics.csv`, `outputs/meeting7/38_asymmetric_k_summary.csv`, and `outputs/meeting7/38_glicko_gap_recovery.csv`.",
-        "",
-        markdown_table(asym_rows, [("model", "Model"), ("brier", "Brier"), ("log_loss", "Log loss"), ("accuracy", "Accuracy")]),
-        "",
-        f"The proof-of-concept did assign different K values to the two players in {format_float(asym38.iloc[0]['percentage_matches_K_A_differs_from_K_B'])}% of 2025 matches, with mean absolute K difference {format_float(asym38.iloc[0]['mean_absolute_K_A_minus_K_B'])}. However, the asymmetric and symmetric adaptive-K predictions are numerically unchanged for 2025, and the maximum recovery fraction of the Glicko gap is {recovery38['recovery_fraction'].abs().max():.3e}. This should be reported as a negative but informative proof-of-concept: simply allowing separate player K values is not enough to recover Glicko's advantage.",
-        "",
-        "## I. Orientation Sensitivity",
-        "",
-        "Source: `outputs/meeting7/39_orientation_sensitivity_comparison.csv`, `outputs/meeting7/39_complement_gap_summary.csv`, `outputs/meeting7/39_early_player_side_distribution.csv`, and Step 40 corrected reporting files.",
-        "",
-        markdown_table(orientation_rows, [("group", "Group"), ("n", "Observations"), ("delta", "Current Elo-Glicko Delta Brier"), ("ci", "CI"), ("conclusion", "Current Conclusion"), ("note", "Step 40 Note")]),
-        "",
-        f"The all-match mean absolute complement gap for low-inflation Glicko is {format_float(comp_all['mean_absolute_complement_gap'])}, with maximum {format_float(comp_all['maximum_absolute_complement_gap'])}. For first_1 focal appearances, {format_float(first1_side['percentage_focal_player_is_large_id'])}% are on the larger-ID side, which explains why the early-game convention matters more than the overall convention. Step 40 confirms that the main conclusions are robust, although some first_5 to first_20 confidence classifications vary by convention or metric.",
-        "",
-        "## J. Recommended Figures and Tables",
-        "",
-        "Recommended figures:",
-        "",
-        "\n".join(f"- `{fig}`" for fig in recommended_figures),
-        "",
-        "Figures to avoid or replace:",
-        "",
-        "\n".join(f"- `{fig}`" for fig in excluded_figures),
-        "",
-        "Core tables for the meeting report should be: overall model comparison, cumulative early-game Brier table, stage-bin Brier/RD table, first_1 mechanism table, initialisation counterfactual table, asymmetric-K overall table, and orientation sensitivity table.",
-        "",
-        "## K. Suggested Meeting Report Structure",
-        "",
-        "1. One-page summary of the research question and headline findings.",
-        "2. Overall model comparison after Step 33 orientation correction.",
-        "3. Early-game analysis: first_1, first_5, first_10 and first_20.",
-        "4. Mechanism: why Glicko fails on first recorded appearances.",
-        "5. Initialisation diagnostic and common initial-rating sensitivity.",
-        "6. Adaptive-K extension result.",
-        "7. Orientation sensitivity and final methodological caveats.",
-        "8. Questions for Chris and dissertation framing.",
-        "",
-        "## L. Dissertation Framework to Discuss with Chris",
-        "",
-        "Proposed dissertation structure:",
-        "",
-        "- Introduction: prediction problem, why croquet ratings are interesting, and research questions.",
-        "- Data and preprocessing: raw match data, canonical player orientation, full-history construction, evaluation splits, and Step 33 probability correction.",
-        "- Methods: Elo baseline, validation-selected Elo, adaptive-K Elo, Glicko, uncertainty/RD and evaluation metrics.",
-        "- Main model comparison: full 2025 Elo-Glicko comparison, sensitivity checks, and why low-inflation Glicko beats Glicko C0 overall.",
-        "- Early-career reliability: appearance-level dataset, first_N and stage-bin analysis, mechanism and initialisation diagnostics.",
-        "- Extensions and robustness: asymmetric adaptive-K proof of concept, orientation sensitivity, bootstrap robustness, and limitations.",
-        "- Conclusion: what was learned about model flexibility, uncertainty, and the limits of rating systems for new players.",
-        "",
-        "Questions to ask Chris:",
-        "",
-        "- Should the dissertation frame the first_1 result as a limitation of Glicko initialisation, or more generally as a limitation of rating systems for players with no recorded history?",
-        "- Is it worth including the asymmetric adaptive-K proof-of-concept as a negative result, or should it be kept brief as robustness/extension material?",
-        "- How much detail should be given to the orientation sensitivity audit in the main text versus an appendix?",
-        "- Does Chris prefer the early-game chapter to focus on cumulative first_N groups, non-overlapping stage bins, or both?",
-        "",
-    ]
-    return "\n".join(lines)
+    return audit_checks, audit_issues
 
 
 def main() -> None:
     MEETING7_DIR.mkdir(parents=True, exist_ok=True)
-    checks, issues, audit_md, report_summary_md = build_audit_outputs()
+    checks, issues = build_audit_outputs()
 
     checks.to_csv(AUDIT_CHECKS_PATH, index=False)
     issues.to_csv(AUDIT_ISSUES_PATH, index=False)
-    AUDIT_MD_PATH.write_text(audit_md, encoding="utf-8")
-    REPORT_SUMMARY_PATH.write_text(report_summary_md, encoding="utf-8")
 
     failed_checks = int(checks["status"].eq("FAIL").sum())
     material_errors = int((issues["classification"] == "MATERIAL_IMPLEMENTATION_ERROR").sum())
@@ -980,8 +542,6 @@ def main() -> None:
     print("Technical analysis can be frozen: YES" if overall_status == "PASS" else "Technical analysis can be frozen: NO")
     print(f"Wrote: {AUDIT_CHECKS_PATH.relative_to(PROJECT_ROOT)}")
     print(f"Wrote: {AUDIT_ISSUES_PATH.relative_to(PROJECT_ROOT)}")
-    print(f"Wrote: {AUDIT_MD_PATH.relative_to(PROJECT_ROOT)}")
-    print(f"Wrote: {REPORT_SUMMARY_PATH.relative_to(PROJECT_ROOT)}")
 
 
 if __name__ == "__main__":

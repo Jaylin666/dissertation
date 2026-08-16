@@ -64,7 +64,6 @@ STABILITY_RESULTS_PATH = DATA_PROCESSED / f"rating_stability_results_{YEAR_RANGE
 YEARLY_SUMMARY_PATH = DATA_PROCESSED / f"rating_stability_yearly_summary_{YEAR_RANGE}.csv"
 TOP_OVERLAP_PATH = DATA_PROCESSED / f"rating_stability_top_rank_overlap_{YEAR_RANGE}.csv"
 PLAYER_LEVEL_PATH = DATA_PROCESSED / f"rating_stability_player_level_{YEAR_RANGE}.csv"
-SUMMARY_MD_PATH = DATA_PROCESSED / f"rating_stability_summary_{YEAR_RANGE}.md"
 
 
 REQUIRED_COLUMNS = ["fcode", "code", "year", "winner", "loser"]
@@ -683,84 +682,6 @@ def make_sanity_checks(setting_outputs: Dict[str, Dict[str, pd.DataFrame]], stab
     }
 
 
-def write_markdown_summary(
-    stability_results: pd.DataFrame,
-    yearly_summary: pd.DataFrame,
-    top_overlap: pd.DataFrame,
-    checks: Dict[str, object],
-) -> str:
-    """Write an English markdown summary for meeting notes."""
-    selected = stability_results[
-        stability_results["setting_name"] == "selected_validation_best"
-    ].iloc[0]
-    default = stability_results[stability_results["setting_name"] == "default_elo"].iloc[0]
-
-    rows = []
-    for _, row in stability_results.iterrows():
-        test_text = "not available"
-        if pd.notna(row.get("test_log_loss", np.nan)):
-            test_text = (
-                f"test log loss = {row['test_log_loss']:.6f}, "
-                f"test accuracy = {row['test_accuracy']:.6f}"
-            )
-        rows.append(
-            f"* {row['setting_name']} (K={row['K']:g}, scale={row['scale']:g}): "
-            f"average abs update = {row['average_abs_rating_update']:.3f}, "
-            f"final rating std = {row['final_rating_std']:.3f}, "
-            f"top50 2024-2025 overlap = {row['top50_overlap_2024_2025']:.3f}, "
-            f"{test_text}"
-        )
-
-    markdown = f"""# Rating stability / volatility analysis ({START_YEAR}-{END_YEAR})
-
-## Aim
-
-The aim is to compare rating stability and volatility across several transparent simple Elo parameter settings.
-This step is not trying to find a lower log loss. Instead, it checks the trade-off between predictive performance and rating smoothness.
-
-## Method
-
-Each setting starts all players from 1500 and runs the same simple Elo update rule over the 2015-2025 match dataset.
-For every setting, the script records match-level rating updates, year-end rating distributions, top-ranking overlap, and player-level rating ranges.
-
-## Parameter settings compared
-
-{chr(10).join(rows)}
-
-## Main stability results
-
-The selected validation-best setting is K={selected['K']:g}, scale={selected['scale']:g}.
-Compared with the default setting, its average absolute rating update is {selected['average_abs_rating_update']:.3f} versus {default['average_abs_rating_update']:.3f}, and its final rating standard deviation is {selected['final_rating_std']:.3f} versus {default['final_rating_std']:.3f}.
-
-## Prediction vs stability comparison
-
-The selected validation-best setting improves the 2025 test predictive metrics relative to the original default setting, but it also uses a larger K and smaller scale. This can make ratings more responsive, and potentially more volatile.
-The stability table should therefore be read together with the validation/test log loss, Brier score and accuracy from the parameter validation step.
-
-## Interpretation
-
-These are preliminary stability checks for the transparent simple Elo baseline. The selected validation-best setting improves predictive performance on the 2025 test set, but a larger K may also make ratings more responsive or more volatile. Therefore, predictive performance should be considered together with stability before treating any Elo parameter setting as final.
-
-The result should not be treated as a final project conclusion before comparing with Glicko and considering rating stability in a more formal way.
-
-## Sanity checks
-
-* Processed games consistent across settings: {checks['processed_games_consistent']}
-* 2025 test fcode sets consistent across settings: {checks['test_fcode_sets_consistent']}
-* pred_a_win always in [0, 1]: {checks['all_pred_a_win_in_range']}
-* actual_a_win contains both 0 and 1: {checks['all_actual_a_win_has_0_and_1']}
-* rating history rows equal two times prediction rows: {checks['all_history_rows_equal_predictions_times_two']}
-* final rating mean close to 1500: {checks['final_rating_mean_close_to_1500']}
-
-## Notes for supervisor
-
-* Is this level of rating volatility acceptable for a sports rating system?
-* Should predictive performance and stability be combined into one model selection criterion?
-* Should I compare these Elo stability results with Glicko rating deviation later?
-* Should the final project report include both predictive scoring rules and rating stability diagnostics?
-"""
-    SUMMARY_MD_PATH.write_text(markdown, encoding="utf-8")
-    return markdown
 
 
 def save_outputs(
@@ -768,14 +689,12 @@ def save_outputs(
     yearly_summary: pd.DataFrame,
     top_overlap: pd.DataFrame,
     player_level: pd.DataFrame,
-    markdown_summary: str,
 ) -> None:
-    """Save all stability analysis outputs."""
+    """Save stability-analysis CSV outputs."""
     stability_results.to_csv(STABILITY_RESULTS_PATH, index=False)
     yearly_summary.to_csv(YEARLY_SUMMARY_PATH, index=False)
     top_overlap.to_csv(TOP_OVERLAP_PATH, index=False)
     player_level.to_csv(PLAYER_LEVEL_PATH, index=False)
-    SUMMARY_MD_PATH.write_text(markdown_summary, encoding="utf-8")
 
 
 def print_command_line_summary(stability_results: pd.DataFrame, checks: Dict[str, object]) -> None:
@@ -813,7 +732,6 @@ def print_command_line_summary(stability_results: pd.DataFrame, checks: Dict[str
     print(f"  yearly summary: {YEARLY_SUMMARY_PATH}")
     print(f"  top rank overlap: {TOP_OVERLAP_PATH}")
     print(f"  player level: {PLAYER_LEVEL_PATH}")
-    print(f"  markdown summary: {SUMMARY_MD_PATH}")
 
 
 def main() -> None:
@@ -851,13 +769,7 @@ def main() -> None:
         parameter_results=parameter_results,
     )
     checks = make_sanity_checks(setting_outputs, stability_results)
-    markdown_summary = write_markdown_summary(
-        stability_results=stability_results,
-        yearly_summary=yearly_summary,
-        top_overlap=top_overlap,
-        checks=checks,
-    )
-    save_outputs(stability_results, yearly_summary, top_overlap, player_level, markdown_summary)
+    save_outputs(stability_results, yearly_summary, top_overlap, player_level)
     print_command_line_summary(stability_results, checks)
 
 

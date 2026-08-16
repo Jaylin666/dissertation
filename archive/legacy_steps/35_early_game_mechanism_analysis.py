@@ -1,9 +1,4 @@
-"""Meeting 7 Step 35: mechanism analysis for early-game results.
-
-This script explains the Step 34 early-game pattern using existing prediction
-outputs and player-appearance data only. It does not rerun Elo/Glicko, tune
-parameters, or modify Step 34 outputs.
-"""
+"""Analyse early-game prediction mechanisms."""
 
 from __future__ import annotations
 
@@ -42,7 +37,6 @@ GLICKO_LOW_VS_C0_PATH = OUTPUT_DIR / "35_glicko_low_vs_c0_by_stage.csv"
 KEY_RESULTS_PATH = OUTPUT_DIR / "35_key_mechanism_results.csv"
 FIGURE_MANIFEST_PATH = OUTPUT_DIR / "35_figure_manifest.csv"
 MECHANISM_VALIDATION_PATH = OUTPUT_DIR / "35_mechanism_validation_checks.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "35_early_game_mechanism_summary.md"
 
 EXPECTED_APPEARANCE_ROWS = 22_758
 EXPECTED_MATCHES = 11_379
@@ -884,67 +878,6 @@ def validate_outputs(
     return checks
 
 
-def write_markdown_summary(
-    cumulative_bias: pd.DataFrame,
-    exact_decomp: pd.DataFrame,
-    extremity: pd.DataFrame,
-    rd_summary: pd.DataFrame,
-    rd_assoc: pd.DataFrame,
-    opponent_strength: pd.DataFrame,
-    low_vs_c0: pd.DataFrame,
-    early_boot: pd.DataFrame,
-) -> None:
-    """Write a technical Meeting 7 mechanism summary, not dissertation prose."""
-
-    g_first1 = cumulative_bias.loc[(cumulative_bias["group"] == "first_1") & (cumulative_bias["model"] == "Glicko_low_fixed")].iloc[0]
-    e_first1 = cumulative_bias.loc[(cumulative_bias["group"] == "first_1") & (cumulative_bias["model"] == "Validation_best_Elo")].iloc[0]
-    g_first5 = cumulative_bias.loc[(cumulative_bias["group"] == "first_5") & (cumulative_bias["model"] == "Glicko_low_fixed")].iloc[0]
-    delta1 = exact_decomp.loc[exact_decomp["appearance_number"] == 1, "delta_brier"].iloc[0]
-    delta20 = exact_decomp.loc[exact_decomp["appearance_number"] == 20, "delta_brier"].iloc[0]
-    g_extreme_1 = extremity.loc[(extremity["appearance_stage"] == "1") & (extremity["model"] == "Glicko_low_fixed"), "pct_probability_below_0_10_or_above_0_90"].iloc[0]
-    e_extreme_1 = extremity.loc[(extremity["appearance_stage"] == "1") & (extremity["model"] == "Validation_best_Elo"), "pct_probability_below_0_10_or_above_0_90"].iloc[0]
-    rd_first1 = rd_summary.loc[rd_summary["appearance_stage"] == "1", "mean_focal_rd"].iloc[0]
-    rd_brier_assoc = rd_assoc.loc[(rd_assoc["group"] == "first_20") & (rd_assoc["target"] == "brier_loss"), "correlation_with_focal_rd"].iloc[0]
-    opp_best = opponent_strength.loc[opponent_strength["threshold"] == 1].sort_values("delta_brier").head(1).iloc[0]
-    c0_first1 = low_vs_c0.loc[low_vs_c0["appearance_stage"] == "1", "delta_brier_C0_minus_low"].iloc[0]
-    boot_first1 = early_boot.loc[(early_boot["group"] == "first_1") & (early_boot["model"] == "Glicko_low_fixed")].iloc[0]
-
-    lines = [
-        "# Step 35 Early-Game Mechanism Analysis",
-        "",
-        "## 1. Research question",
-        "This analysis investigates why Glicko low inflation performs poorly for players' earliest recorded appearances and why the gap relative to validation-best Elo shrinks as players gain recorded games.",
-        "",
-        "## 2. Data and analysis units",
-        f"The primary unit is the focal-player appearance from Step 34. The dataset contains {EXPECTED_APPEARANCE_ROWS:,} appearances from {EXPECTED_MATCHES:,} matches. All probabilities are focal-player win probabilities already saved in Step 34.",
-        "",
-        "## 3. Does Glicko over-predict debut players?",
-        f"For first appearances, Glicko low fixed has mean predicted probability {g_first1.mean_predicted_win_probability:.3f}, empirical win rate {g_first1.empirical_win_rate:.3f}, and prediction bias {g_first1.prediction_bias:.3f}. The player-cluster bootstrap CI is [{boot_first1.ci_lower:.3f}, {boot_first1.ci_upper:.3f}]. This supports the statement that Glicko over-predicts debut players in this evaluation set.",
-        f"Validation-best Elo also has positive debut bias ({e_first1.prediction_bias:.3f}) but it is much smaller.",
-        "",
-        "## 4. Bias over the first 20 appearances",
-        f"Glicko first_5 bias is {g_first5.prediction_bias:.3f}. The Elo-minus-Glicko Delta Brier changes from {delta1:.3f} at appearance 1 to {delta20:.3f} at appearance 20, indicating that the early gap narrows as recorded experience accumulates.",
-        "",
-        "## 5. Prediction extremity",
-        f"In first appearances, the extreme-prediction share (p < 0.10 or p > 0.90) is {g_extreme_1:.3f} for Glicko low fixed and {e_extreme_1:.3f} for validation-best Elo. This supports an overconfidence/extremity mechanism in the debut group.",
-        "",
-        "## 6. Glicko RD mechanism",
-        f"Mean focal Glicko RD for first appearances is {rd_first1:.2f}. The first_20 correlation between focal RD and Brier loss is {rd_brier_assoc:.3f}, so high uncertainty is associated with prediction error only to the extent shown in the RD association table.",
-        "",
-        "## 7. Opponent strength",
-        f"Opponent strength is measured using {opp_best.opponent_strength_field}. The strongest negative debut Delta Brier occurs in the {opp_best.opponent_strength_quartile} group, but the full quartile table should be used cautiously because the debut sample is small.",
-        "",
-        "## 8. Glicko low versus Glicko C0",
-        f"In first appearances, C0 minus low Delta Brier is {c0_first1:.3f}. Positive values mean the low-inflation variant performs better than C0.",
-        "",
-        "## 9. Cautious mechanism interpretation",
-        "The evidence points to a debut-specific mechanism: Glicko assigns high probabilities to some newly recorded players, producing larger early Brier/log-loss penalties. The gap then shrinks as player histories accumulate and Glicko/Elo predictions become more similar.",
-        "",
-        "## 10. Limitations",
-        "These are first recorded appearances in the available dataset, not necessarily true career debuts. Some exact-appearance and probability-band groups are small. This analysis diagnoses mechanisms using existing model outputs only and does not retune any rating system.",
-        "",
-    ]
-    SUMMARY_MD_PATH.write_text("\n".join(lines), encoding="utf-8")
 
 
 def main() -> None:
@@ -986,7 +919,6 @@ def main() -> None:
         manifest,
     )
     print_checks(mechanism_checks)
-    write_markdown_summary(cumulative_bias, exact_decomp, extremity, rd_summary, rd_assoc, opponent_strength, low_vs_c0, early_boot)
 
     fail_count = int((input_checks["status"] == "FAIL").sum() + (mechanism_checks["status"] == "FAIL").sum())
     pass_count = int((input_checks["status"] == "PASS").sum() + (mechanism_checks["status"] == "PASS").sum())
@@ -1016,7 +948,6 @@ def main() -> None:
         KEY_RESULTS_PATH,
         FIGURE_MANIFEST_PATH,
         MECHANISM_VALIDATION_PATH,
-        SUMMARY_MD_PATH,
     ]
 
     print("Step 35 mechanism analysis complete.")

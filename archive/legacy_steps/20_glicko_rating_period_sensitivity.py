@@ -1,10 +1,4 @@
-"""This script compares different Glicko-1 rating-period assumptions for croquet data: match-by-match, event-level, monthly, and yearly.
-
-The experiment isolates the rating-period assumption. All settings use the
-same Glicko-1 formula, same full-history croquet dataset, same initial
-rating/RD, and C=0. Inactivity RD inflation is intentionally not included here;
-it should be tested separately after the rating-period diagnostic.
-"""
+"""Compare Glicko-1 rating-period update schedules."""
 
 from __future__ import annotations
 
@@ -81,7 +75,6 @@ YEARLY_RD_SUMMARY_PATH = OUTPUT_DIR / "glicko_rating_period_yearly_rd_summary.cs
 PERIOD_SUMMARY_PATH = OUTPUT_DIR / "glicko_rating_period_period_summary.csv"
 LIST_SIMILARITY_PATH = OUTPUT_DIR / "glicko_rating_period_list_similarity.csv"
 DATE_ORDERING_SUMMARY_PATH = OUTPUT_DIR / "glicko_rating_period_date_ordering_summary.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "glicko_rating_period_sensitivity_summary.md"
 
 REQUIRED_COLUMNS = ["fcode", "code", "year", "event", "winner", "loser"]
 NUMERIC_ID_COLUMNS = ["fcode", "code", "year", "event", "winner", "loser"]
@@ -1161,119 +1154,6 @@ def append_predictions(predictions: pd.DataFrame, first_write: bool) -> None:
     )
 
 
-def write_summary(
-    matches: pd.DataFrame,
-    metrics: pd.DataFrame,
-    rd_summary: pd.DataFrame,
-    similarity: pd.DataFrame,
-    date_summary: pd.DataFrame,
-    warnings: list[str],
-) -> None:
-    metric_lines = []
-    for row in metrics.sort_values("period_type").itertuples(index=False):
-        metric_lines.append(
-            f"- {row.setting_name}: log loss {row.log_loss:.6f}, "
-            f"Brier {row.brier_score:.6f}, accuracy {row.accuracy:.6f}"
-        )
-
-    rd_lines = []
-    for row in rd_summary.sort_values("period_type").itertuples(index=False):
-        rd_lines.append(
-            f"- {row.setting_name}: median RD {row.median_final_rd:.3f}, "
-            f"mean RD {row.mean_final_rd:.3f}, at MIN_RD {int(row.number_at_min_rd):,} "
-            f"({row.proportion_at_min_rd:.1%})"
-        )
-
-    active_similarity = similarity[
-        (similarity["player_subset"] == "active_2025_games_ge5")
-    ].sort_values("comparison_period_type")
-    similarity_lines = []
-    for row in active_similarity.itertuples(index=False):
-        similarity_lines.append(
-            f"- {row.comparison_setting_name} vs match-by-match, active 2025 games >=5: "
-            f"Spearman {row.spearman_rank_correlation:.4f}, "
-            f"Top50 overlap {row.top50_overlap:.3f}, Top100 overlap {row.top100_overlap:.3f}, "
-            f"mean abs rating difference {row.mean_abs_rating_difference:.2f}"
-        )
-
-    date_lines = []
-    one_setting_date = date_summary[date_summary["setting_name"] == PERIOD_SETTINGS[0]["setting_name"]]
-    for row in one_setting_date.itertuples(index=False):
-        date_lines.append(
-            f"- {row.event_date_ordering_method}: {int(row.match_count):,} matches ({row.share_of_matches:.2%})"
-        )
-
-    warning_lines = ["- None"] if not warnings else [f"- {warning}" for warning in warnings]
-    best_metric = metrics.sort_values("log_loss").iloc[0]
-
-    lines = [
-        "# Glicko-1 Rating-Period Sensitivity Summary",
-        "",
-        "## Aim",
-        "",
-        "This experiment tests how different Glicko rating-period assumptions map onto croquet data.",
-        "",
-        "## Why Rating Period Matters",
-        "",
-        "Classic Glicko is period-based: ratings and RDs are held fixed within a rating period, all games in that period are collected, and player states are updated at the end of the period. Changing the period therefore changes both predictions and RD behaviour.",
-        "",
-        "## Rating-Period Assumptions Tested",
-        "",
-        "- Match-by-match: each game is one rating period.",
-        "- Event-level: all games in the same year-event are one rating period.",
-        "- Monthly: all games in the same calendar month are one rating period.",
-        "- Yearly: all games in the same calendar year are one rating period.",
-        "",
-        "## Controlled Design",
-        "",
-        "All settings use the same Glicko-1 formula, same full-history dataset, same initial rating/RD, and C=0. This is deliberate: the experiment compares rating-period assumptions only. Inactivity RD inflation is not included here and should be tested separately.",
-        "",
-        "## Data Used",
-        "",
-        f"- Dataset: `outputs/elo_optimization/matches_1985_2025_checked.csv`",
-        f"- Years: {int(matches['year'].min())}-{int(matches['year'].max())}",
-        f"- Matches: {len(matches):,}",
-        f"- Unique players: {pd.concat([matches['winner'], matches['loser']]).dropna().astype(int).nunique():,}",
-        f"- 2025 test games per setting: {EXPECTED_2025_GAMES:,}",
-        "",
-        "Date ordering:",
-        "",
-        *date_lines,
-        "",
-        "## Prediction Results",
-        "",
-        *metric_lines,
-        "",
-        f"The best 2025 log loss in this diagnostic is from `{best_metric['setting_name']}`. This should not be over-interpreted yet; it only answers how period assumptions behave under C=0.",
-        "",
-        "## Final Rating List Similarity",
-        "",
-        *similarity_lines,
-        "",
-        "## RD Behaviour",
-        "",
-        *rd_lines,
-        "",
-        "## Interpretation for Supervisor Question",
-        "",
-        "If match-by-match and event-level results are very similar, that supports match-by-match updates as a pragmatic baseline for game-level croquet data. If monthly or yearly results differ more, that suggests very coarse periods may lose useful chronological information. There may not be a single theoretically preferred answer; the choice can be justified pragmatically and experimentally.",
-        "",
-        "## Important Limitations",
-        "",
-        "- This experiment keeps C=0, so inactivity RD inflation is not tested yet.",
-        "- This is still Glicko-1, not Glicko-2.",
-        "- It does not yet compare against Elo.",
-        "- Yearly period is included mainly as a coarse diagnostic, not necessarily as a realistic candidate.",
-        "",
-        "## Warnings",
-        "",
-        *warning_lines,
-        "",
-        "## Next Step",
-        "",
-        "Next, either add inactivity RD inflation sensitivity for the most plausible period assumptions, or prepare a fair Elo-vs-Glicko comparison using the selected Glicko period assumption.",
-    ]
-    SUMMARY_MD_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -1393,7 +1273,6 @@ def main() -> None:
     period_summary_df.to_csv(PERIOD_SUMMARY_PATH, index=False, encoding="utf-8-sig")
     similarity_df.to_csv(LIST_SIMILARITY_PATH, index=False, encoding="utf-8-sig")
     date_summary.to_csv(DATE_ORDERING_SUMMARY_PATH, index=False, encoding="utf-8-sig")
-    write_summary(matches, metrics_df, rd_summary_df, similarity_df, date_summary, warnings)
 
     print()
     print("2025 fcode set consistency:")
@@ -1420,7 +1299,6 @@ def main() -> None:
         PERIOD_SUMMARY_PATH,
         LIST_SIMILARITY_PATH,
         DATE_ORDERING_SUMMARY_PATH,
-        SUMMARY_MD_PATH,
     ]:
         print(f"  {path}")
     print(f"Total runtime: {time.time() - start_time:.2f} seconds")

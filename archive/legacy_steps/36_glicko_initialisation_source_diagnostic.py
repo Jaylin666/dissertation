@@ -1,10 +1,4 @@
-"""Meeting 7 Step 36: Glicko initialisation source diagnostic.
-
-This script diagnoses why Step 34/35 first-appearance focal players have a
-high saved low-inflation Glicko predicted win probability. It uses only stored
-Step 33/34 probabilities and pre-match states. It does not rerun Elo/Glicko,
-tune parameters, or modify earlier outputs.
-"""
+"""Diagnose Glicko initialisation effects for recorded entrants."""
 
 from __future__ import annotations
 
@@ -29,7 +23,6 @@ FIGURE_DIR = OUTPUT_DIR / "figures"
 
 APPEARANCE_DATASET_PATH = OUTPUT_DIR / "34_early_game_appearance_dataset.csv"
 STEP33_SCORES_PATH = PROJECT_ROOT / "outputs" / "meeting6" / "33_orientation_corrected_per_match_scores_2025.csv"
-STEP35_SUMMARY_PATH = OUTPUT_DIR / "35_early_game_mechanism_summary.md"
 STEP35_KEY_RESULTS_PATH = OUTPUT_DIR / "35_key_mechanism_results.csv"
 STEP35_RD_SUMMARY_PATH = OUTPUT_DIR / "35_glicko_rating_rd_summary.csv"
 
@@ -50,7 +43,6 @@ LOW_VS_C0_PATH = OUTPUT_DIR / "36_debut_low_vs_c0_diagnostic.csv"
 KEY_RESULTS_PATH = OUTPUT_DIR / "36_key_initialisation_diagnostic_results.csv"
 FIGURE_MANIFEST_PATH = OUTPUT_DIR / "36_figure_manifest.csv"
 VALIDATION_PATH = OUTPUT_DIR / "36_initialisation_diagnostic_validation_checks.csv"
-SUMMARY_MD_PATH = OUTPUT_DIR / "36_glicko_initialisation_source_summary.md"
 
 EXPECTED_APPEARANCE_ROWS = 22_758
 EXPECTED_MATCHES = 11_379
@@ -148,7 +140,6 @@ OUTPUT_FILES = [
     KEY_RESULTS_PATH,
     FIGURE_MANIFEST_PATH,
     VALIDATION_PATH,
-    SUMMARY_MD_PATH,
 ]
 
 
@@ -245,13 +236,7 @@ def canonical_probability_for_focal(row: pd.Series, canonical_col: str) -> float
 
 
 def reconstruct_saved_glicko_probability(row: pd.Series) -> tuple[float, str, str, float]:
-    """Reconstruct the stored Step 34 focal Glicko probability.
-
-    Step 33 defines the final Glicko probability as the direct canonical
-    player-A probability E(A, B, RD_B). Step 34 then converts it to focal
-    orientation. Therefore focal-B rows are reconstructed as 1 - E(A, B, RD_B),
-    not as a new direct-B Glicko probability.
-    """
+    """Reconstruct focal probability from canonical direct A probability; focal B uses its complement."""
 
     p_a_direct = expected_score(
         row["rating_a_Glicko_low"],
@@ -1416,90 +1401,6 @@ def validate_final_outputs(
     return checks
 
 
-def write_summary_markdown(
-    debut: pd.DataFrame,
-    reconstruction: pd.DataFrame,
-    orientation_audit: pd.DataFrame,
-    state_summary: pd.DataFrame,
-    one_vs_both: pd.DataFrame,
-    rd_associations: pd.DataFrame,
-    focal_rd_diag: pd.DataFrame,
-    extreme_influence: pd.DataFrame,
-    counterfactual: pd.DataFrame,
-    low_vs_c0: pd.DataFrame,
-    conclusion_code: str,
-    recommend_initial_rating_sensitivity: bool,
-) -> None:
-    """Write a technical Meeting 7 diagnostic summary."""
-
-    p_g = debut["p_focal_Glicko_low_fixed"].astype(float)
-    y = debut["outcome_focal"].astype(float)
-    rating_diff = debut["rating_focal_Glicko_low"] - debut["rating_opponent_Glicko_low"]
-    max_orientation = float(orientation_audit["absolute_difference"].max())
-    max_reconstruction = float(reconstruction["absolute_difference"].max())
-    focal_rd_used = int((reconstruction["rd_role_relative_to_focal_player"] == "focal_RD").sum())
-    opponent_rd_used = int((reconstruction["rd_role_relative_to_focal_player"] == "opponent_RD").sum())
-    rd_brier_corr_row = rd_associations.loc[rd_associations["target"].eq("Glicko_Brier_loss")]
-    rd_brier_corr = rd_brier_corr_row["pearson_correlation"].iloc[0] if not rd_brier_corr_row.empty else pd.NA
-    trimmed5 = float(extreme_influence.loc[extreme_influence["metric"].eq("trimmed_mean_5_percent"), "value"].iloc[0])
-    both_row = one_vs_both.loc[one_vs_both["group"].eq("both_players_debut")].iloc[0]
-    one_row = one_vs_both.loc[one_vs_both["group"].eq("exactly_one_debut_player")].iloc[0]
-    c0_minus_low_brier = float(low_vs_c0.loc[low_vs_c0["diagnostic_item"].eq("C0_minus_low_Brier"), "value"].iloc[0])
-    equal_rating_p = float(
-        counterfactual.loc[
-            counterfactual["counterfactual"].eq("B_set_focal_rating_equal_to_opponent"),
-            "mean_predicted_probability",
-        ].iloc[0]
-    )
-
-    lines = [
-        "# Step 36 Glicko Initialisation Source Diagnostic",
-        "",
-        "## 1. Purpose",
-        "This diagnostic investigates why first recorded appearances have a high saved low-inflation Glicko predicted win probability. It uses stored Step 33/34 probabilities and pre-match states only.",
-        "",
-        "## 2. Data and sample definition",
-        f"The diagnostic sample contains {len(debut)} first_1 focal appearances from {debut['match_id'].nunique()} unique matches and {debut['player_id'].nunique()} unique focal players.",
-        "",
-        "## 3. Verification of the 0.743 first-appearance probability",
-        f"The reproduced mean Glicko probability is {p_g.mean():.6f}, the empirical win rate is {y.mean():.6f}, and the prediction bias is {(p_g - y).mean():.6f}.",
-        "",
-        "## 4. Orientation and formula reconstruction",
-        f"The maximum focal-orientation audit error is {max_orientation:.3e}. The maximum reconstruction error from the Step 33 formula is {max_reconstruction:.3e}.",
-        "The saved probability definition is the Step 33 canonical-A direct probability converted to focal orientation.",
-        "",
-        "## 5. Debut focal rating and opponent rating comparison",
-        f"First-appearance focal ratings have mean {debut['rating_focal_Glicko_low'].mean():.3f}; opponent ratings have mean {debut['rating_opponent_Glicko_low'].mean():.3f}. The mean focal-minus-opponent rating difference is {rating_diff.mean():.3f}.",
-        "",
-        "## 6. Role of focal RD in the implemented expected score formula",
-        f"Focal debut RD is {debut['rd_focal_Glicko_low'].mean():.3f} on average and is constant at the initial value in this sample. Because most first_1 focal players are canonical player B, the saved focal probability uses RD_B in {focal_rd_used} rows as the focal player's RD and in {opponent_rd_used} rows as the focal player's opponent RD.",
-        "",
-        "## 7. Role of opponent RD",
-        f"Mean focal-opponent RD is {debut['rd_opponent_Glicko_low'].mean():.3f}. The Pearson association between focal-opponent RD and Glicko Brier loss is {rd_brier_corr}.",
-        "",
-        "## 8. Extreme observations",
-        f"The observed mean probability is {p_g.mean():.6f}, while the 5 percent trimmed mean is {trimmed5:.6f}. This checks whether the mean is driven by only a few extreme probabilities.",
-        "",
-        "## 9. One-debut versus both-debut matches",
-        f"Exactly-one-debut matches contribute {int(one_row['number_of_appearances'])} appearances from {int(one_row['number_of_unique_matches'])} matches. Both-debut matches contribute {int(both_row['number_of_appearances'])} appearances from {int(both_row['number_of_unique_matches'])} matches.",
-        "",
-        "## 10. Low-inflation Glicko versus Glicko C0 at debut",
-        f"C0 minus low Brier at first appearance is {c0_minus_low_brier:.6f}. Positive values mean the low-inflation variant has lower Brier loss than C0.",
-        "",
-        "## 11. Counterfactual diagnostic results",
-        f"Setting the focal rating equal to the opponent rating gives mean probability {equal_rating_p:.6f}. These are formula-only diagnostics and are not fitted models.",
-        "",
-        "## 12. Most defensible explanation",
-        f"The diagnostic conclusion code is `{conclusion_code}`. The evidence should be interpreted as diagnostic rather than causal model refitting.",
-        "",
-        "## 13. What cannot yet be concluded",
-        "This step does not prove what the optimal initial rating or RD should be. It also does not establish true career debut status; these are first recorded appearances in the available data.",
-        "",
-        "## 14. Initial-rating sensitivity experiment",
-        f"Initial-rating sensitivity experiment recommended next: {recommend_initial_rating_sensitivity}. This recommendation is for a future diagnostic/sensitivity step only.",
-        "",
-    ]
-    SUMMARY_MD_PATH.write_text("\n".join(lines), encoding="utf-8")
 
 
 def main() -> None:
@@ -1524,11 +1425,11 @@ def main() -> None:
     one_vs_both = build_one_vs_both_summary(debut)
     rating_bins = build_rating_difference_bins(debut)
     rd_quartiles = build_opponent_rd_quartiles(debut)
-    rd_associations = build_opponent_rd_associations(debut)
-    focal_rd_diag = build_focal_rd_formula_diagnostic(debut, reconstruction)
+    build_opponent_rd_associations(debut)
+    build_focal_rd_formula_diagnostic(debut, reconstruction)
     extreme_influence, _ = build_extreme_probability_outputs(debut)
     counterfactual = build_counterfactual_diagnostics(debut)
-    low_vs_c0 = build_low_vs_c0_diagnostic(debut)
+    build_low_vs_c0_diagnostic(debut)
     key_results, conclusion_code, recommend_initial_rating_sensitivity = build_key_results(
         debut,
         reconstruction,
@@ -1538,20 +1439,6 @@ def main() -> None:
         orientation_audit,
     )
     figure_manifest = create_figures(debut, rating_bins, rd_quartiles, counterfactual)
-    write_summary_markdown(
-        debut,
-        reconstruction,
-        orientation_audit,
-        state_summary,
-        one_vs_both,
-        rd_associations,
-        focal_rd_diag,
-        extreme_influence,
-        counterfactual,
-        low_vs_c0,
-        conclusion_code,
-        recommend_initial_rating_sensitivity,
-    )
 
     final_checks = validate_final_outputs(
         appearances,
