@@ -33,9 +33,9 @@ active Glicko-1 formula implementation: `code/models/glicko.py`.
 
 | Historical step or file | Historical purpose | Current status / replacement |
 |---|---|---|
-| Steps 01-05 | Initial inspection, single-year Elo, evaluation, and scientific summaries | Audit-only scripts in `archive/legacy_steps/`; checked loading is consolidated in `code/io_utils.py`. |
+| Steps 01-04 | Initial inspection, single-year Elo, evaluation, and parameter testing | Audit-only scripts in `archive/legacy_steps/`; checked loading is consolidated in `code/io_utils.py`. Step 05 was a meeting-reporting summary and is omitted from the current tree. |
 | Step 07 | Multi-year checked data construction | Promoted into `code/data/build_matches.py`. |
-| Steps 08-17 | Multi-year Elo, validation, burn-in, stability, and baseline decisions | Core workflow consolidated in `code/pipelines/elo_pipeline.py`; frozen settings are in `code/config.py`; distinct experiments remain audit-only. |
+| Steps 08-16 | Multi-year Elo, validation, burn-in, stability, convergence, and event-level volatility | Core workflow is consolidated in `code/pipelines/elo_pipeline.py`; frozen settings are in `code/config.py`; retained experiments remain audit-only. Step 17 was a derived meeting-decision summary and is omitted from the current tree. |
 | Steps 18-21 and 23 | Glicko equation checks, baselines, period sensitivity, and validation | Equations and checks consolidated in `code/models/glicko.py` and `tests/test_glicko_core.py`; historical scientific experiments and checks remain audit-only. |
 | Step 24 | Low-inflation Glicko workflow | Promoted into `code/pipelines/glicko_pipeline.py`. |
 | Step 25 | Rating-period runtime comparison | Audit-only in `archive/legacy_steps/`. |
@@ -44,7 +44,7 @@ active Glicko-1 formula implementation: `code/models/glicko.py`.
 | Step 33 | Formal orientation-corrected comparison | Exact script archived; supported replacement is `code/pipelines/comparison_pipeline.py`. |
 | Step 34 | Early-game analysis | Promoted into `code/analysis/early_game.py`. |
 | Steps 35-37 | Early-game mechanism and initialisation diagnostics | Historical scripts archived; supported concepts are consolidated in `code/analysis/early_game.py` and `code/analysis/entry_diagnostics.py`. |
-| Steps 38-40 | Adaptive-K and orientation sensitivity/reporting | Audit-only scripts; relevant helpers are in `code/models/elo.py`, `code/analysis/orientation.py`, and `code/pipelines/comparison_pipeline.py`. |
+| Steps 38-39 | Asymmetric Adaptive-K and probability-orientation sensitivity | Audit-only scripts; relevant helpers are in `code/models/elo.py`, `code/analysis/orientation.py`, and `code/pipelines/comparison_pipeline.py`. Step 40 only finalised reporting metadata and wording and is omitted from the current tree. |
 | Step 41 | Burn-in, recorded-entry, and rating-scale diagnostics | Promoted into `code/analysis/rating_drift.py` and the entry-diagnostics workflow. |
 | Step 42 | Strict prematch recorded-entry and cross-file audit | Promoted into `code/analysis/entry_diagnostics.py`. |
 | `glicko_core.py` | Reusable Glicko equations | Canonical code is `code/models/glicko.py`; compatibility wrapper retained. |
@@ -53,6 +53,8 @@ active Glicko-1 formula implementation: `code/models/glicko.py`.
 
 Git history records the promotions and moves when file-level provenance is
 required.
+
+`meeting7_final_code_audit.py` retains historical references to Step 40 because it records the original audit sequence. Those references are provenance only and are not active runtime dependencies.
 
 ## Output provenance
 
