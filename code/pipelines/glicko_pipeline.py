@@ -682,54 +682,6 @@ def save_gap_brier_plot(gap_metrics: pd.DataFrame, path: Path) -> None:
     plt.close(fig)
 
 
-def format_value(value: Any) -> str:
-    if pd.isna(value):
-        return ""
-    if isinstance(value, (float, np.floating)):
-        return f"{float(value):.6f}"
-    return str(value)
-
-
-
-
-def choose_recommendation(metrics: pd.DataFrame, gap_metrics: pd.DataFrame) -> tuple[str, str]:
-    metrics_sorted = metrics.sort_values(["brier", "log_loss"]).reset_index(drop=True)
-    best = metrics_sorted.iloc[0]
-    c0 = metrics.loc[metrics["variant"] == "C0_no_inflation"].iloc[0]
-    brier_gain = float(c0["brier"] - best["brier"])
-    logloss_gain = float(c0["log_loss"] - best["log_loss"])
-
-    if best["variant"] != "C0_no_inflation" and brier_gain > 0 and logloss_gain > 0:
-        headline = (
-            f"{best['variant']} is the tentative candidate main Glicko variant "
-            "from this sensitivity check."
-        )
-        reason = (
-            f"It improves both 2025 Brier score by {brier_gain:.6f} and log loss by "
-            f"{logloss_gain:.6f} relative to C0. This is still a sensitivity result, "
-            "not a final universal best model."
-        )
-        return headline, reason
-
-    if best["variant"] == "C0_no_inflation":
-        headline = "C0_no_inflation remains the prediction-oriented baseline in this run."
-        reason = (
-            "The RD inflation variants do not improve the aggregate 2025 Brier/log-loss "
-            "metrics. RD inflation remains conceptually relevant for inactive players and "
-            "should still be discussed as a sensitivity check."
-        )
-        return headline, reason
-
-    headline = f"{best['variant']} has the lowest Brier score, but the recommendation is cautious."
-    reason = (
-        "The aggregate metrics are mixed, so this should be treated as a sensitivity result "
-        "rather than a final Glicko choice."
-    )
-    return headline, reason
-
-
-
-
 def main() -> None:
     """Run the Glicko pipeline."""
 
