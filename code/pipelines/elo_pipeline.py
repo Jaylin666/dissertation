@@ -21,7 +21,7 @@ from code.config import (
     EloConfig,
 )
 from code.io_utils import (
-    PROJECT_ROOT,
+    PUBLIC_MATCHES_PATH,
     add_event_ordering_columns,
     ensure_directory,
     read_csv_checked,
@@ -30,12 +30,7 @@ from code.io_utils import (
 from code.models.elo import expected_score, update_with_config
 
 
-FULL_HISTORY_PATH = (
-    PROJECT_ROOT
-    / "outputs"
-    / "elo_optimization"
-    / "matches_1985_2025_checked.csv"
-)
+FULL_HISTORY_PATH = PUBLIC_MATCHES_PATH
 REQUIRED_MATCH_COLUMNS = ("fcode", "year", "event", "winner", "loser")
 OPTIONAL_MATCH_COLUMNS = (
     "winner_name",

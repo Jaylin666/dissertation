@@ -17,7 +17,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from code.io_utils import add_event_ordering_columns as add_shared_event_ordering
+from code.io_utils import (
+    PUBLIC_MATCHES_PATH,
+    add_event_ordering_columns as add_shared_event_ordering,
+)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -88,18 +91,30 @@ BASELINE_EXPECTED = {
 }
 
 
-def find_full_history_dataset() -> Path:
-    expected = PROJECT_ROOT / "outputs" / "elo_optimization" / "matches_1985_2025_checked.csv"
-    if expected.exists():
-        return expected
+def find_full_history_dataset(explicit_path: str | Path | None = None) -> Path:
+    if explicit_path is not None:
+        candidate = Path(explicit_path)
+        if not candidate.is_absolute():
+            candidate = PROJECT_ROOT / candidate
+        if not candidate.exists():
+            raise FileNotFoundError(f"Explicit match dataset not found: {candidate}")
+        return candidate
 
-    candidates = sorted(PROJECT_ROOT.rglob("matches_1985_2025_checked.csv"))
-    if not candidates:
-        raise FileNotFoundError(
-            "Could not find matches_1985_2025_checked.csv. "
-            "Run code/13_build_full_history_match_dataset.py first."
-        )
-    return candidates[0]
+    if PUBLIC_MATCHES_PATH.exists():
+        return PUBLIC_MATCHES_PATH
+
+    generated_path = (
+        PROJECT_ROOT
+        / "outputs"
+        / "elo_optimization"
+        / "matches_1985_2025_checked.csv"
+    )
+    if generated_path.exists():
+        return generated_path
+
+    raise FileNotFoundError(
+        "Could not find the tracked public dataset or local generated checked dataset."
+    )
 
 
 def format_code_value(value: Any) -> str:
@@ -153,8 +168,10 @@ def add_inactivity_period_index(matches: pd.DataFrame) -> tuple[pd.DataFrame, st
     return matches, "year"
 
 
-def load_matches() -> tuple[pd.DataFrame, str, Path]:
-    dataset_path = find_full_history_dataset()
+def load_matches(
+    path: str | Path | None = None,
+) -> tuple[pd.DataFrame, str, Path]:
+    dataset_path = find_full_history_dataset(path)
     matches = pd.read_csv(dataset_path, low_memory=False)
 
     missing_required = [col for col in REQUIRED_COLUMNS if col not in matches.columns]

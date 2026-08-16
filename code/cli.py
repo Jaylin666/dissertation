@@ -23,7 +23,7 @@ from code.config import (
     TEST_YEAR,
     VALIDATION_YEARS,
 )
-from code.io_utils import PROJECT_ROOT
+from code.io_utils import PROJECT_ROOT, PUBLIC_MATCHES_PATH
 from code.validation_utils import robust_bool
 
 
@@ -165,8 +165,7 @@ def validate_compact_outputs() -> bool:
         ):
             failures.append("Chapter 5 first-appearance Brier score changed")
 
-    print(f"Tracked error-level checks inspected: {total_error_checks}")
-    print(f"Failures: {len(failures)}")
+    print(f"Tracked evidence checks: {total_error_checks}, {len(failures)} failures")
     for failure in failures:
         print(f"  - {failure}")
     if not failures:
@@ -176,15 +175,30 @@ def validate_compact_outputs() -> bool:
     return not failures
 
 
-def command_build_data(args: argparse.Namespace) -> int:
-    from code.data import build_matches
+def validate_public_dataset() -> bool:
+    """Validate the tracked name-free processed dataset."""
 
+    from code.data.export_public_dataset import public_dataset_check_results
+
+    checks = public_dataset_check_results()
+    failures = [name for name, passed in checks.items() if not passed]
+    print(f"Public dataset checks: {len(checks)}, {len(failures)} failures")
+    for failure in failures:
+        print(f"  - {failure}")
+    if not failures:
+        print("Public dataset validation result: PASS")
+    else:
+        print("Public dataset validation result: FAIL")
+    return not failures
+
+
+def command_build_data(args: argparse.Namespace) -> int:
     output = Path(args.output_root) / "elo_optimization"
     _print_run_header(
         "build-data",
         "full run" if args.full_run else "validation-only",
-        [PROJECT_ROOT / "data_raw"],
-        [output],
+        [PROJECT_ROOT / "data_raw"] if args.full_run else [PUBLIC_MATCHES_PATH],
+        [output] if args.full_run else ["console validation report"],
         [
             f"years={FULL_HISTORY_START_YEAR}-{FULL_HISTORY_END_YEAR}",
             f"expected_games={EXPECTED_FULL_HISTORY_MATCHES}",
@@ -194,12 +208,12 @@ def command_build_data(args: argparse.Namespace) -> int:
         ],
     )
     if args.full_run:
+        from code.data import build_matches
+
         build_matches.configure_output_root(args.output_root)
         build_matches.main()
     else:
-        matches = pd.read_csv(build_matches.MATCHES_OUTPUT_PATH, low_memory=False)
-        build_matches.validate_canonical_counts(matches)
-        print("Existing checked-game dataset counts: PASS")
+        return 0 if validate_public_dataset() else 1
     return 0
 
 
@@ -235,12 +249,7 @@ def command_run_glicko(args: argparse.Namespace) -> int:
     _print_run_header(
         "run-glicko",
         "full run" if args.full_run else "validation-only",
-        [
-            PROJECT_ROOT
-            / "outputs"
-            / "elo_optimization"
-            / "matches_1985_2025_checked.csv"
-        ],
+        [PUBLIC_MATCHES_PATH],
         [Path(args.output_root) / "meeting5_glicko_rd_inflation"],
         [
             f"initial_rating={GLICKO_LOW_INFLATION.initial_rating}",
@@ -315,10 +324,7 @@ def command_entry_diagnostics(args: argparse.Namespace) -> int:
         "entry-diagnostics",
         "full run" if args.full_run else "validation-only",
         [
-            PROJECT_ROOT
-            / "outputs"
-            / "elo_optimization"
-            / "matches_1985_2025_checked.csv",
+            PUBLIC_MATCHES_PATH,
             PROJECT_ROOT
             / "outputs"
             / "meeting6"
@@ -358,10 +364,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.command == "validate":
+        from code.data.export_public_dataset import PUBLIC_MANIFEST_PATH
+
         _print_run_header(
             "validate",
             "validation-only",
-            _validation_files(),
+            [*_validation_files(), PUBLIC_MATCHES_PATH, PUBLIC_MANIFEST_PATH],
             ["console validation report"],
             [
                 f"years={FULL_HISTORY_START_YEAR}-{FULL_HISTORY_END_YEAR}",
@@ -369,7 +377,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 f"test_year={TEST_YEAR}",
             ],
         )
-        return 0 if validate_compact_outputs() else 1
+        tracked_ok = validate_compact_outputs()
+        public_ok = validate_public_dataset()
+        return 0 if tracked_ok and public_ok else 1
     return COMMANDS[args.command](args)
 
 

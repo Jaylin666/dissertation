@@ -43,8 +43,10 @@ python -m code.cli entry-diagnostics --full-run --output-root outputs/reproducti
 ```
 
 The default CLI mode is validation-only. A computational workflow runs only
-when `--full-run` is supplied. Full runs require the untracked large
-intermediate datasets described in the root `README.md`. These examples are
-individual entry points, not a claim that all workflows can be reproduced with
-one command.
+when `--full-run` is supplied. The Elo and Glicko core workflows read the
+tracked name-free dataset in `data/processed/`. Rebuilding that dataset needs
+private raw inputs, while downstream workflows may still need the untracked
+intermediates described in the root `README.md`. These examples are individual
+entry points, not a claim that all workflows can be reproduced with one
+command.
 

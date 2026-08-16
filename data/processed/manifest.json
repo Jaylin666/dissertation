@@ -1,0 +1,15 @@
+{
+  "compression": "gzip",
+  "export_script": "code/data/export_public_dataset.py",
+  "file": "association_croquet_games_1985_2025_no_names.csv.gz",
+  "first_year": 1985,
+  "last_year": 2025,
+  "player_names_removed": true,
+  "rows": 456382,
+  "sha256": "a16fd9be5785f8c4e93d5223bc0fda59a5b9718b7b55fa1a1f2d21c9cd0d9f46",
+  "source_processed_file": "matches_1985_2025_checked.csv",
+  "stable_player_ids_retained": true,
+  "test_year": 2025,
+  "test_year_rows": 11379,
+  "unique_coded_players": 5143
+}

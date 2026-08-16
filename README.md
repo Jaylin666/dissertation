@@ -9,9 +9,10 @@ frozen. The repository is organised to make the current implementation,
 automated validation, Chapter 4 and Chapter 5 evidence, and scientific
 provenance easy to distinguish.
 
-The repository is not fully self-contained. Raw source data and large
-row-level intermediates are intentionally excluded from Git and are required
-for a complete reconstruction.
+The repository includes the processed game-level dataset used in the
+dissertation, with player names and direct personal fields removed. Raw source
+data and large downstream intermediates remain excluded from Git, so the
+repository is not a one-command complete reconstruction pipeline.
 
 ## Repository structure
 
@@ -24,6 +25,8 @@ for a complete reconstruction.
   - `config.py` records frozen dissertation parameters and expected values.
 - `tests/`: equation, probability-orientation, recorded-entry, and frozen
   output regression tests.
+- `data/processed/`: tracked name-free processed game-level data for the core
+  rating workflows.
 - `outputs/dissertation_evidence/`: controlled compact evidence for the
   dissertation.
 - `archive/`: scientifically relevant legacy scripts plus the compact source
@@ -80,9 +83,11 @@ python -m code.cli run-elo --full-run --output-root outputs/reproduction
 
 The commands represent the supported data build, Elo, Glicko,
 orientation-corrected comparison, early-game, and recorded-entry workflows.
-They are not a one-command reproduction pipeline: each full run requires its
-documented upstream source or intermediate files. The CLI prints the exact
-paths and frozen parameter configuration before execution.
+The Elo and Glicko core full runs read the tracked processed dataset directly.
+Rebuilding that dataset still requires the private raw files, and downstream
+comparison and early-game workflows may require their documented upstream
+intermediates. The CLI prints the exact paths and frozen parameter
+configuration before execution.
 
 ## Dissertation evidence
 
@@ -108,18 +113,17 @@ the controlled files.
 
 ## Data availability
 
-The analysis uses annual Association Croquet game, event, player, and index
-files for 1985-2025. These raw files are not published in this repository.
-They must be obtained separately from the source provider under the applicable
-access and use conditions, then placed under `data_raw/` using the filenames
-expected by `code/data/download.py` and `code/data/build_matches.py`.
+The tracked file in `data/processed/` is the checked game-level table used in
+the dissertation. Player names and direct personal fields are removed. Stable
+coded player identifiers are retained because longitudinal rating histories
+and the fixed Player-A orientation depend on them.
 
-The checked full-history table, per-game predictions, rating histories,
+The original annual Association Croquet source files and player-name lookup
+table are not redistributed. Rebuilding the processed dataset requires those
+private raw inputs under `data_raw/`. Per-game predictions, rating histories,
 player-appearance tables, caches, and repeated experiment dumps are also
-excluded from Git. After obtaining the source data, reconstruct the checked
-historical table before running downstream workflows. Generated files under
-`outputs/` are ignored by default; only the reviewed dissertation evidence
-packages are tracked there.
+excluded from Git. Generated files under `outputs/` are ignored by default;
+only the reviewed dissertation evidence packages are tracked there.
 
 ## Scientific provenance
 

@@ -11,6 +11,12 @@ import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_ROOT = PROJECT_ROOT / "outputs"
+PUBLIC_MATCHES_PATH = (
+    PROJECT_ROOT
+    / "data"
+    / "processed"
+    / "association_croquet_games_1985_2025_no_names.csv.gz"
+)
 
 
 def project_path(*parts: str) -> Path:
