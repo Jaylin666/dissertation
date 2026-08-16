@@ -1,7 +1,5 @@
 """Build the checked historical game dataset."""
 
-from __future__ import annotations
-
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 

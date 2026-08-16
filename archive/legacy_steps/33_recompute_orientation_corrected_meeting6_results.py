@@ -1,4 +1,19 @@
-"""Orientation-corrected model comparison and calibration."""
+"""Meeting 6 step 6: orientation-corrected final results.
+
+Step 32 showed that the saved Glicko prediction files store the probability of
+the actual winner. Because Glicko expected scores are not complementary when
+the two players have different RDs, converting a winner probability to player-A
+probability with an outcome-dependent complement produces an evaluation
+orientation problem.
+
+This script does not rerun or retune any rating model. It reads the Step 32
+audit file and uses the fixed direct player-A Glicko probability:
+
+    p_A = expected_score(rating_A, rating_B, RD_B)
+
+It then recomputes all final Meeting 6 probability-based tables, figures, and
+summaries with new 33_* outputs.
+"""
 
 from __future__ import annotations
 
@@ -17,7 +32,7 @@ import pandas as pd
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = SCRIPT_DIR.parent
 OUTPUT_DIR = PROJECT_ROOT / "outputs" / "meeting6"
 FIGURE_DIR = OUTPUT_DIR / "figures"
 
@@ -27,18 +42,6 @@ STEP31_DEBUT_OPPONENT_SUMMARY_PATH = OUTPUT_DIR / "31_debut_opponent_rating_summ
 STEP31_UNIQUE_PLAYER_SNAPSHOT_PATH = OUTPUT_DIR / "31_unique_player_rating_snapshot.csv"
 STEP32_DIRECT_PATH = OUTPUT_DIR / "32_glicko_direct_probability_comparison.csv"
 STEP32_IMPACT_PATH = OUTPUT_DIR / "32_orientation_impact_on_metrics.csv"
-
-
-def configure_output_root(output_root: str | Path) -> Path:
-    global OUTPUT_DIR, FIGURE_DIR
-
-    root = Path(output_root)
-    if not root.is_absolute():
-        root = PROJECT_ROOT / root
-    OUTPUT_DIR = root.resolve() / "meeting6"
-    FIGURE_DIR = OUTPUT_DIR / "figures"
-    return OUTPUT_DIR
-
 
 RANDOM_SEED = 20260715
 BOOTSTRAP_REPS = 2_000
@@ -92,6 +95,8 @@ class SubgroupSpec:
 
 
 def add_check(rows: list[dict[str, Any]], name: str, passed: bool, observed: Any, expected: Any = "", detail: str = "", severity: str = "error") -> None:
+    """Append one validation or audit check."""
+
     rows.append(
         {
             "check_name": name,
@@ -105,12 +110,16 @@ def add_check(rows: list[dict[str, Any]], name: str, passed: bool, observed: Any
 
 
 def require_columns(df: pd.DataFrame, columns: list[str], source: str) -> None:
+    """Raise a clear error if a required input column is missing."""
+
     missing = [col for col in columns if col not in df.columns]
     if missing:
         raise ValueError(f"{source} is missing required columns: {missing}")
 
 
 def load_inputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Load Step 29, Step 31, and Step 32 outputs."""
+
     for path in [STEP29_SCORES_PATH, STEP32_DIRECT_PATH, STEP32_IMPACT_PATH]:
         if not path.exists():
             raise FileNotFoundError(f"Required input not found: {path}")
@@ -179,7 +188,7 @@ def load_inputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFram
 
 
 def validate_canonical_player_orientation(scores: pd.DataFrame) -> pd.DataFrame:
-    """Validate canonical player and outcome orientation."""
+    """Check that player A/B are stable and not outcome-dependent."""
 
     rows: list[dict[str, Any]] = []
     a_is_min_id = (scores["player_a_id"] == scores[["winner_id", "loser_id"]].min(axis=1)).all()
@@ -205,7 +214,7 @@ def validate_canonical_player_orientation(scores: pd.DataFrame) -> pd.DataFrame:
 
 
 def add_glicko_fixed_probabilities(scores: pd.DataFrame, comp: pd.DataFrame) -> pd.DataFrame:
-    """Use direct Player A probabilities because unequal RDs break symmetry."""
+    """Merge Step 32 fixed-direct Glicko probabilities into the Step 29 table."""
 
     out = scores.copy()
     model_map = {
@@ -261,7 +270,7 @@ def add_glicko_fixed_probabilities(scores: pd.DataFrame, comp: pd.DataFrame) -> 
 
 
 def score_probability(df: pd.DataFrame, alias: str, p_col: str) -> None:
-    """Score stored prematch Player A probabilities."""
+    """Add per-match Brier, log loss, accuracy, and favourite-perspective fields."""
 
     p = df[p_col].astype(float).clip(0.0, 1.0)
     y = df["outcome_a"].astype(float)
@@ -275,7 +284,7 @@ def score_probability(df: pd.DataFrame, alias: str, p_col: str) -> None:
 
 
 def calculate_per_match_scores(scores: pd.DataFrame) -> pd.DataFrame:
-    """Calculate model scores for each game."""
+    """Recalculate all probability-based per-match scores."""
 
     out = scores.copy()
     probability_cols = {
@@ -321,6 +330,8 @@ def calculate_per_match_scores(scores: pd.DataFrame) -> pd.DataFrame:
 
 
 def confidence_category(value: float) -> str:
+    """Categorise Glicko-vs-Elo favourite-probability differences."""
+
     if value < -0.05:
         return "Glicko substantially less confident"
     if value < -0.01:
@@ -333,6 +344,8 @@ def confidence_category(value: float) -> str:
 
 
 def calibration_error_favourite(group: pd.DataFrame, alias: str) -> tuple[float, pd.DataFrame]:
+    """Weighted absolute calibration gap using predicted-favourite bins."""
+
     p = group[f"favourite_probability_{alias}"].astype(float).to_numpy()
     y = group[f"favourite_won_{alias}"].astype(float).to_numpy()
     bins = np.array([0.50, 0.60, 0.70, 0.80, 0.90, 1.0000000001])
@@ -365,6 +378,8 @@ def calibration_error_favourite(group: pd.DataFrame, alias: str) -> tuple[float,
 
 
 def model_metric_row(group: pd.DataFrame, alias: str) -> dict[str, Any]:
+    """Calculate a standard model metric row for one sample."""
+
     cal_error, _ = calibration_error_favourite(group, alias)
     return {
         "model": alias,
@@ -384,10 +399,14 @@ def model_metric_row(group: pd.DataFrame, alias: str) -> dict[str, Any]:
 
 
 def calculate_overall_model_metrics(scores: pd.DataFrame) -> pd.DataFrame:
+    """Calculate overall metrics for every model."""
+
     return pd.DataFrame([model_metric_row(scores, alias) for alias in MODEL_ORDER])
 
 
 def paired_point_metrics(group: pd.DataFrame) -> dict[str, Any]:
+    """Point estimates for the main paired comparisons."""
+
     if group.empty:
         return {
             "games": 0,
@@ -435,7 +454,11 @@ def paired_point_metrics(group: pd.DataFrame) -> dict[str, Any]:
 
 
 def bootstrap_differences(group: pd.DataFrame, diff_cols: list[str], seed: int, reps: int = BOOTSTRAP_REPS) -> dict[str, tuple[float, float, str]]:
-    """Bootstrap by event, falling back to games for one event cluster."""
+    """Paired bootstrap CIs for mean differences.
+
+    The default is event-cluster bootstrap. Extremely small samples with fewer
+    than two event clusters fall back to match-level bootstrap.
+    """
 
     if group.empty:
         return {col: (np.nan, np.nan, "empty") for col in diff_cols}
@@ -464,6 +487,8 @@ def bootstrap_differences(group: pd.DataFrame, diff_cols: list[str], seed: int, 
 
 
 def overall_pairwise_and_ci(scores: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Build overall point and bootstrap comparison tables."""
+
     point = paired_point_metrics(scores)
     pairwise = pd.DataFrame(
         [
@@ -520,7 +545,7 @@ def overall_pairwise_and_ci(scores: pd.DataFrame) -> tuple[pd.DataFrame, pd.Data
 
 
 def subgroup_specs(scores: pd.DataFrame) -> list[SubgroupSpec]:
-    """Build subgroup definitions from prematch information only."""
+    """Build formal subgroup definitions using pre-match information only."""
 
     specs: list[SubgroupSpec] = []
 
@@ -613,6 +638,8 @@ def subgroup_specs(scores: pd.DataFrame) -> list[SubgroupSpec]:
 
 
 def calculate_subgroup_model_performance(scores: pd.DataFrame, specs: list[SubgroupSpec]) -> pd.DataFrame:
+    """Calculate long-format model performance for each subgroup."""
+
     rows = []
     for spec in specs:
         group = scores.loc[spec.mask].copy()
@@ -633,6 +660,8 @@ def calculate_subgroup_model_performance(scores: pd.DataFrame, specs: list[Subgr
 
 
 def calculate_subgroup_pairwise(scores: pd.DataFrame, specs: list[SubgroupSpec]) -> pd.DataFrame:
+    """Calculate point paired improvements for each subgroup."""
+
     rows = []
     for spec in specs:
         group = scores.loc[spec.mask].copy()
@@ -653,7 +682,7 @@ def calculate_subgroup_pairwise(scores: pd.DataFrame, specs: list[SubgroupSpec])
 
 
 def calculate_subgroup_bootstrap(scores: pd.DataFrame, specs: list[SubgroupSpec]) -> pd.DataFrame:
-    """Calculate event-cluster intervals for subgroup differences."""
+    """Calculate event-cluster bootstrap CIs for subgroup paired improvements."""
 
     rows = []
     diff_cols = list(PAIRWISE_DIFFS)
@@ -686,6 +715,8 @@ def calculate_subgroup_bootstrap(scores: pd.DataFrame, specs: list[SubgroupSpec]
 
 
 def sample_masks(scores: pd.DataFrame) -> dict[str, pd.Series]:
+    """Canonical sample masks for final diagnostic tables."""
+
     no_debut = ~scores["either_player_debut"].astype(bool)
     exactly_one_debut = scores["a_is_debut"].astype(bool) ^ scores["b_is_debut"].astype(bool)
     return {
@@ -703,7 +734,7 @@ def sample_masks(scores: pd.DataFrame) -> dict[str, pd.Series]:
 
 
 def calculate_adaptive_k_recovery(scores: pd.DataFrame) -> pd.DataFrame:
-    """Measure the improvement recovered by Adaptive-K Elo."""
+    """Quantify how much of the Default-Elo-to-Glicko improvement adaptive-K recovers."""
 
     rows = []
     for key, mask in sample_masks(scores).items():
@@ -750,6 +781,8 @@ def calculate_adaptive_k_recovery(scores: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_debut_corrected_tables(scores: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Build corrected debut model and player-perspective tables."""
+
     masks = {
         "Either player debut": scores["either_player_debut"].astype(bool),
         "Exactly one debut": scores["a_is_debut"].astype(bool) ^ scores["b_is_debut"].astype(bool),
@@ -803,6 +836,8 @@ def build_debut_corrected_tables(scores: pd.DataFrame) -> tuple[pd.DataFrame, pd
 
 
 def build_returner_tables(scores: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Build cumulative and exclusive inactivity/returner tables."""
+
     no_debut = ~scores["either_player_debut"].astype(bool)
     valid_gap = no_debut & scores["both_players_have_history"].astype(bool) & scores["max_days_since_last_game"].notna()
 
@@ -866,6 +901,8 @@ def build_returner_tables(scores: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFr
 
 
 def build_exclusion_robustness(scores: pd.DataFrame) -> pd.DataFrame:
+    """Measure how the main Glicko-vs-Elo result changes after exclusions."""
+
     masks = {
         "All 2025 evaluation games": pd.Series(True, index=scores.index),
         "Exclude any debut match": ~scores["either_player_debut"].astype(bool),
@@ -896,7 +933,7 @@ def build_exclusion_robustness(scores: pd.DataFrame) -> pd.DataFrame:
 
 
 def standard_calibration(scores: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Bin prematch probabilities against Player A outcomes."""
+    """Calculate common player-A calibration bins and weighted absolute gaps."""
 
     samples = {
         "Overall": pd.Series(True, index=scores.index),
@@ -960,7 +997,7 @@ def standard_calibration(scores: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFra
 
 
 def brier_decomposition_one(group: pd.DataFrame, alias: str, sample: str, bin_width: float = 0.05) -> tuple[dict[str, Any], pd.DataFrame]:
-    """Decompose Brier score using the common Player A outcome."""
+    """Murphy-style binned Brier decomposition using common outcome_a."""
 
     y = group["outcome_a"].astype(float).to_numpy()
     p = group[f"p_a_{alias}"].astype(float).clip(EPS, 1 - EPS).to_numpy()
@@ -1024,6 +1061,8 @@ def brier_decomposition_one(group: pd.DataFrame, alias: str, sample: str, bin_wi
 
 
 def murphy_arrays(y: np.ndarray, p: np.ndarray, bin_width: float = 0.05) -> dict[str, float]:
+    """Fast binned Murphy components for bootstrap samples."""
+
     y = y.astype(float)
     p = np.clip(p.astype(float), EPS, 1.0 - EPS)
     n = len(y)
@@ -1053,7 +1092,7 @@ def murphy_arrays(y: np.ndarray, p: np.ndarray, bin_width: float = 0.05) -> dict
 
 
 def event_bootstrap_positions(group: pd.DataFrame, rng: np.random.Generator) -> np.ndarray:
-    """Sample game positions by event cluster."""
+    """Sample row positions by event cluster."""
 
     reset = group.reset_index(drop=True)
     grouped = [np.asarray(pos, dtype=int) for pos in reset.groupby("event_key", sort=False).indices.values()]
@@ -1062,7 +1101,7 @@ def event_bootstrap_positions(group: pd.DataFrame, rng: np.random.Generator) -> 
 
 
 def standard_brier_decomposition(scores: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Calculate standard Brier decompositions."""
+    """Build standard Brier decomposition tables and bootstrap CIs."""
 
     samples = {
         "Overall": pd.Series(True, index=scores.index),
@@ -1125,7 +1164,7 @@ def standard_brier_decomposition(scores: pd.DataFrame) -> tuple[pd.DataFrame, pd
 
 
 def calculate_orientation_sensitivity(scores: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Calculate probability-orientation sensitivity."""
+    """Compare old saved-winner, fixed direct, from-B complement, and symmetric orientations."""
 
     orientation_defs = {
         "old_step29_saved_winner_orientation": ("old_p_a_Glicko_low", "Old Step29 saved-winner conversion"),
@@ -1204,6 +1243,8 @@ def calculate_orientation_sensitivity(scores: pd.DataFrame) -> tuple[pd.DataFram
 
 
 def build_key_final_results(scores: pd.DataFrame, subgroup_boot: pd.DataFrame) -> pd.DataFrame:
+    """Build a compact table for Meeting 6 slides/notes."""
+
     target_specs = [
         ("Overall", pd.Series(True, index=scores.index)),
         ("Overall excluding debut", ~scores["either_player_debut"].astype(bool)),
@@ -1248,6 +1289,8 @@ def build_key_final_results(scores: pd.DataFrame, subgroup_boot: pd.DataFrame) -
 
 
 def interpretation_for_result(label: str, point: dict[str, Any], ci_map: dict[str, tuple[float, float, str]]) -> str:
+    """Create a brief interpretation label."""
+
     low, high, _ = ci_map["delta_brier_glicko_vs_elo"]
     if point["games"] < 50 or point["events"] < 10:
         return "small sample; descriptive only"
@@ -1261,6 +1304,8 @@ def interpretation_for_result(label: str, point: dict[str, Any], ci_map: dict[st
 
 
 def write_supersession_map() -> pd.DataFrame:
+    """Record which old probability-based outputs are superseded by Step 33."""
+
     rows = [
         ("29_per_match_model_scores_2025.csv", "33_orientation_corrected_per_match_scores_2025.csv", "Glicko player-A probabilities corrected to fixed direct orientation."),
         ("29_overall_model_metrics.csv", "33_overall_model_metrics.csv", "Overall metrics recomputed with fixed Glicko orientation."),
@@ -1284,6 +1329,8 @@ def write_supersession_map() -> pd.DataFrame:
 
 
 def plot_errorbar(df: pd.DataFrame, label_col: str, y_col: str, low_col: str, high_col: str, title: str, ylabel: str, path: Path, note: str = "", rotate: int = 25) -> None:
+    """Categorical point plot with confidence intervals."""
+
     fig, ax = plt.subplots(figsize=(9.5, 5.2))
     x = np.arange(len(df))
     y = df[y_col].astype(float).to_numpy()
@@ -1307,42 +1354,6 @@ def plot_errorbar(df: pd.DataFrame, label_col: str, y_col: str, low_col: str, hi
     plt.close(fig)
 
 
-def create_player_a_calibration_gap_figure(
-    calibration_bins: pd.DataFrame,
-    path: Path,
-) -> Path:
-    """Plot calibration gaps for the two reported models."""
-
-    model_order = ["Glicko_low_fixed", "Validation_best_Elo"]
-    expected_bins = [f"{lower / 10:.1f}-{(lower + 1) / 10:.1f}" for lower in range(10)]
-    selected = calibration_bins.loc[
-        calibration_bins["sample"].eq("Overall")
-        & calibration_bins["model"].isin(model_order)
-        & calibration_bins["games"].gt(0)
-    ].copy()
-
-    fig, ax = plt.subplots(figsize=(9.0, 4.6))
-    for model in model_order:
-        model_bins = selected.loc[selected["model"].eq(model)].sort_values("bin_lower")
-        if model_bins["bin_label"].tolist() != expected_bins:
-            raise ValueError(f"Unexpected calibration bins for {model}")
-        ax.plot(
-            model_bins["bin_label"],
-            model_bins["calibration_gap"],
-            marker="o",
-            label=MODEL_LABELS[model],
-        )
-    ax.axhline(0.0, color="#1f77b4", linestyle="--", linewidth=1.0)
-    ax.set_xlabel("Player-A probability interval")
-    ax.set_ylabel("Empirical win rate minus\nmean predicted probability")
-    ax.tick_params(axis="x", rotation=30)
-    ax.legend()
-    fig.tight_layout()
-    fig.savefig(path, dpi=200)
-    plt.close(fig)
-    return path
-
-
 def create_figures(
     scores: pd.DataFrame,
     overall_metrics: pd.DataFrame,
@@ -1356,9 +1367,12 @@ def create_figures(
     orientation_metrics: pd.DataFrame,
     debut_mechanism: pd.DataFrame,
 ) -> list[Path]:
+    """Create Meeting 6 Step 33 figures."""
+
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     paths: list[Path] = []
 
+    # Figure 1: overall Brier score.
     fig_path = FIGURE_DIR / "33_fig01_overall_brier_zoomed.png"
     fig, ax = plt.subplots(figsize=(8.8, 4.8))
     fig1_models = ["Glicko_low_fixed", "Validation_best_Elo", "best_AdaptiveK", "Default_Elo", "Glicko_C0_fixed"]
@@ -1379,6 +1393,7 @@ def create_figures(
     plt.close(fig)
     paths.append(fig_path)
 
+    # Figure 2: exclusion robustness.
     fig_path = FIGURE_DIR / "33_fig02_exclusion_robustness_delta_brier.png"
     plot_errorbar(
         exclusion,
@@ -1393,6 +1408,7 @@ def create_figures(
     )
     paths.append(fig_path)
 
+    # Figure 3: debut probability vs actual.
     fig_path = FIGURE_DIR / "33_fig03_debut_probability_vs_actual.png"
     debut_only = debut_player.loc[debut_player["is_debut_player"].astype(bool)].copy()
     plot_rows = []
@@ -1417,6 +1433,7 @@ def create_figures(
     plt.close(fig)
     paths.append(fig_path)
 
+    # Figure 4: zero activity / debut decomposition.
     fig_path = FIGURE_DIR / "33_fig04_zero_activity_debut_decomposition.png"
     rows = []
     masks = {
@@ -1433,6 +1450,7 @@ def create_figures(
     plot_errorbar(pd.DataFrame(rows), "sample", "delta_brier_glicko_vs_elo", "delta_brier_ci_lower", "delta_brier_ci_upper", "Zero activity and debut are not the same subgroup", "Elo Brier - Glicko Brier", fig_path)
     paths.append(fig_path)
 
+    # Figure 5: returner inflation.
     fig_path = FIGURE_DIR / "33_fig05_returner_inflation_gain.png"
     plot_errorbar(
         returning_exclusive,
@@ -1447,6 +1465,7 @@ def create_figures(
     )
     paths.append(fig_path)
 
+    # Figure 6: no-debut RD quartiles.
     fig_path = FIGURE_DIR / "33_fig06_no_debut_rd_quartiles.png"
     rd_rows = []
     for label in ["Q1 lowest uncertainty", "Q2", "Q3", "Q4 highest uncertainty"]:
@@ -1457,10 +1476,24 @@ def create_figures(
     plot_errorbar(pd.DataFrame(rd_rows), "rd_quartile", "delta_brier_glicko_vs_elo", "delta_brier_ci_lower", "delta_brier_ci_upper", "Glicko advantage by no-debut pre-match RD quartile", "Elo Brier - Glicko Brier", fig_path)
     paths.append(fig_path)
 
-    fig_path = FIGURE_DIR / "33_fig07_player_a_calibration_gap.png"
-    create_player_a_calibration_gap_figure(calibration_bins, fig_path)
+    # Figure 7: standard player-A calibration.
+    fig_path = FIGURE_DIR / "33_fig07_standard_player_a_calibration.png"
+    fig, ax = plt.subplots(figsize=(6.8, 5.6))
+    cal = calibration_bins.loc[(calibration_bins["sample"] == "Overall") & (calibration_bins["model"].isin(["Glicko_low_fixed", "Validation_best_Elo", "best_AdaptiveK", "Glicko_C0_fixed"])) & (calibration_bins["games"] > 0)].copy()
+    for alias, group in cal.groupby("model", sort=False):
+        ax.plot(group["mean_player_a_probability"], group["empirical_player_a_win_rate"], marker="o", label=MODEL_LABELS[alias])
+    ax.plot([0, 1], [0, 1], color="#666666", linestyle="--", linewidth=1)
+    ax.set_xlabel("Mean predicted player-A win probability")
+    ax.set_ylabel("Empirical player-A win rate")
+    ax.set_title("Standard calibration using common player-A outcome")
+    ax.legend()
+    ax.grid(alpha=0.25)
+    fig.tight_layout()
+    fig.savefig(fig_path, dpi=200)
+    plt.close(fig)
     paths.append(fig_path)
 
+    # Figure 8: orientation sensitivity.
     fig_path = FIGURE_DIR / "33_fig08_orientation_sensitivity.png"
     orient = orientation_metrics.loc[(orientation_metrics["model"] == "Glicko_low") & (orientation_metrics["sample"] == "Overall")].copy()
     fig, ax = plt.subplots(figsize=(8.5, 4.8))
@@ -1474,6 +1507,7 @@ def create_figures(
     plt.close(fig)
     paths.append(fig_path)
 
+    # Figure 9: prediction-confidence mechanism.
     fig_path = FIGURE_DIR / "33_fig09_prediction_confidence_mechanism.png"
     conf = subgroup_pairwise.loc[subgroup_pairwise["subgroup_variable"] == "glicko_vs_elo_confidence_change"].copy()
     boot = subgroup_boot.loc[(subgroup_boot["subgroup_variable"] == "glicko_vs_elo_confidence_change") & (subgroup_boot["diff_name"] == "delta_brier_glicko_vs_elo")]
@@ -1481,6 +1515,7 @@ def create_figures(
     plot_errorbar(conf, "subgroup", "delta_brier_glicko_vs_elo", "ci_lower", "ci_upper", "Glicko advantage by confidence change vs Elo", "Elo Brier - Glicko Brier", fig_path)
     paths.append(fig_path)
 
+    # Figure 10: debut opponent rating distribution.
     fig_path = FIGURE_DIR / "33_fig10_debut_opponent_rating_distribution.png"
     fig, ax = plt.subplots(figsize=(8.5, 4.8))
     if not debut_mechanism.empty:
@@ -1516,6 +1551,8 @@ def validate_final_outputs(
     output_paths: list[Path],
     figure_paths: list[Path],
 ) -> pd.DataFrame:
+    """Run final Step 33 validation checks."""
+
     rows: list[dict[str, Any]] = []
     add_check(rows, "input_rows_11379", len(scores) == EXPECTED_GAMES, len(scores), EXPECTED_GAMES)
     add_check(rows, "match_id_unique", scores["match_id"].duplicated().sum() == 0, int(scores["match_id"].duplicated().sum()), 0)
@@ -1592,6 +1629,8 @@ def write_markdown_summary(
     figure_paths: list[Path],
     output_paths: list[Path],
 ) -> Path:
+    """Write the final orientation-corrected Markdown summary."""
+
     def fmt(x: Any, digits: int = 6) -> str:
         return "NA" if pd.isna(x) else f"{float(x):.{digits}f}"
 
@@ -1697,7 +1736,7 @@ def write_markdown_summary(
 
 
 def main() -> None:
-    """Run the model comparison pipeline."""
+    """Run the Step 33 orientation-corrected final analysis."""
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
