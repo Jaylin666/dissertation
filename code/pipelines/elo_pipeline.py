@@ -21,6 +21,7 @@ from code.config import (
     EloConfig,
 )
 from code.io_utils import (
+    PROJECT_ROOT,
     PUBLIC_MATCHES_PATH,
     add_event_ordering_columns,
     ensure_directory,
