@@ -671,7 +671,12 @@ def save_rd_distribution_plot(final_ratings: pd.DataFrame, path: Path) -> None:
         for variant in variants
     ]
     fig, ax = plt.subplots(figsize=(8, 4.8))
-    ax.boxplot(data, labels=variants, showfliers=False)
+    try:
+        ax.boxplot(data, tick_labels=variants, showfliers=False)
+    except TypeError as exc:
+        if "tick_labels" not in str(exc):
+            raise
+        ax.boxplot(data, labels=variants, showfliers=False)
     ax.set_title("Final RD distribution by inactivity variant")
     ax.set_ylabel("Final RD")
     ax.set_xlabel("Variant")
